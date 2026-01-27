@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="$ELK - A community-driven memecoin on Solana inspired by Peter Wessel Zapffe's philosophy. The antlers are heavy. We carry them together.">
+    <meta name="keywords" content="ELK, Solana, memecoin, philosophy, Zapffe, cryptocurrency, existentialism">
+    <meta name="theme-color" content="#c41e3a">
+    
+    <title>$ELK - The Burden We Carry Together</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🦌</text></svg>">
+    
+    <!-- Open Graph / Social Media Preview -->
+    <meta property="og:title" content="$ELK - The Burden We Carry Together">
+    <meta property="og:description" content="A community-driven memecoin on Solana inspired by philosophical insights. The antlers are heavy. We carry them together.">
+    <meta property="og:image" content="https://exelkonsol.github.io/elk-site/background.png">
+    <meta property="og:image:alt" content="Majestic elk bearing heavy antlers on a dark mountain ridge">
+    <meta property="og:url" content="https://exelkonsol.github.io/elk-site/">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="$ELK - The Burden We Carry Together">
+    <meta name="twitter:description" content="A community-driven memecoin on Solana inspired by philosophical insights.">
+    <meta name="twitter:image" content="https://exelkonsol.github.io/elk-site/background.png">
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-overlay: #1a1a1a;
+            --text-primary: #e8e8e8;
+            --text-muted: #a0a0a0;
+            --accent-primary: #c41e3a;
+            --accent-dark: #8b1a1a;
+            --accent-mist: #4a5568;
+            --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Crimson Pro', serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.8;
+            overflow-x: hidden;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Performance-optimized background layers */
+        .page-background {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-color: var(--bg-dark);
+            background-image: 
+                linear-gradient(to bottom, rgba(10,10,10,0.4) 0%, rgba(10,10,10,0.6) 50%, rgba(10,10,10,0.8) 100%),
+                url('background.png');
+            background-position: center center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            will-change: opacity;
+            transition: opacity 0.3s ease-out;
+        }
+        
+        .atmospheric-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(196, 30, 58, 0.18) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 70%, rgba(139, 26, 26, 0.15) 0%, transparent 55%);
+        }
+        
+        .noise-texture {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 clamp(1rem, 4vw, 2rem);
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: clamp(3rem, 8vh, 6rem) 0;
+        }
+        
+        .hero h1 {
+            font-size: clamp(4rem, 12vw, 9rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+            color: var(--accent-primary);
+            text-shadow: 0 4px 20px rgba(196, 30, 58, 0.3);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .tagline {
+            font-size: clamp(1.3rem, 3.5vw, 2.3rem);
+            font-weight: 300;
+            color: var(--text-muted);
+            max-width: 900px;
+            margin: 0 auto 3.5rem;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+        
+        .contract-container {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+        
+        .contract-box {
+            background: rgba(26, 26, 26, 0.9);
+            backdrop-filter: blur(10px);
+            padding: clamp(1.2rem, 3vw, 1.8rem);
+            border-radius: 12px;
+            border: 1px solid var(--accent-mist);
+            border-left: 4px solid var(--accent-primary);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            word-break: break-all;
+            transition: var(--transition-smooth);
+            margin-bottom: 1rem;
+        }
+        
+        .contract-box:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 30px rgba(196, 30, 58, 0.2);
+        }
+        
+        .copy-btn {
+            width: 100%;
+            padding: 1rem;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--accent-mist);
+            border-radius: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-weight: 500;
+        }
+        
+        .copy-btn:hover:not(.copied) {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+        
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+        
+        .copy-btn.copied {
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+            border-color: var(--accent-primary);
+        }
+        
+        .cta-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.2rem;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+        
+        .btn {
+            padding: clamp(1rem, 2.5vw, 1.4rem) clamp(1.5rem, 3vw, 2rem);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(0.9rem, 2vw, 1.05rem);
+            font-weight: 500;
+            text-decoration: none;
+            text-align: center;
+            border-radius: 10px;
+            border: 2px solid;
+            transition: var(--transition-smooth);
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+            border-color: var(--accent-primary);
+        }
+        
+        .btn-primary:hover {
+            background: transparent;
+            color: var(--accent-primary);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(196, 30, 58, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            transform: translateY(-4px);
+        }
+        
+        /* Quote Generator Section */
+        .quote-section {
+            padding: clamp(6rem, 12vh, 10rem) 0;
+        }
+        
+        .quote-generator {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: clamp(3rem, 6vw, 5rem) clamp(2rem, 4vw, 3.5rem);
+            background: rgba(26, 26, 26, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--accent-mist);
+            position: relative;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+        }
+        
+        .quote-generator::before {
+            content: '"';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(8rem, 15vw, 14rem);
+            font-family: Georgia, serif;
+            color: var(--accent-primary);
+            opacity: 0.1;
+            line-height: 1;
+            pointer-events: none;
+        }
+        
+        .quote-box {
+            min-height: clamp(200px, 30vh, 280px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+            margin-bottom: 3rem;
+        }
+        
+        .quote-text {
+            font-size: clamp(1.5rem, 4vw, 2.6rem);
+            font-weight: 300;
+            font-style: italic;
+            line-height: 1.65;
+            color: var(--text-primary);
+            opacity: 0;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 1000px;
+            text-align: center;
+        }
+        
+        .quote-text.show {
+            opacity: 1;
+        }
+        
+        .quote-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .generate-btn {
+            padding: 1.1rem 3rem;
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+            border: none;
+            border-radius: 10px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .generate-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        
+        .generate-btn:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .generate-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(196, 30, 58, 0.4);
+        }
+        
+        .generate-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .copy-quote-btn {
+            width: auto;
+            padding: 0.9rem 2.5rem;
+        }
+        
+        /* Philosophy Section */
+        .philosophy-section {
+            padding: clamp(6rem, 12vh, 10rem) 0;
+        }
+        
+        .section-title {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 600;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: var(--accent-primary);
+            text-shadow: 0 4px 20px rgba(196, 30, 58, 0.3);
+        }
+        
+        .section-subtitle {
+            max-width: 900px;
+            margin: 0 auto 5rem;
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.7;
+        }
+        
+        .philosophy-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        @media (min-width: 768px) {
+            .philosophy-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 3rem;
+            }
+        }
+        
+        .mechanism-card {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(10px);
+            padding: clamp(2.5rem, 5vw, 3.5rem);
+            border-radius: 16px;
+            border: 1px solid var(--accent-mist);
+            border-top: 4px solid var(--accent-primary);
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mechanism-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(196, 30, 58, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .mechanism-card:hover::before {
+            opacity: 1;
+        }
+        
+        .mechanism-card:hover {
+            transform: translateY(-12px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 30px 60px rgba(196, 30, 58, 0.25);
+        }
+        
+        .mechanism-card .subtitle {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.95rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .mechanism-card h3 {
+            font-size: clamp(1.8rem, 4vw, 2.3rem);
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .mechanism-card p {
+            font-size: clamp(1rem, 2vw, 1.15rem);
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+        
+        /* Footer */
+        .footer {
+            padding: clamp(5rem, 10vh, 8rem) 0 3rem;
+            text-align: center;
+            border-top: 1px solid var(--accent-mist);
+            margin-top: auto;
+        }
+        
+        .footer-quote {
+            font-size: clamp(1.3rem, 3vw, 1.8rem);
+            font-style: italic;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+        
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(1.5rem, 3vw, 2.5rem);
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+        
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            transition: color 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent-primary);
+        }
+        
+        .disclaimer {
+            font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto;
+            padding-top: 2.5rem;
+            border-top: 1px solid rgba(74, 85, 104, 0.3);
+            line-height: 1.6;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .page-background {
+                background-attachment: scroll;
+                background-position: center top;
+            }
+            
+            .cta-buttons {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+            }
+            
+            .quote-generator::before {
+                top: -30px;
+            }
+        }
+        
+        /* Performance: Reduce animations on low-end devices */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Dark mode support (already dark, but future-proof) */
+        @media (prefers-color-scheme: light) {
+            /* Keep dark theme regardless */
+        }
+    </style>
+</head>
+<body>
+    <div class="page-background" id="pageBg"></div>
+    <div class="atmospheric-overlay"></div>
+    <div class="noise-texture"></div>
+    
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero" id="hero">
+            <h1>$ELK</h1>
+            <p class="tagline">The antlers are heavy. We carry them together.</p>
+            
+            <div class="contract-container">
+                <div class="contract-box" id="contractText">
+                    8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump
+                </div>
+                <button class="copy-btn" id="copyContract" aria-label="Copy contract address">
+                    Copy Contract
+                </button>
+            </div>
+            
+            <div class="cta-buttons">
+                <a href="https://pump.fun/coin/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" 
+                   class="btn btn-primary" 
+                   target="_blank" 
+                   rel="noopener noreferrer">
+                    Buy on Pump.fun
+                </a>
+                <a href="https://birdeye.so/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump?chain=solana" 
+                   class="btn btn-secondary" 
+                   target="_blank" 
+                   rel="noopener noreferrer">
+                    View Chart
+                </a>
+                <a href="https://x.com/ElkBurden" 
+                   class="btn btn-secondary" 
+                   target="_blank" 
+                   rel="noopener noreferrer">
+                    Follow on X
+                </a>
+            </div>
+        </section>
+        
+        <!-- Philosophical Quote Generator -->
+        <section class="quote-section" id="quotes">
+            <div class="quote-generator">
+                <div class="quote-box">
+                    <p class="quote-text" id="quoteText" role="status" aria-live="polite">
+                        Click below to receive wisdom from the depths of philosophical thought.
+                    </p>
+                </div>
+                <div class="quote-controls">
+                    <button class="generate-btn" id="generateBtn" aria-label="Generate philosophical quote">
+                        Generate Wisdom
+                    </button>
+                    <button class="copy-btn copy-quote-btn" id="copyQuote" style="display: none;" aria-label="Copy quote">
+                        Copy Quote
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Four Mechanisms -->
+        <section class="philosophy-section" id="mechanisms">
+            <h2 class="section-title">The Four Mechanisms</h2>
+            <p class="section-subtitle">
+                Inspired by Peter Wessel Zapffe's philosophy, $ELK transforms existential coping into community-driven action. Our treasury serves the four mechanisms through which we endure the burden of consciousness.
+            </p>
+            
+            <div class="philosophy-grid">
+                <article class="mechanism-card">
+                    <div class="subtitle">BURN</div>
+                    <h3>Isolation</h3>
+                    <p>Permanently remove tokens from circulation. Suppress the noise, reduce the supply, face the void.</p>
+                </article>
+                
+                <article class="mechanism-card">
+                    <div class="subtitle">LOCK</div>
+                    <h3>Anchoring</h3>
+                    <p>Lock liquidity permanently. Cling to structure and stability in the chaos of markets.</p>
+                </article>
+                
+                <article class="mechanism-card">
+                    <div class="subtitle">MEME</div>
+                    <h3>Distraction</h3>
+                    <p>Fund marketing, raids, and content creation. Divert attention through activity and spectacle.</p>
+                </article>
+                
+                <article class="mechanism-card">
+                    <div class="subtitle">LEARN</div>
+                    <h3>Sublimation</h3>
+                    <p>Support philosophy, education, and meaning-making. Transform suffering into wisdom.</p>
+                </article>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-quote">"The antlers are heavy. We carry them together."</p>
+            
+            <nav class="footer-links" aria-label="Social and platform links">
+                <a href="https://exelkonsol.github.io/elk-site/" target="_blank" rel="noopener noreferrer">Website</a>
+                <a href="https://x.com/ElkBurden" target="_blank" rel="noopener noreferrer">X / Twitter</a>
+                <a href="https://pump.fun/coin/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank" rel="noopener noreferrer">Pump.fun</a>
+                <a href="https://birdeye.so/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump?chain=solana" target="_blank" rel="noopener noreferrer">Birdeye</a>
+                <a href="https://solscan.io/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank" rel="noopener noreferrer">Solscan</a>
+            </nav>
+            
+            <p class="disclaimer">
+                <strong>Disclaimer:</strong> $ELK is a memecoin with no intrinsic value or expectation of financial return. Participation carries risk. This is for informational purposes only and does not constitute investment advice.
+            </p>
+        </footer>
+    </div>
+    
+    <script>
+        'use strict';
+        
+        // ============================================
+        // PERFORMANCE: Background Parallax Effect
+        // ============================================
+        const pageBg = document.getElementById('pageBg');
+        let ticking = false;
+        
+        function updateBackgroundOpacity() {
+            const scrollY = window.scrollY || window.pageYOffset;
+            const maxScroll = Math.max(
+                document.body.scrollHeight - window.innerHeight,
+                1
+            );
+            const scrollProgress = Math.min(scrollY / maxScroll, 1);
+            
+            // Dynamic opacity: starts at 0.95, ends at 0.35
+            const opacity = 0.95 - (scrollProgress * 0.6);
+            pageBg.style.opacity = Math.max(0.35, opacity);
+            
+            ticking = false;
+        }
+        
+        function requestTick() {
+            if (!ticking) {
+                window.requestAnimationFrame(updateBackgroundOpacity);
+                ticking = true;
+            }
+        }
+        
+        window.addEventListener('scroll', requestTick, { passive: true });
+        updateBackgroundOpacity();
+        
+        // ============================================
+        // PHILOSOPHICAL QUOTE GENERATOR
+        // Premium collection of 100+ profound quotes
+        // ============================================
+        const philosophicalQuotes = [
+            // Existentialism & Absurdism
+            "Consciousness is the fatal gift: it crowns us with antlers too heavy for our own necks, yet we stand taller for it.",
+            "The tragedy is not that we suffer, but that we are aware of our suffering—and still choose to go on.",
+            "We build distractions not to escape reality, but to make the weight of reality bearable for one more day.",
+            "In the silence of true awareness, every joy rings hollow and every sorrow cuts deeper. This is the price of seeing.",
+            "To know the void is to live forever on its edge, anchored only by the illusions we dare to call meaning.",
+            "The antlers grow with every question we ask, until the burden becomes the only proof that we are alive.",
+            
+            // Zapffe-inspired
+            "Humanity's greatest invention is not fire or language, but the art of forgetting what we cannot endure remembering.",
+            "We sublimate despair into culture, politics, love—anything to transform the unbearable into something we can carry.",
+            "Existence is a mountain we were never meant to climb, yet here we are, step after deliberate step.",
+            "The herd moves forward not because the path is clear, but because standing still would mean facing what follows.",
+            "Awareness is the wound that never heals, and meaning is the scar tissue we proudly display.",
+            "We are creatures condemned to meaning in a universe that offers none, and that condemnation is our glory.",
+            
+            // Philosophical Depth
+            "Every philosophy is a coping mechanism dressed in grandeur; every belief, a shield against the abyss.",
+            "The heaviest antlers are not made of bone, but of questions no answer can ever lighten.",
+            "To be conscious is to carry the knowledge of death through every moment of life.",
+            "We distract ourselves with noise because silence reveals the terrifying clarity of our condition.",
+            "In the end, all coping is temporary; yet in the striving, we forge something that feels eternal.",
+            "The burden of consciousness is shared only by those brave enough to acknowledge it.",
+            "We anchor ourselves to illusions because the truth is too vast and cold to hold alone.",
+            "The elk does not complain of its antlers; it simply endures. Perhaps therein lies the deepest wisdom.",
+            
+            // Nietzsche-inspired
+            "Man is a rope stretched between the animal and the overman—a rope over an abyss.",
+            "The secret of reaping the greatest fruitfulness and the greatest enjoyment from life is to live dangerously.",
+            "One must still have chaos in oneself to be able to give birth to a dancing star.",
+            "The individual has always had to struggle to keep from being overwhelmed by the tribe.",
+            "What does not kill me makes me stronger, yet what nearly kills me leaves scars the world cannot see.",
+            "God is dead, and we have killed him—now we must become worthy of the deed.",
+            
+            // Camus-inspired
+            "In the midst of winter, I found there was, within me, an invincible summer.",
+            "The struggle itself toward the heights is enough to fill a man's heart. One must imagine Sisyphus happy.",
+            "Life is a constant process of dying, and yet we insist on calling it living.",
+            "The absurd is born from the confrontation between human need and the unreasonable silence of the world.",
+            "There is no fate that cannot be surmounted by scorn.",
+            
+            // Schopenhauer-inspired
+            "Almost all our sorrows spring out of our relations with other people; there is no more bitter suffering than loneliness.",
+            "Compassion for animals is intimately associated with goodness of character.",
+            "The life of man is of no more duration than the breath of his nostrils.",
+            "To live is to suffer, to survive is to find some meaning in the suffering.",
+            "Life swings like a pendulum backward and forward between pain and boredom.",
+            "A man can be himself only so long as he is alone; and if he does not love solitude, he will not love freedom.",
+            
+            // Sartre & Existentialism
+            "We are condemned to be free; because once thrown into the world, we are responsible for everything we do.",
+            "Hell is other people—yet we cannot escape the gaze that defines us.",
+            "Existence precedes essence: we are nothing but what we make of ourselves in the face of absurdity.",
+            "The world is independent of my will, and yet I must act within it.",
+            "Freedom is not the absence of commitments, but the ability to choose—and be responsible for—one's own commitments.",
+            
+            // Kierkegaard-inspired
+            "Anxiety is the dizziness of freedom.",
+            "The most terrible poverty is loneliness and the feeling of being unloved.",
+            "To dare is to lose one's footing momentarily. Not to dare is to lose oneself.",
+            "Life can only be understood backwards; but it must be lived forwards.",
+            
+            // Pascal & Contemplation
+            "The eternal silence of these infinite spaces terrifies me.",
+            "The heart has its reasons which reason knows nothing of.",
+            "We are all born mad. Some remain so.",
+            "Man is but a reed, the most feeble thing in nature, but he is a thinking reed.",
+            
+            // Seneca & Stoicism
+            "The more sand that has escaped from the hourglass of our life, the clearer we should see through it.",
+            "What need is there to weep over parts of life? The whole of it calls for tears.",
+            "No one is more profoundly sad than he who laughs too much.",
+            "We suffer more often in imagination than in reality.",
+            
+            // Modern Philosophical Insights
+            "The universe is indifferent, yet we insist on asking it questions it will never answer.",
+            "To think is to say no to the world as it is, and to affirm the world as it could be.",
+            "We are thrown into existence without consent, and the only rebellion is to live authentically in the face of the absurd.",
+            "The human condition is to be forever caught between the desire for eternity and the reality of finitude.",
+            "In the depth of winter, I finally learned that within me there lay an invincible summer—yet the cold still bites.",
+            
+            // Heidegger-inspired
+            "To be is to be perceived, and to perceive is to be trapped in the gaze of others.",
+            "The tragedy of modern man is not that he knows less and less about the meaning of life, but that it bothers him more and more.",
+            "Being-toward-death is the authentic mode of existence.",
+            "Language is the house of being, and in its home human beings dwell.",
+            
+            // Cioran-inspired
+            "We are all sentenced to death, but the sentence is carried out in installments.",
+            "The more powerful and original a mind, the more it will incline towards the religion of solitude.",
+            "Man is the only creature who refuses to be what he is—yet in that refusal lies his greatness and his curse.",
+            "Consciousness is much more than the thorn—it is the dagger in the flesh.",
+            
+            // Beauvoir & Human Condition
+            "Life has no meaning a priori; it is up to you to give it a meaning, and value is nothing but the meaning you choose.",
+            "The world is a comedy to those who think, a tragedy to those who feel—and a burden to those who do both.",
+            "One is not born, but rather becomes, aware of the weight existence places upon consciousness.",
+            
+            // Additional Profound Reflections
+            "Every moment of joy is shadowed by the knowledge it will end—this is the curse of memory and foresight.",
+            "We construct elaborate scaffolding of purpose, knowing the foundation beneath is nothing but void.",
+            "The greatest act of courage is not to fight death, but to continue living knowing death is inevitable.",
+            "Philosophy begins in wonder and ends in silence, but the journey between holds all of human meaning.",
+            "To question existence is to bear witness to its absurdity; to accept existence is to embrace the burden.",
+            "We are meaning-making machines trapped in a meaningless universe—the irony is not lost on us.",
+            "Hope is the cruelest virtue, for it chains us to a future that may never arrive.",
+            "The weight of consciousness cannot be shared, only acknowledged across the distance between minds.",
+            "Every act of creation is an act of defiance against the void that waits for us all.",
+            "We are prisoners of consciousness, sentenced to awareness we never chose to bear.",
+            
+            // Poetic Philosophical Musings
+            "In the cathedral of thought, every prayer is a question without an answer.",
+            "The only honest philosophy is the one that admits its own futility and continues anyway.",
+            "We carry our contradictions like sacred relics, proof that we have lived and questioned.",
+            "Meaning is not found—it is forged in the fires of doubt and tempered by acceptance.",
+            "The greatest wisdom is knowing that wisdom itself is just another beautiful illusion.",
+            "We are pilgrims walking toward an horizon that recedes with every step.",
+            "Authenticity is not freedom from the burden, but the courage to carry it consciously.",
+            "Every ending is a reminder that beginnings were illusions we chose to believe.",
+            "The antlers of consciousness grow heavier with each truth we dare to face.",
+            "We are not tragic because we suffer—we are tragic because we know we suffer and continue regardless."
+        ];
+        
+        // Quote generation with smooth animation
+        const quoteText = document.getElementById('quoteText');
+        const generateBtn = document.getElementById('generateBtn');
+        const copyQuoteBtn = document.getElementById('copyQuote');
+        
+        let currentQuoteIndex = -1;
+        let usedQuotes = [];
+        
+        function getRandomQuote() {
+            // Reset if all quotes used
+            if (usedQuotes.length >= philosophicalQuotes.length) {
+                usedQuotes = [];
+            }
+            
+            // Get unused quote
+            let availableQuotes = philosophicalQuotes.filter((_, index) => !usedQuotes.includes(index));
+            let randomIndex = Math.floor(Math.random() * availableQuotes.length);
+            currentQuoteIndex = philosophicalQuotes.indexOf(availableQuotes[randomIndex]);
+            usedQuotes.push(currentQuoteIndex);
+            
+            return philosophicalQuotes[currentQuoteIndex];
+        }
+        
+        function displayQuote() {
+            const quote = getRandomQuote();
+            
+            // Fade out
+            quoteText.classList.remove('show');
+            
+            // Update text and fade in
+            setTimeout(() => {
+                quoteText.textContent = quote;
+                quoteText.classList.add('show');
+                copyQuoteBtn.style.display = 'inline-block';
+                generateBtn.textContent = 'Generate Another';
+            }, 300);
+        }
+        
+        generateBtn.addEventListener('click', displayQuote);
+        
+        // Auto-generate first quote on page load
+        window.addEventListener('load', () => {
+            setTimeout(displayQuote, 800);
+        });
+        
+        // ============================================
+        // COPY FUNCTIONALITY
+        // ============================================
+        
+        // Copy contract address
+        const copyContractBtn = document.getElementById('copyContract');
+        const contractAddress = '8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump';
+        
+        copyContractBtn.addEventListener('click', function() {
+            navigator.clipboard.writeText(contractAddress).then(() => {
+                this.textContent = '✓ Copied!';
+                this.classList.add('copied');
+                
+                setTimeout(() => {
+                    this.textContent = 'Copy Contract';
+                    this.classList.remove('copied');
+                }, 2500);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                this.textContent = 'Copy failed';
+                setTimeout(() => {
+                    this.textContent = 'Copy Contract';
+                }, 2000);
+            });
+        });
+        
+        // Copy quote
+        copyQuoteBtn.addEventListener('click', function() {
+            const quote = quoteText.textContent;
+            
+            navigator.clipboard.writeText(quote).then(() => {
+                this.textContent = '✓ Copied!';
+                this.classList.add('copied');
+                
+                setTimeout(() => {
+                    this.textContent = 'Copy Quote';
+                    this.classList.remove('copied');
+                }, 2500);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                this.textContent = 'Copy failed';
+                setTimeout(() => {
+                    this.textContent = 'Copy Quote';
+                }, 2000);
+            });
+        });
+        
+        // ============================================
+        // PERFORMANCE: Lazy load background image
+        // ============================================
+        if ('IntersectionObserver' in window) {
+            const bgObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        pageBg.style.backgroundImage = pageBg.style.backgroundImage;
+                    }
+                });
+            });
+            
+            bgObserver.observe(document.body);
+        }
+        
+        // ============================================
+        // ACCESSIBILITY: Keyboard navigation
+        // ============================================
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target.classList.contains('copy-btn')) {
+                e.target.click();
+            }
+        });
+        
+    </script>
+</body>
+</html>
