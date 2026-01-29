@@ -92,7 +92,6 @@
             z-index: -3;
             background: var(--bg-dark);
             pointer-events: none;
-            touch-action: none;
         }
         
         .bg-elk-container {
@@ -100,7 +99,6 @@
             inset: 0; 
             z-index: -2;
             pointer-events: none;
-            touch-action: none;
         }
         
         .bg-elk {
@@ -113,7 +111,6 @@
             transition: opacity 6s ease-in-out;
             will-change: opacity;
             pointer-events: none;
-            touch-action: none;
         }
         
         .bg-elk.active {
@@ -126,7 +123,6 @@
             inset: 0; 
             z-index: -1; 
             pointer-events: none;
-            touch-action: none;
             background: 
                 /* Soft top light */
                 radial-gradient(ellipse 120% 40% at 50% -5%, rgba(255,255,255,0.03) 0%, transparent 60%),
@@ -150,7 +146,6 @@
             z-index: -1; 
             opacity: 0.06; 
             pointer-events: none;
-            touch-action: none;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
         
@@ -162,7 +157,6 @@
             inset: 0;
             z-index: -1;
             pointer-events: none;
-            touch-action: none;
             overflow: hidden;
         }
         
@@ -173,7 +167,6 @@
             opacity: 0;
             animation: orbFloat linear infinite;
             pointer-events: none;
-            touch-action: none;
         }
         
         .orb-1 {
@@ -1331,7 +1324,7 @@
             .bg-elk {
                 background-attachment: scroll;
                 background-position: top;
-                transition: opacity 3s ease-in-out; /* Shorten for less jank */
+                transition: opacity 3s ease-in-out; /* Shortened for less jank */
             }
 
             /* Reduce heavy effects */
