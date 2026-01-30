@@ -646,41 +646,8 @@
         }
         
         /* =====================================================
-           AUDIO PLAYER - Atmospheric Experience (ENHANCED)
+           SOUNDCLOUD AUDIO PLAYER
            ===================================================== */
-        
-        /* Mesmerizing glow animation for active player */
-        @keyframes audioGlow {
-            0%, 100% { 
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 
-                            0 0 30px rgba(196, 30, 58, 0.15),
-                            inset 0 0 20px rgba(196, 30, 58, 0.03);
-            }
-            50% { 
-                box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 
-                            0 0 50px rgba(196, 30, 58, 0.25),
-                            inset 0 0 30px rgba(196, 30, 58, 0.05);
-            }
-        }
-        
-        /* Vinyl rotation animation */
-        @keyframes vinylSpin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        /* Track name scroll animation for long names */
-        @keyframes trackScroll {
-            0%, 20% { transform: translateX(0); }
-            80%, 100% { transform: translateX(calc(-100% + 200px)); }
-        }
-        
-        /* Waveform pulse animation */
-        @keyframes waveformPulse {
-            0%, 100% { opacity: 0.4; transform: scaleY(0.3); }
-            50% { opacity: 1; transform: scaleY(1); }
-        }
-        
         .audio-player {
             position: fixed;
             bottom: 2rem;
@@ -698,7 +665,7 @@
             border: 1px solid rgba(196, 30, 58, 0.3);
             border-radius: 16px;
             padding: 1.5rem;
-            width: 320px;
+            width: 340px;
             opacity: 0;
             transform: translateY(20px) scale(0.95);
             pointer-events: none;
@@ -706,59 +673,6 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
             position: relative;
             overflow: hidden;
-        }
-        
-        /* Mesmerizing background gradient when playing */
-        .audio-panel::before {
-            content: '';
-            position: absolute;
-            inset: -100%;
-            background: conic-gradient(from 0deg at 50% 50%, 
-                transparent 0deg, 
-                rgba(196, 30, 58, 0.08) 60deg, 
-                transparent 120deg,
-                rgba(107, 18, 18, 0.06) 180deg,
-                transparent 240deg,
-                rgba(196, 30, 58, 0.05) 300deg,
-                transparent 360deg);
-            opacity: 0;
-            transition: opacity 1s ease;
-            pointer-events: none;
-        }
-        
-        .audio-player.is-playing .audio-panel::before {
-            opacity: 1;
-            animation: vinylSpin 20s linear infinite;
-        }
-        
-        .audio-player.is-playing .audio-panel {
-            animation: audioGlow 4s ease-in-out infinite;
-            border-color: rgba(196, 30, 58, 0.5);
-        }
-        
-        /* Vinyl disc visualization */
-        .vinyl-disc {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 180px;
-            height: 180px;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            background: 
-                radial-gradient(circle at center, #0a0a0a 15%, transparent 15.5%),
-                radial-gradient(circle at center, transparent 30%, rgba(196, 30, 58, 0.1) 30.5%, rgba(196, 30, 58, 0.05) 32%, transparent 33%),
-                radial-gradient(circle at center, transparent 45%, rgba(60, 60, 60, 0.2) 45.5%, transparent 47%),
-                radial-gradient(circle at center, #1a1a1a 0%, #0f0f0f 100%);
-            opacity: 0;
-            pointer-events: none;
-            z-index: 0;
-            transition: opacity 0.5s ease;
-        }
-        
-        .audio-player.is-playing .vinyl-disc {
-            opacity: 0.15;
-            animation: vinylSpin 8s linear infinite;
         }
         
         .audio-player.expanded .audio-panel {
@@ -771,8 +685,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.2rem;
-            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
             border-bottom: 1px solid rgba(196, 30, 58, 0.2);
         }
         
@@ -784,321 +698,33 @@
             letter-spacing: 0.05em;
         }
         
-        .now-playing {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Track name display */
-        .track-name-display {
-            flex: 1;
+        /* SoundCloud Embed Container */
+        .soundcloud-embed {
+            border-radius: 12px;
             overflow: hidden;
-            position: relative;
+            background: rgba(0, 0, 0, 0.3);
         }
         
-        .track-name {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            white-space: nowrap;
-            transition: color 0.3s ease;
+        .soundcloud-embed iframe {
+            display: block;
+            border-radius: 12px;
         }
         
-        .audio-player.is-playing .track-name {
-            color: var(--accent-glow);
+        .soundcloud-credit {
+            margin-top: 1rem;
+            text-align: center;
         }
         
-        /* Mini waveform visualizer */
-        .waveform-mini {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            height: 20px;
-            margin-left: auto;
-        }
-        
-        .waveform-mini span {
-            width: 3px;
-            background: linear-gradient(to top, var(--accent-dark), var(--accent-primary));
-            border-radius: 2px;
-            transition: height 0.1s ease;
-        }
-        
-        .waveform-mini span:nth-child(1) { height: 6px; animation: waveformPulse 0.8s ease-in-out infinite 0s; }
-        .waveform-mini span:nth-child(2) { height: 12px; animation: waveformPulse 0.8s ease-in-out infinite 0.1s; }
-        .waveform-mini span:nth-child(3) { height: 8px; animation: waveformPulse 0.8s ease-in-out infinite 0.2s; }
-        .waveform-mini span:nth-child(4) { height: 14px; animation: waveformPulse 0.8s ease-in-out infinite 0.3s; }
-        .waveform-mini span:nth-child(5) { height: 10px; animation: waveformPulse 0.8s ease-in-out infinite 0.4s; }
-        .waveform-mini span:nth-child(6) { height: 6px; animation: waveformPulse 0.8s ease-in-out infinite 0.5s; }
-        
-        .audio-player:not(.is-playing) .waveform-mini span {
-            animation: none;
-            height: 4px !important;
-            opacity: 0.3;
-        }
-        
-        .now-playing-indicator {
-            display: flex;
-            align-items: flex-end;
-            gap: 2px;
-            height: 16px;
-        }
-        
-        .now-playing-indicator span {
-            width: 3px;
-            background: var(--accent-primary);
-            border-radius: 2px;
-            animation: soundBar 0.8s ease-in-out infinite;
-        }
-        
-        .now-playing-indicator span:nth-child(1) { animation-delay: 0s; height: 8px; }
-        .now-playing-indicator span:nth-child(2) { animation-delay: 0.2s; height: 12px; }
-        .now-playing-indicator span:nth-child(3) { animation-delay: 0.4s; height: 6px; }
-        .now-playing-indicator span:nth-child(4) { animation-delay: 0.1s; height: 10px; }
-        
-        @keyframes soundBar {
-            0%, 100% { transform: scaleY(0.5); }
-            50% { transform: scaleY(1); }
-        }
-        
-        .now-playing-indicator.paused span {
-            animation: none;
-            height: 4px !important;
-        }
-        
-        .now-playing-text {
+        .soundcloud-credit a {
             font-family: 'IBM Plex Mono', monospace;
             font-size: 0.75rem;
             color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s ease;
         }
         
-        .track-progress {
-            margin-bottom: 1rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Progress bar glow when playing */
-        .progress-bar-container {
-            position: relative;
-            height: 6px;
-            background: rgba(74, 85, 104, 0.3);
-            border-radius: 3px;
-            overflow: hidden;
-            cursor: pointer;
-        }
-        
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-dark), var(--accent-primary), var(--accent-glow));
-            border-radius: 3px;
-            width: 0%;
-            transition: width 0.1s linear;
-            position: relative;
-        }
-        
-        .progress-bar-fill::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            background: var(--accent-glow);
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(196, 30, 58, 0.6);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .progress-bar-container:hover .progress-bar-fill::after,
-        .audio-player.is-playing .progress-bar-fill::after {
-            opacity: 1;
-        }
-        
-        .track-time {
-            display: flex;
-            justify-content: space-between;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-bottom: 0.4rem;
-        }
-        
-        .progress-slider {
-            width: 100%;
-            height: 4px;
-            -webkit-appearance: none;
-            appearance: none;
-            background: rgba(74, 85, 104, 0.4);
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-            transition: height 0.2s;
-        }
-        
-        .progress-slider:hover {
-            height: 6px;
-        }
-        
-        .progress-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 12px;
-            height: 12px;
-            background: var(--accent-primary);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 6px rgba(160, 24, 48, 0.4);
-        }
-        
-        .progress-slider::-webkit-slider-thumb:hover {
-            background: var(--accent-glow);
-            transform: scale(1.2);
-        }
-        
-        .progress-slider::-moz-range-thumb {
-            width: 12px;
-            height: 12px;
-            background: var(--accent-primary);
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-        
-        .track-selector {
-            margin-bottom: 1rem;
-        }
-        
-        .track-selector label {
-            display: block;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-        
-        .track-select {
-            width: 100%;
-            padding: 0.7rem 1rem;
-            background: rgba(26, 26, 26, 0.8);
-            border: 1px solid var(--accent-mist);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a0a0a0' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-        }
-        
-        .track-select:hover {
-            border-color: var(--accent-primary);
-        }
-        
-        .track-select:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 2px rgba(196, 30, 58, 0.2);
-        }
-        
-        .volume-control {
-            margin-bottom: 1rem;
-        }
-        
-        .volume-control label {
-            display: flex;
-            justify-content: space-between;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-        
-        .volume-slider {
-            width: 100%;
-            height: 6px;
-            -webkit-appearance: none;
-            appearance: none;
-            background: rgba(74, 85, 104, 0.5);
-            border-radius: 3px;
-            outline: none;
-            cursor: pointer;
-        }
-        
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            background: var(--accent-primary);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(196, 30, 58, 0.4);
-        }
-        
-        .volume-slider::-webkit-slider-thumb:hover {
-            background: var(--accent-glow);
-            transform: scale(1.15);
-        }
-        
-        .volume-slider::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            background: var(--accent-primary);
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-        
-        .audio-controls {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .audio-control-btn {
-            flex: 1;
-            padding: 0.8rem;
-            background: rgba(26, 26, 26, 0.8);
-            border: 1px solid var(--accent-mist);
-            border-radius: 8px;
-            color: var(--text-muted);
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.4rem;
-        }
-        
-        .audio-control-btn:hover {
-            border-color: var(--accent-primary);
+        .soundcloud-credit a:hover {
             color: var(--accent-primary);
-        }
-        
-        .audio-control-btn.playing {
-            background: var(--accent-primary);
-            border-color: var(--accent-primary);
-            color: var(--bg-dark);
         }
         
         .audio-toggle-btn {
@@ -1234,7 +860,7 @@
         }
         
         /* =====================================================
-           MODAL SYSTEM - Fixed for Desktop
+           MODAL SYSTEM
            ===================================================== */
         .modal-overlay {
             position: fixed;
@@ -1311,7 +937,6 @@
             padding-top: clamp(2.5rem, 5vw, 4rem);
         }
         
-        /* Custom scrollbar for modal */
         .modal-scroll-area::-webkit-scrollbar {
             width: 8px;
         }
@@ -1324,10 +949,6 @@
         .modal-scroll-area::-webkit-scrollbar-thumb {
             background: var(--accent-primary);
             border-radius: 4px;
-        }
-        
-        .modal-scroll-area::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-glow);
         }
         
         .modal-header {
@@ -1487,7 +1108,7 @@
             
             .audio-panel {
                 width: calc(100vw - 2rem);
-                max-width: 320px;
+                max-width: 340px;
                 position: absolute;
                 bottom: 100%;
                 right: 0;
@@ -1526,6 +1147,41 @@
                 height: 38px;
                 font-size: 1.3rem;
             }
+            
+            /* Fix background lag */
+            .bg-elk {
+                background-attachment: scroll;
+                background-position: top;
+                transition: opacity 3s ease-in-out;
+            }
+
+            .noise-texture {
+                opacity: 0.02;
+            }
+
+            .ambient-orbs {
+                display: none;
+            }
+
+            .atmospheric-overlay {
+                background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%);
+            }
+
+            .quote-generator::before {
+                animation-duration: 12s;
+            }
+
+            .quote-generator {
+                backdrop-filter: blur(10px);
+            }
+
+            .mechanism-card {
+                transition: all 0.2s ease;
+            }
+
+            .hero h1 {
+                font-size: clamp(3rem, 12vw, 6rem);
+            }
         }
         
         @media (prefers-reduced-motion: reduce) {
@@ -1535,63 +1191,6 @@
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
-            }
-        }
-
-        /* =====================================================
-           MOBILE PERFORMANCE FIXES (NEW)
-           ===================================================== */
-        @media (max-width: 768px) {
-            /* Fix background lag */
-            .bg-elk {
-                background-attachment: scroll;
-                background-position: top;
-                transition: opacity 3s ease-in-out; /* Shortened for less jank */
-            }
-
-            /* Reduce heavy effects */
-            .noise-texture {
-                opacity: 0.02; /* Lower grain intensity */
-            }
-
-            .ambient-orbs {
-                display: none; /* Remove orbs on mobile - too GPU-heavy */
-            }
-
-            .atmospheric-overlay {
-                background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%); /* Simplify gradients */
-            }
-
-            .quote-generator::before {
-                animation-duration: 12s; /* Slow pulse to reduce CPU */
-            }
-
-            .quote-generator {
-                backdrop-filter: blur(10px); /* Reduce blur */
-            }
-
-            .mechanism-card {
-                transition: all 0.2s ease; /* Shorten hover transitions */
-            }
-
-            .modal-scroll-area::-webkit-scrollbar {
-                width: 4px; /* Thinner scrollbar for touch */
-            }
-
-            /* Improve slider touch */
-            .progress-slider, .volume-slider {
-                height: 8px; /* Thicker for easier touch drag */
-            }
-
-            .progress-slider::-webkit-slider-thumb,
-            .volume-slider::-webkit-slider-thumb {
-                width: 20px;
-                height: 20px; /* Larger thumbs for mobile */
-            }
-
-            /* Minor layout tweak for hero */
-            .hero h1 {
-                font-size: clamp(3rem, 12vw, 6rem); /* Slightly smaller to fit better */
             }
         }
     </style>
@@ -1728,80 +1327,29 @@
         </footer>
     </div>
     
-    <!-- Audio Player -->
+    <!-- SoundCloud Audio Player -->
     <div class="audio-player" id="audioPlayer">
         <div class="audio-panel">
-            <div class="vinyl-disc"></div>
             <div class="audio-panel-header">
                 <span class="audio-panel-title">🦌 ATMOSPHERE</span>
             </div>
             
-            <div class="now-playing">
-                <div class="now-playing-indicator paused" id="nowPlayingIndicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-                <div class="track-name-display">
-                    <span class="track-name" id="trackNameDisplay">Select a track</span>
-                </div>
-                <div class="waveform-mini" id="waveformMini">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
+            <div class="soundcloud-embed">
+                <iframe 
+                    id="scPlayer"
+                    width="100%" 
+                    height="300" 
+                    scrolling="no" 
+                    frameborder="no" 
+                    allow="autoplay" 
+                    src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/2183381792&color=%23990000&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=true">
+                </iframe>
             </div>
             
-            <div class="track-progress">
-                <div class="track-time">
-                    <span id="currentTime">0:00</span>
-                    <span id="totalTime">0:00</span>
-                </div>
-                <input type="range" min="0" max="100" value="0" class="progress-slider" id="progressSlider">
-            </div>
-            
-            <div class="track-selector">
-                <label for="trackSelect">Track</label>
-                <select class="track-select" id="trackSelect">
-                    <option value="Before the Clearing.mp3">Before the Clearing</option>
-                    <option value="Crimson Twilight.mp3">Crimson Twilight</option>
-                    <option value="Echoes Where Meaning Was.mp3">Echoes Where Meaning Was</option>
-                    <option value="Eternal Weight.mp3">Eternal Weight</option>
-                    <option value="Forest Depths.mp3">Forest Depths</option>
-                    <option value="Herd Gathering.mp3">Herd Gathering</option>
-                    <option value="Herd Through the Valley.mp3">Herd Through the Valley</option>
-                    <option value="Migration of the Burdened.mp3">Migration of the Burdened</option>
-                    <option value="Mountain Echo.mp3">Mountain Echo</option>
-                    <option value="No Elk Walks Alone.mp3">No Elk Walks Alone</option>
-                    <option value="Signal from the Ridge.mp3">Signal from the Ridge</option>
-                    <option value="The Burden.mp3">The Burden</option>
-                    <option value="The Herd Remembers.mp3">The Herd Remembers</option>
-                    <option value="The Weight of Knowing.mp3">The Weight of Knowing</option>
-                    <option value="Turning Ash to Altar.mp3">Turning Ash to Altar</option>
-                    <option value="What Consciousness Costs.mp3">What Consciousness Costs</option>
-                </select>
-            </div>
-            
-            <div class="volume-control">
-                <label for="volumeSlider">
-                    <span>Volume</span>
-                    <span id="volumeValue">35%</span>
-                </label>
-                <input type="range" min="0" max="100" value="35" class="volume-slider" id="volumeSlider">
-            </div>
-            
-            <div class="audio-controls">
-                <button class="audio-control-btn" id="playPauseBtn">
-                    <span id="playPauseIcon">▶</span>
-                    <span id="playPauseText">Play</span>
-                </button>
-                <button class="audio-control-btn" id="nextTrackBtn">
-                    ⏭ Next
-                </button>
+            <div class="soundcloud-credit">
+                <a href="https://soundcloud.com/peter-zapffe-837854216/sets/the-burden-atmospheric-philosophy" target="_blank" rel="noopener">
+                    🎵 The Burden: Atmospheric Philosophy
+                </a>
             </div>
         </div>
         
@@ -1810,10 +1358,6 @@
             <span id="toggleText">Music</span>
         </button>
     </div>
-    
-    <!-- Dual Audio Elements for Smooth Crossfade Transitions -->
-    <audio id="elkAudio" preload="auto"></audio>
-    <audio id="elkAudio2" preload="auto"></audio>
     
     <!-- Modal Overlay -->
     <div class="modal-overlay" id="modalOverlay">
@@ -1836,11 +1380,9 @@
         let isTransitioning = false;
         const isMobile = window.innerWidth <= 768;
         
-        // Find crimsonmoon index for desktop
         const desktopBgIndex = 5; // crimsonmoon.png is bg5
         
         if (isMobile) {
-            // Mobile: Start slideshow
             backgrounds[0].classList.add('active');
             
             function crossfadeBackgrounds() {
@@ -1851,335 +1393,45 @@
                 const nextIndex = (currentBgIndex + 1) % backgrounds.length;
                 const nextEl = backgrounds[nextIndex];
                 
-                // Fade in next, then fade out current (adjusted timing for mobile smoothness)
                 nextEl.classList.add('active');
                 
                 setTimeout(() => {
                     currentEl.classList.remove('active');
                     currentBgIndex = nextIndex;
                     isTransitioning = false;
-                }, 1500); // Shortened overlap for less jank on mobile
+                }, 1500);
             }
             
             setInterval(crossfadeBackgrounds, 15000);
         } else {
-            // Desktop: Show only crimsonmoon.png permanently
             backgrounds[desktopBgIndex].classList.add('active');
         }
         
         // ===================================================================
-        // AUDIO PLAYER SYSTEM - ENHANCED with Smooth Crossfade Transitions
+        // SOUNDCLOUD AUDIO PLAYER - Simplified
         // ===================================================================
-        const audio = document.getElementById('elkAudio');
-        const audio2 = document.getElementById('elkAudio2');
         const audioPlayer = document.getElementById('audioPlayer');
         const audioToggleBtn = document.getElementById('audioToggleBtn');
         const toggleIcon = document.getElementById('toggleIcon');
         const toggleText = document.getElementById('toggleText');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const playPauseIcon = document.getElementById('playPauseIcon');
-        const playPauseText = document.getElementById('playPauseText');
-        const nextTrackBtn = document.getElementById('nextTrackBtn');
-        const trackSelect = document.getElementById('trackSelect');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const volumeValue = document.getElementById('volumeValue');
-        const nowPlayingIndicator = document.getElementById('nowPlayingIndicator');
-        const trackNameDisplay = document.getElementById('trackNameDisplay');
-        const progressSlider = document.getElementById('progressSlider');
-        const currentTimeEl = document.getElementById('currentTime');
-        const totalTimeEl = document.getElementById('totalTime');
         
-        // Track names for display (matching select options)
-        const trackNames = [
-            'Before the Clearing',
-            'Crimson Twilight',
-            'Echoes Where Meaning Was',
-            'Eternal Weight',
-            'Forest Depths',
-            'Herd Gathering',
-            'Herd Through the Valley',
-            'Migration of the Burdened',
-            'Mountain Echo',
-            'No Elk Walks Alone',
-            'Signal from the Ridge',
-            'The Burden',
-            'The Herd Remembers',
-            'The Weight of Knowing',
-            'Turning Ash to Altar',
-            'What Consciousness Costs'
-        ];
-        
-        const tracks = [
-            'Before the Clearing.mp3',
-            'Crimson Twilight.mp3',
-            'Echoes Where Meaning Was.mp3',
-            'Eternal Weight.mp3',
-            'Forest Depths.mp3',
-            'Herd Gathering.mp3',
-            'Herd Through the Valley.mp3',
-            'Migration of the Burdened.mp3',
-            'Mountain Echo.mp3',
-            'No Elk Walks Alone.mp3',
-            'Signal from the Ridge.mp3',
-            'The Burden.mp3',
-            'The Herd Remembers.mp3',
-            'The Weight of Knowing.mp3',
-            'Turning Ash to Altar.mp3',
-            'What Consciousness Costs.mp3'
-        ];
-        
-        let currentTrackIndex = Math.floor(Math.random() * tracks.length);
-        let isPlaying = false;
         let panelOpen = false;
-        let isSeeking = false;
-        let activeAudio = audio;  // Track which audio element is currently active
-        let isCrossfading = false;
-        const crossfadeDuration = 2000; // 2 seconds for butter-smooth transitions
-        let targetVolume = 0.35;
-        
-        // Initialize both audio elements
-        audio.volume = targetVolume;
-        audio2.volume = 0;
-        audio.src = tracks[currentTrackIndex];
-        trackSelect.selectedIndex = currentTrackIndex;
-        trackNameDisplay.textContent = trackNames[currentTrackIndex];
-        
-        // Format time helper
-        function formatTime(seconds) {
-            if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-        
-        // Update track name display with fade effect
-        function updateTrackNameDisplay(trackIndex) {
-            trackNameDisplay.style.opacity = '0';
-            setTimeout(() => {
-                trackNameDisplay.textContent = trackNames[trackIndex];
-                trackNameDisplay.style.opacity = '1';
-            }, 200);
-        }
-        
-        function updatePlayState(playing) {
-            isPlaying = playing;
-            
-            if (playing) {
-                playPauseIcon.textContent = '⏸';
-                playPauseText.textContent = 'Pause';
-                playPauseBtn.classList.add('playing');
-                toggleIcon.textContent = '🔊';
-                audioToggleBtn.classList.add('playing');
-                nowPlayingIndicator.classList.remove('paused');
-                audioPlayer.classList.add('is-playing');
-            } else {
-                playPauseIcon.textContent = '▶';
-                playPauseText.textContent = 'Play';
-                playPauseBtn.classList.remove('playing');
-                toggleIcon.textContent = '🔇';
-                audioToggleBtn.classList.remove('playing');
-                nowPlayingIndicator.classList.add('paused');
-                audioPlayer.classList.remove('is-playing');
-            }
-        }
-        
-        // Smooth crossfade between tracks
-        function crossfadeToTrack(newIndex, shouldAutoplay = true) {
-            if (isCrossfading) return;
-            
-            const inactiveAudio = activeAudio === audio ? audio2 : audio;
-            const oldAudio = activeAudio;
-            
-            // Preload new track on inactive audio element
-            inactiveAudio.src = tracks[newIndex];
-            inactiveAudio.volume = 0;
-            currentTrackIndex = newIndex;
-            trackSelect.selectedIndex = newIndex;
-            updateTrackNameDisplay(newIndex);
-            
-            if (!isPlaying && !shouldAutoplay) {
-                // Just load the track without playing
-                activeAudio = inactiveAudio;
-                progressSlider.value = 0;
-                currentTimeEl.textContent = '0:00';
-                return;
-            }
-            
-            // Start crossfade
-            isCrossfading = true;
-            
-            inactiveAudio.play().then(() => {
-                const startTime = Date.now();
-                const fadeInterval = setInterval(() => {
-                    const elapsed = Date.now() - startTime;
-                    const progress = Math.min(elapsed / crossfadeDuration, 1);
-                    
-                    // Smooth easing function (ease-in-out)
-                    const eased = progress < 0.5 
-                        ? 2 * progress * progress 
-                        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-                    
-                    // Fade volumes
-                    inactiveAudio.volume = eased * targetVolume;
-                    oldAudio.volume = (1 - eased) * targetVolume;
-                    
-                    if (progress >= 1) {
-                        clearInterval(fadeInterval);
-                        oldAudio.pause();
-                        oldAudio.currentTime = 0;
-                        activeAudio = inactiveAudio;
-                        isCrossfading = false;
-                        updatePlayState(true);
-                    }
-                }, 16); // ~60fps updates for smooth fade
-            }).catch(() => {
-                // Fallback: direct switch without crossfade
-                isCrossfading = false;
-                oldAudio.pause();
-                inactiveAudio.volume = targetVolume;
-                activeAudio = inactiveAudio;
-                if (shouldAutoplay && isPlaying) {
-                    inactiveAudio.play().catch(() => {});
-                }
-            });
-        }
-        
-        // Simple track load (for manual selection when not playing)
-        function loadTrack(index, shouldPlay = false) {
-            if (isPlaying || shouldPlay) {
-                crossfadeToTrack(index, true);
-            } else {
-                currentTrackIndex = index;
-                activeAudio.src = tracks[index];
-                trackSelect.selectedIndex = index;
-                updateTrackNameDisplay(index);
-                progressSlider.value = 0;
-                currentTimeEl.textContent = '0:00';
-            }
-        }
-        
-        function playNextTrack() {
-            const nextIndex = (currentTrackIndex + 1) % tracks.length;
-            if (isPlaying) {
-                crossfadeToTrack(nextIndex, true);
-            } else {
-                loadTrack(nextIndex, false);
-            }
-        }
         
         // Toggle panel
         audioToggleBtn.addEventListener('click', () => {
             panelOpen = !panelOpen;
             audioPlayer.classList.toggle('expanded', panelOpen);
-        });
-        
-        // Play/Pause
-        playPauseBtn.addEventListener('click', () => {
-            if (isPlaying) {
-                activeAudio.pause();
-                updatePlayState(false);
-            } else {
-                activeAudio.volume = targetVolume;
-                activeAudio.play().then(() => {
-                    updatePlayState(true);
-                }).catch(() => {
-                    console.log('Audio playback failed');
-                });
-            }
-        });
-        
-        // Next track
-        nextTrackBtn.addEventListener('click', () => {
-            playNextTrack();
-        });
-        
-        // Track select
-        trackSelect.addEventListener('change', () => {
-            loadTrack(trackSelect.selectedIndex, isPlaying);
-        });
-        
-        // Volume
-        volumeSlider.addEventListener('input', function() {
-            targetVolume = this.value / 100;
-            activeAudio.volume = targetVolume;
-            volumeValue.textContent = this.value + '%';
             
-            // Auto-play if volume is raised from 0
-            if (targetVolume > 0 && !isPlaying) {
-                activeAudio.play().then(() => {
-                    updatePlayState(true);
-                }).catch(() => {});
+            if (panelOpen) {
+                toggleIcon.textContent = '🔊';
+                toggleText.textContent = 'Playing';
+                audioToggleBtn.classList.add('playing');
+            } else {
+                toggleIcon.textContent = '🔇';
+                toggleText.textContent = 'Music';
+                audioToggleBtn.classList.remove('playing');
             }
         });
-        
-        // Progress slider - seeking
-        progressSlider.addEventListener('mousedown', () => {
-            isSeeking = true;
-        });
-        
-        progressSlider.addEventListener('touchstart', () => {
-            isSeeking = true;
-        });
-        
-        progressSlider.addEventListener('input', function() {
-            if (activeAudio.duration) {
-                const seekTime = (this.value / 100) * activeAudio.duration;
-                currentTimeEl.textContent = formatTime(seekTime);
-            }
-        });
-        
-        progressSlider.addEventListener('change', function() {
-            if (activeAudio.duration) {
-                activeAudio.currentTime = (this.value / 100) * activeAudio.duration;
-            }
-            isSeeking = false;
-        });
-        
-        progressSlider.addEventListener('mouseup', () => {
-            isSeeking = false;
-        });
-        
-        progressSlider.addEventListener('touchend', () => {
-            isSeeking = false;
-        });
-        
-        // Audio time update (for both audio elements)
-        function handleTimeUpdate() {
-            if (!isSeeking && activeAudio.duration && !isCrossfading) {
-                const progress = (activeAudio.currentTime / activeAudio.duration) * 100;
-                progressSlider.value = progress;
-                currentTimeEl.textContent = formatTime(activeAudio.currentTime);
-            }
-        }
-        
-        audio.addEventListener('timeupdate', handleTimeUpdate);
-        audio2.addEventListener('timeupdate', handleTimeUpdate);
-        
-        // Audio loaded - get duration
-        function handleLoadedMetadata() {
-            if (this === activeAudio) {
-                totalTimeEl.textContent = formatTime(this.duration);
-                progressSlider.value = 0;
-            }
-        }
-        
-        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-        audio2.addEventListener('loadedmetadata', handleLoadedMetadata);
-        
-        // Audio ended - auto-play next track with crossfade
-        function handleTrackEnded() {
-            if (this === activeAudio && !isCrossfading) {
-                playNextTrack();
-            }
-        }
-        
-        audio.addEventListener('ended', handleTrackEnded);
-        audio2.addEventListener('ended', handleTrackEnded);
-        
-        audio.addEventListener('play', () => { if (audio === activeAudio) updatePlayState(true); });
-        audio.addEventListener('pause', () => { if (audio === activeAudio && !isCrossfading) updatePlayState(false); });
-        audio2.addEventListener('play', () => { if (audio2 === activeAudio) updatePlayState(true); });
-        audio2.addEventListener('pause', () => { if (audio2 === activeAudio && !isCrossfading) updatePlayState(false); });
         
         // Close panel when clicking outside
         document.addEventListener('click', (e) => {
@@ -2188,9 +1440,6 @@
                 audioPlayer.classList.remove('expanded');
             }
         });
-        
-        // Add CSS transition for track name
-        trackNameDisplay.style.transition = 'opacity 0.2s ease';
 
         // ===================================================================
         // QUOTE GENERATOR
@@ -2303,8 +1552,6 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // NOTE: Add your Anthropic API key here, e.g., 'x-api-key': 'your-key-here'
-                        // Also update model to 'claude-3-5-sonnet-20240620' for validity
                     },
                     body: JSON.stringify({
                         model: 'claude-sonnet-4-20250514',
@@ -2499,9 +1746,7 @@
                     </div>
                 `;
                 
-                // Reset scroll position
                 modalScrollArea.scrollTop = 0;
-                
                 modalOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
             });
@@ -2515,14 +1760,12 @@
         
         modalClose.addEventListener('click', closeModal);
         
-        // Close on overlay click (not content)
         modalOverlay.addEventListener('click', (e) => {
             if (e.target === modalOverlay) {
                 closeModal();
             }
         });
         
-        // Close on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
                 closeModal();
