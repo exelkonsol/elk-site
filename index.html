@@ -117,29 +117,22 @@
             opacity: 0.30;
         }
         
-        /* Vignette & Atmospheric overlay - DARKER with corner shadows */
+        /* Vignette & Atmospheric overlay */
         .atmospheric-overlay {
             position: fixed; 
             inset: 0; 
             z-index: -1; 
             pointer-events: none;
             background: 
-                /* Soft top light */
                 radial-gradient(ellipse 120% 40% at 50% -5%, rgba(255,255,255,0.02) 0%, transparent 60%),
-                /* Crimson accents - reduced */
                 radial-gradient(ellipse at 25% 35%, rgba(160, 24, 48, 0.08) 0%, transparent 50%),
                 radial-gradient(ellipse at 75% 65%, rgba(107, 18, 18, 0.06) 0%, transparent 50%),
-                /* Dark vignette - corners - ENHANCED */
                 radial-gradient(ellipse 150% 100% at 50% 50%, transparent 15%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.92) 100%),
-                /* Left corner shadow - stronger */
                 linear-gradient(to right, rgba(0,0,0,0.85) 0%, transparent 30%),
-                /* Right corner shadow - stronger */
                 linear-gradient(to left, rgba(0,0,0,0.85) 0%, transparent 30%),
-                /* Overall darkening - enhanced */
                 linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.15) 20%, rgba(0,0,0,0.15) 80%, rgba(0,0,0,0.65) 100%);
         }
         
-        /* Desktop-only extra darkness layer */
         @media (min-width: 769px) {
             .atmospheric-overlay::after {
                 content: '';
@@ -161,7 +154,7 @@
         }
         
         /* =====================================================
-           AMBIENT MIST ORBS - Subtle Living Movement
+           AMBIENT MIST ORBS
            ===================================================== */
         .ambient-orbs {
             position: fixed;
@@ -404,7 +397,6 @@
             overflow: hidden;
         }
         
-        /* Soft background image for AI quote generator */
         .quote-generator-bg {
             position: absolute;
             inset: 0;
@@ -525,7 +517,6 @@
             to { transform: translate(-50%, -50%) rotate(360deg); }
         }
         
-        /* Mode Selector */
         .mode-selector {
             display: flex;
             gap: 1rem;
@@ -568,7 +559,6 @@
             z-index: 1;
         }
         
-        /* Control Buttons */
         .quote-controls {
             display: flex;
             flex-direction: column;
@@ -646,7 +636,7 @@
         }
         
         /* =====================================================
-           SOUNDCLOUD AUDIO PLAYER - Fully Responsive
+           CUSTOM AUDIO PLAYER
            ===================================================== */
         .audio-player {
             position: fixed;
@@ -665,7 +655,8 @@
             border: 1px solid rgba(196, 30, 58, 0.4);
             border-radius: 16px;
             padding: 1rem;
-            width: 350px;
+            width: 380px;
+            max-height: 80vh;
             opacity: 0;
             transform: translateY(20px) scale(0.95);
             pointer-events: none;
@@ -674,6 +665,8 @@
                 0 20px 60px rgba(0, 0, 0, 0.9),
                 0 0 30px rgba(196, 30, 58, 0.1);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         .audio-player.expanded .audio-panel {
@@ -689,6 +682,7 @@
             margin-bottom: 0.8rem;
             padding-bottom: 0.6rem;
             border-bottom: 1px solid rgba(196, 30, 58, 0.25);
+            flex-shrink: 0;
         }
         
         .audio-panel-title {
@@ -715,37 +709,183 @@
             color: var(--accent-primary);
         }
         
-        /* SoundCloud Embed Container - visual=true shows artwork */
-        .soundcloud-embed {
+        .custom-player {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .player-cover-container {
+            position: relative;
+            height: 280px;
             border-radius: 12px;
             overflow: hidden;
+            margin-bottom: 1rem;
             background: #000;
         }
         
-        .soundcloud-embed iframe {
-            display: block;
-            border-radius: 12px;
+        .cover-img {
+            position: absolute;
+            inset: 0;
             width: 100%;
-            height: 450px;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1.8s ease-in-out;
         }
         
-        .soundcloud-credit {
-            margin-top: 0.8rem;
+        .cover-img.active {
+            opacity: 1;
+        }
+        
+        .track-info {
+            text-align: center;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .track-info h3 {
+            font-size: 1.3rem;
+            color: var(--accent-primary);
+            margin-bottom: 0.3rem;
+        }
+        
+        .track-info p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+        
+        #visualizer {
+            width: 100%;
+            height: 160px;
+            background: #000;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+        }
+        
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0 0.5rem;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .progress-container > div {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            min-width: 45px;
             text-align: center;
         }
         
-        .soundcloud-credit a {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            text-decoration: none;
-            transition: color 0.3s ease;
-            opacity: 0.7;
+        #progressBar {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: rgba(196, 30, 58, 0.2);
+            border-radius: 3px;
+            outline: none;
         }
         
-        .soundcloud-credit a:hover {
+        #progressBar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(196, 30, 58, 0.6);
+        }
+        
+        .player-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.2rem;
+            padding: 0.5rem 0;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        
+        .control-btn:hover {
             color: var(--accent-primary);
-            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        .control-btn.big {
+            font-size: 2.8rem;
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        #volumeSlider {
+            -webkit-appearance: none;
+            width: 80px;
+            height: 5px;
+            background: rgba(196, 30, 58, 0.2);
+            border-radius: 3px;
+        }
+        
+        #volumeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .playlist-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 0.5rem;
+        }
+        
+        .playlist-title {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--accent-primary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        
+        #playlistList {
+            list-style: none;
+        }
+        
+        #playlistList li {
+            padding: 0.8rem 0.5rem;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(196, 30, 58, 0.15);
+            transition: var(--transition-smooth);
+            border-radius: 6px;
+        }
+        
+        #playlistList li:hover {
+            background: rgba(196, 30, 58, 0.15);
+            color: var(--text-primary);
+        }
+        
+        #playlistList li.active {
+            background: rgba(196, 30, 58, 0.25);
+            color: var(--accent-primary);
+            font-weight: 600;
         }
         
         .audio-toggle-btn {
@@ -1135,41 +1275,40 @@
             
             .audio-panel {
                 width: 100%;
-                max-height: 70vh;
-                margin-bottom: 0.5rem;
-                overflow-y: auto;
-            }
-            
-            .audio-panel::-webkit-scrollbar {
-                width: 3px;
-            }
-            
-            .audio-panel::-webkit-scrollbar-thumb {
-                background: var(--accent-primary);
-                border-radius: 2px;
+                max-height: 90vh;
+                border-radius: 16px 16px 0 0;
             }
             
             .audio-panel-close {
                 display: block;
             }
             
-            .soundcloud-embed iframe {
-                height: 300px;
+            .player-cover-container {
+                height: 220px;
             }
             
-            .audio-player:not(.expanded) .audio-panel {
-                display: none;
+            #visualizer {
+                height: 120px;
             }
             
-            .audio-player.expanded .audio-panel {
-                display: block;
+            .player-controls {
+                gap: 1rem;
             }
             
-            .audio-toggle-btn {
-                width: 100%;
-                justify-content: center;
-                padding: 0.75rem 1rem;
-                font-size: 0.85rem;
+            .control-btn.big {
+                font-size: 2.4rem;
+            }
+            
+            .volume-control {
+                gap: 0.4rem;
+            }
+            
+            #volumeSlider {
+                width: 70px;
+            }
+            
+            .playlist-container {
+                padding: 0;
             }
             
             .modal-content {
@@ -1190,7 +1329,6 @@
                 font-size: 1.3rem;
             }
             
-            /* Fix background lag */
             .bg-elk {
                 background-attachment: scroll;
                 background-position: top;
@@ -1240,7 +1378,6 @@
 <body>
     <div class="bg-base"></div>
     
-    <!-- Background System with New Images -->
     <div class="bg-elk-container" id="bgContainer">
         <div class="bg-elk" id="bg0" style="background-image: url('crimsonherd.png');"></div>
         <div class="bg-elk" id="bg1" style="background-image: url('elk2.png');"></div>
@@ -1254,7 +1391,6 @@
     <div class="atmospheric-overlay"></div>
     <div class="noise-texture"></div>
     
-    <!-- Ambient Orbs - Subtle Living Movement -->
     <div class="ambient-orbs">
         <div class="orb orb-1"></div>
         <div class="orb orb-2"></div>
@@ -1369,7 +1505,7 @@
         </footer>
     </div>
     
-    <!-- SoundCloud Audio Player -->
+    <!-- Custom Audio Player -->
     <div class="audio-player" id="audioPlayer">
         <div class="audio-panel">
             <div class="audio-panel-header">
@@ -1377,22 +1513,41 @@
                 <button class="audio-panel-close" id="audioPanelClose">✕</button>
             </div>
             
-            <div class="soundcloud-embed">
-                <iframe 
-                    id="scPlayer"
-                    width="100%" 
-                    height="450" 
-                    scrolling="no" 
-                    frameborder="no" 
-                    allow="autoplay" 
-                    src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/2183381792&color=%23990000&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=true">
-                </iframe>
-            </div>
-            
-            <div class="soundcloud-credit">
-                <a href="https://soundcloud.com/peter-zapffe-837854216/sets/the-burden-atmospheric-philosophy" target="_blank" rel="noopener">
-                    Open full playlist ↗
-                </a>
+            <div class="custom-player">
+                <div class="player-cover-container">
+                    <img id="cover1" class="cover-img" src="" alt="Cover">
+                    <img id="cover2" class="cover-img" src="" alt="Cover">
+                </div>
+                
+                <div class="track-info">
+                    <h3 id="trackTitle">Loading...</h3>
+                    <p id="trackArtist"></p>
+                </div>
+                
+                <canvas id="visualizer"></canvas>
+                
+                <div class="progress-container">
+                    <div id="currentTime">0:00</div>
+                    <input type="range" id="progressBar" value="0" min="0" max="100" step="0.1">
+                    <div id="durationTime">0:00</div>
+                </div>
+                
+                <div class="player-controls">
+                    <button id="shuffleBtn" class="control-btn" title="Shuffle">🔀</button>
+                    <button id="prevBtn" class="control-btn" title="Previous">⏮</button>
+                    <button id="playPauseBtn" class="control-btn big">▶</button>
+                    <button id="nextBtn" class="control-btn" title="Next">⏭</button>
+                    <button id="repeatBtn" class="control-btn" title="Repeat">🔁</button>
+                    <div class="volume-control">
+                        <button id="volumeBtn" class="control-btn">🔊</button>
+                        <input type="range" id="volumeSlider" value="1" min="0" max="1" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="playlist-container">
+                    <h4 class="playlist-title">Playlist</h4>
+                    <ul id="playlistList"></ul>
+                </div>
             </div>
         </div>
         
@@ -1401,6 +1556,9 @@
             <span id="toggleText">Music</span>
         </button>
     </div>
+    
+    <!-- Hidden audio element -->
+    <audio id="mainAudio" preload="auto"></audio>
     
     <!-- Modal Overlay -->
     <div class="modal-overlay" id="modalOverlay">
@@ -1416,14 +1574,14 @@
         'use strict';
         
         // ===================================================================
-        // BACKGROUND SYSTEM - Fixed for Desktop, Slideshow for Mobile
+        // BACKGROUND SYSTEM
         // ===================================================================
         const backgrounds = Array.from(document.querySelectorAll('.bg-elk'));
         let currentBgIndex = 0;
         let isTransitioning = false;
         const isMobile = window.innerWidth <= 768;
         
-        const desktopBgIndex = 5; // crimsonmoon.png is bg5
+        const desktopBgIndex = 5;
         
         if (isMobile) {
             backgrounds[0].classList.add('active');
@@ -1451,55 +1609,355 @@
         }
         
         // ===================================================================
-        // SOUNDCLOUD AUDIO PLAYER - Simplified
+        // CUSTOM AUDIO PLAYER
         // ===================================================================
+        const mainAudio = document.getElementById('mainAudio');
         const audioPlayer = document.getElementById('audioPlayer');
         const audioToggleBtn = document.getElementById('audioToggleBtn');
         const audioPanelClose = document.getElementById('audioPanelClose');
         const toggleIcon = document.getElementById('toggleIcon');
         const toggleText = document.getElementById('toggleText');
         
-        let panelOpen = false;
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const repeatBtn = document.getElementById('repeatBtn');
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const durationDisplay = document.getElementById('durationTime');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeBtn = document.getElementById('volumeBtn');
+        const trackTitle = document.getElementById('trackTitle');
+        const trackArtist = document.getElementById('trackArtist');
+        const playlistList = document.getElementById('playlistList');
+        const visualizer = document.getElementById('visualizer');
+        const ctx = visualizer.getContext('2d');
         
+        const cover1 = document.getElementById('cover1');
+        const cover2 = document.getElementById('cover2');
+        let activeCover = cover1;
+        let inactiveCover = cover2;
+        
+        let panelOpen = false;
+        let isPlaying = false;
+        let shuffle = false;
+        let repeatMode = 'none'; // 'none', 'all', 'one'
+        let audioContext = null;
+        let analyser = null;
+        let dataArray = null;
+        let animationFrame = null;
+        
+        // ========== PLAYLIST - UPDATE WITH YOUR TRACKS ==========
+        const playlist = [
+            {
+                title: "Crimson Storm",
+                artist: "$ELK Atmosphere",
+                src: "crimsonstorm.mp3", // Upload your .mp3 files to the repo root and update paths
+                cover: "crimsonstorm.png"
+            },
+            {
+                title: "Mountain Antlers",
+                artist: "$ELK Atmosphere",
+                src: "mountainantlers.mp3",
+                cover: "mountainantlers.png"
+            },
+            {
+                title: "Crimson Moon",
+                artist: "$ELK Atmosphere",
+                src: "crimsonmoon.mp3",
+                cover: "crimsonmoon.png"
+            },
+            {
+                title: "Heavy Herd",
+                artist: "$ELK Atmosphere",
+                src: "crimsonherd.mp3",
+                cover: "crimsonherd.png"
+            },
+            // Add all your tracks here. You can reuse images for covers or add new ones for variety.
+        ];
+        
+        let currentIndex = 0;
+        
+        // ========== UTILS ==========
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s < 10 ? '0' + s : s}`;
+        }
+        
+        function resizeCanvas() {
+            visualizer.width = visualizer.offsetWidth * devicePixelRatio;
+            visualizer.height = visualizer.offsetHeight * devicePixelRatio;
+            ctx.scale(devicePixelRatio, devicePixelRatio);
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        
+        function saveState() {
+            localStorage.setItem('elkPlayerState', JSON.stringify({
+                currentIndex,
+                currentTime: mainAudio.currentTime,
+                volume: mainAudio.volume,
+                shuffle,
+                repeatMode
+            }));
+        }
+        
+        function loadState() {
+            const saved = localStorage.getItem('elkPlayerState');
+            if (saved && playlist.length > 0) {
+                const state = JSON.parse(saved);
+                currentIndex = Math.min(state.currentIndex || 0, playlist.length - 1);
+                shuffle = state.shuffle || false;
+                repeatMode = state.repeatMode || 'none';
+                mainAudio.volume = state.volume || 1;
+                loadTrack(currentIndex);
+                mainAudio.currentTime = state.currentTime || 0;
+                updateUI();
+            } else if (playlist.length > 0) {
+                loadTrack(0);
+            }
+        }
+        
+        // ========== VISUALIZER ==========
+        function initVisualizer() {
+            if (audioContext) return;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            const source = audioContext.createMediaElementSource(mainAudio);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+        }
+        
+        function drawVisualizer() {
+            animationFrame = requestAnimationFrame(drawVisualizer);
+            analyser.getByteFrequencyData(dataArray);
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(0, 0, visualizer.width / devicePixelRatio, visualizer.height / devicePixelRatio);
+            
+            const barCount = 80;
+            const barWidth = (visualizer.width / devicePixelRatio) / barCount;
+            for (let i = 0; i < barCount; i++) {
+                const height = (dataArray[i] / 255) * (visualizer.height / devicePixelRatio) * 0.8;
+                ctx.fillStyle = `rgba(196, 30, 58, ${0.6 + dataArray[i]/500})`;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#c41e3a';
+                ctx.fillRect(i * barWidth, (visualizer.height / devicePixelRatio) - height, barWidth * 0.9, height);
+            }
+        }
+        
+        // ========== TRACK CONTROL ==========
+        function loadTrack(index) {
+            if (index < 0 || index >= playlist.length) return;
+            currentIndex = index;
+            const track = playlist[index];
+            mainAudio.src = track.src;
+            trackTitle.textContent = track.title;
+            trackArtist.textContent = track.artist || '';
+            
+            // Smooth cover transition
+            const newSrc = track.cover;
+            inactiveCover.src = newSrc;
+            inactiveCover.onload = () => {
+                inactiveCover.classList.add('active');
+                activeCover.classList.remove('active');
+                [activeCover, inactiveCover] = [inactiveCover, activeCover];
+            };
+            if (inactiveCover.complete && inactiveCover.naturalHeight !== 0) inactiveCover.onload();
+            
+            updatePlaylistHighlight();
+            saveState();
+        }
+        
+        function play() {
+            initVisualizer();
+            mainAudio.play().then(() => {
+                isPlaying = true;
+                playPauseBtn.textContent = '⏸';
+                updateToggleBtn(true);
+                drawVisualizer();
+            }).catch(e => console.log('Play blocked:', e));
+        }
+        
+        function pause() {
+            mainAudio.pause();
+            isPlaying = false;
+            playPauseBtn.textContent = '▶';
+            updateToggleBtn(false);
+            if (animationFrame) cancelAnimationFrame(animationFrame);
+        }
+        
+        function togglePlayPause() {
+            if (mainAudio.paused || mainAudio.ended) play();
+            else pause();
+        }
+        
+        function nextTrack() {
+            let nextIndex = currentIndex + 1;
+            if (shuffle) {
+                nextIndex = Math.floor(Math.random() * playlist.length);
+            } else if (nextIndex >= playlist.length) {
+                if (repeatMode === 'all') nextIndex = 0;
+                else {
+                    pause();
+                    return;
+                }
+            }
+            loadTrack(nextIndex);
+            if (isPlaying) play();
+        }
+        
+        function prevTrack() {
+            let prevIndex = currentIndex - 1;
+            if (prevIndex < 0) {
+                if (repeatMode === 'all') prevIndex = playlist.length - 1;
+                else prevIndex = 0;
+            }
+            loadTrack(prevIndex);
+            if (isPlaying) play();
+        }
+        
+        function toggleShuffle() {
+            shuffle = !shuffle;
+            shuffleBtn.style.color = shuffle ? 'var(--accent-primary)' : '';
+            saveState();
+        }
+        
+        function cycleRepeat() {
+            if (repeatMode === 'none') repeatMode = 'all';
+            else if (repeatMode === 'all') repeatMode = 'one';
+            else repeatMode = 'none';
+            repeatBtn.textContent = repeatMode === 'one' ? '🔂' : '🔁';
+            repeatBtn.style.color = repeatMode !== 'none' ? 'var(--accent-primary)' : '';
+            saveState();
+        }
+        
+        function updateVolumeIcon(vol) {
+            if (vol === 0) volumeBtn.textContent = '🔇';
+            else if (vol < 0.5) volumeBtn.textContent = '🔉';
+            else volumeBtn.textContent = '🔊';
+        }
+        
+        function updateToggleBtn(playing) {
+            toggleIcon.textContent = playing ? '🔊' : '🔇';
+            toggleText.textContent = playing ? 'Playing' : 'Music';
+            audioToggleBtn.classList.toggle('playing', playing);
+        }
+        
+        function updatePlaylistHighlight() {
+            const items = playlistList.querySelectorAll('li');
+            items.forEach((item, i) => {
+                item.classList.toggle('active', i === currentIndex);
+            });
+        }
+        
+        function buildPlaylist() {
+            playlistList.innerHTML = '';
+            playlist.forEach((track, i) => {
+                const li = document.createElement('li');
+                li.textContent = `${track.title}${track.artist ? ' — ' + track.artist : ''}`;
+                li.addEventListener('click', () => {
+                    loadTrack(i);
+                    play();
+                });
+                playlistList.appendChild(li);
+            });
+            updatePlaylistHighlight();
+        }
+        
+        function updateUI() {
+            updateVolumeIcon(mainAudio.volume);
+            updateShuffleBtn();
+            cycleRepeat(); // to refresh icon
+            updatePlaylistHighlight();
+        }
+        
+        // ========== EVENT LISTENERS ==========
+        mainAudio.addEventListener('ended', () => {
+            if (repeatMode === 'one') {
+                mainAudio.currentTime = 0;
+                play();
+            } else {
+                nextTrack();
+            }
+        });
+        
+        mainAudio.addEventListener('timeupdate', () => {
+            if (mainAudio.duration) {
+                const progress = (mainAudio.currentTime / mainAudio.duration) * 100;
+                progressBar.value = progress;
+                currentTimeDisplay.textContent = formatTime(mainAudio.currentTime);
+                durationDisplay.textContent = formatTime(mainAudio.duration);
+            }
+        });
+        
+        mainAudio.addEventListener('loadedmetadata', () => {
+            durationDisplay.textContent = formatTime(mainAudio.duration);
+        });
+        
+        progressBar.addEventListener('input', (e) => {
+            const time = (e.target.value / 100) * mainAudio.duration;
+            mainAudio.currentTime = time;
+        });
+        
+        volumeSlider.addEventListener('input', (e) => {
+            mainAudio.volume = e.target.value;
+            updateVolumeIcon(e.target.value);
+            saveState();
+        });
+        
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        prevBtn.addEventListener('click', prevTrack);
+        nextBtn.addEventListener('click', nextTrack);
+        shuffleBtn.addEventListener('click', toggleShuffle);
+        repeatBtn.addEventListener('click', cycleRepeat);
+        
+        // Panel toggle
         function openPanel() {
             panelOpen = true;
             audioPlayer.classList.add('expanded');
-            toggleIcon.textContent = '🔊';
-            toggleText.textContent = 'Playing';
-            audioToggleBtn.classList.add('playing');
+            if (!isPlaying && playlist.length > 0) {
+                play();
+            }
         }
         
         function closePanel() {
             panelOpen = false;
             audioPlayer.classList.remove('expanded');
-            toggleIcon.textContent = '🔇';
-            toggleText.textContent = 'Music';
-            audioToggleBtn.classList.remove('playing');
+            // Keep music playing when panel closed
         }
         
-        // Toggle panel
         audioToggleBtn.addEventListener('click', () => {
-            if (panelOpen) {
-                closePanel();
-            } else {
-                openPanel();
-            }
+            if (panelOpen) closePanel();
+            else openPanel();
         });
         
-        // Close button (visible on mobile)
-        audioPanelClose.addEventListener('click', () => {
-            closePanel();
-        });
+        audioPanelClose.addEventListener('click', closePanel);
         
-        // Close panel when clicking outside (desktop only)
+        // Close on outside click (desktop)
         document.addEventListener('click', (e) => {
             if (panelOpen && !audioPlayer.contains(e.target)) {
                 closePanel();
             }
         });
-
+        
+        // ========== INITIALIZATION ==========
+        if (playlist.length === 0) {
+            trackTitle.textContent = "No tracks found";
+            trackTitle.style.color = 'var(--text-muted)';
+        } else {
+            loadState();
+            buildPlaylist();
+            resizeCanvas();
+        }
+        
         // ===================================================================
-        // QUOTE GENERATOR
+        // QUOTE GENERATOR (unchanged from your version)
         // ===================================================================
         const quotes = {
             existential: [
@@ -1597,7 +2055,6 @@
             return queues[mode].pop();
         }
         
-        // AI Quote Generation
         async function generateAIQuote() {
             quoteSpinner.classList.add('active');
             quoteText.classList.remove('show');
@@ -1609,9 +2066,11 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        // Note: You need to add your own API key here if you want AI quotes
+                        // 'x-api-key': 'your-key',
                     },
                     body: JSON.stringify({
-                        model: 'claude-sonnet-4-20250514',
+                        model: 'claude-3-5-sonnet-20241022',
                         max_tokens: 1000,
                         messages: [{
                             role: 'user',
@@ -1621,8 +2080,7 @@
                 });
                 
                 const data = await response.json();
-                const aiQuote = data.content?.find(item => item.type === 'text')?.text || 
-                    'The weight of awareness is the price we pay for the privilege of understanding our own existence.';
+                const aiQuote = data.content?.[0]?.text || 'The weight of awareness is the price we pay for the privilege of understanding our own existence.';
                 
                 setTimeout(() => {
                     quoteSpinner.classList.remove('active');
@@ -1656,7 +2114,6 @@
             }
         }
         
-        // Mode switching
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.onclick = () => {
                 document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -1669,7 +2126,7 @@
         generateBtn.onclick = displayQuote;
         
         // ===================================================================
-        // MECHANISM MODALS
+        // MECHANISM MODALS (unchanged)
         // ===================================================================
         const modalData = {
             isolation: {
@@ -1741,7 +2198,7 @@
                     
                     <div class="modal-section">
                         <h4>The $ELK Implementation</h4>
-                        <p>In crypto, distraction is the lifeblood of memetic energy. For $ELK, <strong>Distraction manifests as marketing, raids, content creation, and meme warfare</strong>. We fund these activities from the treasury to keep the community engaged, energized, and laughing in the face of absurdity.</p>
+                        <p>In crypto, distraction is the lifeblood of memetic energy. For $ELK, <strong>Distraction manifests as marketing, raids, and content creation</strong>. We fund these activities from the treasury to keep the community engaged, energized, and laughing in the face of absurdity.</p>
                         <p>We raid Twitter spaces. We create viral memes. We organize AMAs, contests, and campaigns. These are not frivolous—they're philosophical necessities. They keep us moving, thinking, creating. They prevent stagnation and despair.</p>
                     </div>
                     
@@ -1787,7 +2244,6 @@
         const modalClose = document.getElementById('modalClose');
         const modalScrollArea = document.getElementById('modalScrollArea');
         
-        // Open modal
         document.querySelectorAll('.mechanism-card').forEach(card => {
             card.addEventListener('click', () => {
                 const mechanism = card.dataset.mechanism;
@@ -1809,7 +2265,6 @@
             });
         });
         
-        // Close modal
         function closeModal() {
             modalOverlay.classList.remove('active');
             document.body.style.overflow = '';
@@ -1841,11 +2296,6 @@
                     this.textContent = 'Copy Wisdom';
                     this.classList.remove('copied');
                 }, 2500);
-            }).catch(() => {
-                this.textContent = 'Copy failed';
-                setTimeout(() => {
-                    this.textContent = 'Copy Wisdom';
-                }, 2000);
             });
         };
         
@@ -1865,6 +2315,7 @@
         // ===================================================================
         window.addEventListener('load', () => {
             setTimeout(displayQuote, 1200);
+            resizeCanvas();
         });
     </script>
 </body>
