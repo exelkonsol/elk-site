@@ -59,6 +59,8 @@
 
         html {
             scroll-behavior: smooth;
+            overflow-x: hidden;
+            height: 100%;
         }
 
         /* Custom Scrollbar */
@@ -87,8 +89,12 @@
             line-height: 1.8;
             overflow-x: hidden;
             min-height: 100vh;
+            min-height: 100svh; /* Mobile viewport fix */
+            min-height: -webkit-fill-available;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior: none; /* Prevents rubber-band bounce bugs */
+            -webkit-overflow-scrolling: touch;
         }
 
         /* =====================================================
@@ -100,6 +106,7 @@
             z-index: -3;
             background: var(--bg-dark);
             pointer-events: none;
+            transform: translateZ(0);
         }
 
         .bg-elk-container {
@@ -107,27 +114,48 @@
             inset: 0;
             z-index: -2;
             pointer-events: none;
+            transform: translateZ(0);
+            /* Edge vignette for seamless blending */
+            -webkit-mask-image: radial-gradient(ellipse 85% 85% at center, black 30%, transparent 85%);
+            mask-image: radial-gradient(ellipse 85% 85% at center, black 30%, transparent 85%);
+        }
+
+        /* Fallback vignette for browsers without mask-image support */
+        .bg-elk-container::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 90% 90% at center, transparent 40%, var(--bg-dark) 95%);
+            pointer-events: none;
+            z-index: 1;
         }
 
         .bg-elk {
             position: absolute;
-            inset: 0;
+            inset: -5%; /* Slight overflow to prevent edge gaps */
             background-size: cover;
             background-position: center;
-            /* avoid mobile scroll jitter / zoom */
             background-attachment: scroll;
             background-repeat: no-repeat;
             opacity: 0;
             transition: opacity 6s ease-in-out;
-            will-change: opacity;
+            will-change: opacity, transform;
             pointer-events: none;
-            /* soften art slightly so low-res PNGs look cleaner */
             filter: blur(0.6px) saturate(1.05) contrast(0.96);
             image-rendering: auto;
+            transform: translateZ(0);
         }
 
         .bg-elk.active {
             opacity: 0.30;
+        }
+
+        /* Desktop: Larger images with enhanced presence */
+        @media (min-width: 769px) {
+            .bg-elk {
+                background-size: 135% auto; /* Significantly larger images */
+                background-position: center center;
+            }
         }
 
         /* Vignette & Atmospheric overlay */
@@ -136,6 +164,7 @@
             inset: 0;
             z-index: -1;
             pointer-events: none;
+            transform: translateZ(0);
             background:
                 radial-gradient(ellipse 120% 40% at 50% -5%, rgba(255, 255, 255, 0.02) 0%, transparent 60%),
                 radial-gradient(ellipse at 25% 35%, rgba(160, 24, 48, 0.08) 0%, transparent 50%),
@@ -163,6 +192,7 @@
             z-index: -1;
             opacity: 0.03;
             pointer-events: none;
+            transform: translateZ(0);
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
@@ -175,6 +205,7 @@
             z-index: -1;
             pointer-events: none;
             overflow: hidden;
+            transform: translateZ(0);
         }
 
         .orb {
@@ -254,6 +285,7 @@
            ===================================================== */
         .hero {
             min-height: 100vh;
+            min-height: 100svh; /* Mobile viewport fix */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -417,7 +449,7 @@
                 0 0 80px rgba(196, 30, 58, 0.15),
                 inset 0 1px 0 rgba(255, 255, 255, 0.05);
             position: relative;
-            overflow: hidden;
+            overflow: hidden; /* Ensures bg image respects border-radius */
         }
 
         .quote-generator-bg {
@@ -430,6 +462,19 @@
             pointer-events: none;
             z-index: 0;
             transition: opacity 1s ease;
+        }
+
+        /* Desktop: Perfect fit adjustment for generatewisdom.png */
+        @media (min-width: 1024px) {
+            .quote-generator-bg {
+                background-size: cover;
+                background-position: center 20%; /* Adjust focal point for desktop aspect ratio */
+                opacity: 0.15;
+            }
+            
+            .quote-generator:hover .quote-generator-bg {
+                opacity: 0.22;
+            }
         }
 
         .quote-generator:hover .quote-generator-bg {
@@ -1835,7 +1880,7 @@
             {
                 id: 8,
                 title: "Mountain Echo",
-                subtitle: "The ridge repeats what we won’t say.",
+                subtitle: "The ridge repeats what we won't say.",
                 src: "Mountain Echo.mp3",
                 durationLabel: "--:--",
                 artwork: "Mountain Echo.png"
@@ -2337,23 +2382,23 @@
                 "The struggle itself toward the heights is enough to fill a man's heart. One must imagine Sisyphus happy."
             ],
             degen: [
-                "The market doesn’t care about your feelings, only your conviction in the face of volatility.",
-                "Diamond hands aren’t forged in green candles—they’re tempered in the red.",
-                "We didn’t choose the degen life; consciousness chose it for us, and we simply refuse to look away.",
-                "To ape or not to ape—the question itself reveals we’ve already decided.",
+                "The market doesn't care about your feelings, only your conviction in the face of volatility.",
+                "Diamond hands aren't forged in green candles—they're tempered in the red.",
+                "We didn't choose the degen life; consciousness chose it for us, and we simply refuse to look away.",
+                "To ape or not to ape—the question itself reveals we've already decided.",
                 "The charts reflect not just price, but the collective psychology of those brave enough to play.",
                 "In the casino of existence, we are simultaneously the house, the player, and the game itself.",
-                "HODL is not a strategy—it’s a philosophical stance against the tyranny of short-term thinking.",
+                "HODL is not a strategy—it's a philosophical stance against the tyranny of short-term thinking.",
                 "Every dip is a test of conviction; every pump, a validation of belief against the void.",
                 "We chase moons not for wealth, but to prove we can defy gravity—even if just for a moment.",
                 "The ultimate degeneracy is pretending life has inherent meaning. We create it with every trade.",
                 "Leverage is the physical manifestation of existential risk—amplifying both glory and ruin.",
                 "To risk it all on a meme coin is to embrace the absurd with full awareness of its absurdity.",
-                "The rug pull is merely the market’s way of teaching us about the impermanence of all things.",
-                "We don’t invest in tokens—we invest in collective narratives against the darkness.",
+                "The rug pull is merely the market's way of teaching us about the impermanence of all things.",
+                "We don't invest in tokens—we invest in collective narratives against the darkness.",
                 "The whitepaper is our scripture, the chart our meditation, the community our congregation.",
                 "In a world of fiat and decay, we choose digital scarcity and communal hope.",
-                "Every degen knows the real treasure isn’t profit—it’s the philosophy we argued about along the way.",
+                "Every degen knows the real treasure isn't profit—it's the philosophy we argued about along the way.",
                 "To buy the dip is to affirm life in the face of uncertainty.",
                 "We are not gambling—we are philosophically hedging against meaninglessness.",
                 "The moon was always metaphorical; we knew this, yet we reach anyway."
@@ -2362,15 +2407,15 @@
                 "The elk carries the forest on its antlers, and the forest remembers.",
                 "Heavy is the crown of bone and velvet, heavier still the responsibility to the herd.",
                 "The antlers are heavy. We carry them together.",
-                "In the mountain’s shadow, the elk teaches: endure, persist, prevail.",
+                "In the mountain's shadow, the elk teaches: endure, persist, prevail.",
                 "The burden becomes beautiful when shared across the herd.",
                 "Majestic not because it is unburdened, but because it bears the weight with grace.",
                 "The elk does not ask why the antlers grow—it simply stands taller.",
-                "Through winter’s deepest cold, the herd remains. This is our truth.",
+                "Through winter's deepest cold, the herd remains. This is our truth.",
                 "The mountain is steep, the path uncertain, yet the elk climbs on.",
                 "Alone, the antlers crush. Together, they crown us.",
                 "The forest whispers: those who carry burdens become legends.",
-                "The elk’s strength is not in its antlers, but in its refusal to shed them.",
+                "The elk's strength is not in its antlers, but in its refusal to shed them.",
                 "Every step forward is a triumph over the weight we bear.",
                 "The herd knows no individual glory—only collective endurance.",
                 "To stand with the elk is to accept the weight and find meaning in the carrying.",
