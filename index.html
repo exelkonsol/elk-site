@@ -154,6 +154,11 @@
                 background: rgba(0, 0, 0, 0.18);
                 pointer-events: none;
             }
+
+            /* Desktop: zoom backgrounds out to show more image */
+            .bg-elk {
+                background-size: contain;
+            }
         }
 
         /* Film Grain Texture (softened) */
@@ -424,8 +429,9 @@
             position: absolute;
             inset: 0;
             background-image: url('generatewisdom.png');
-            background-size: cover;
+            background-size: contain;
             background-position: center;
+            background-repeat: no-repeat;
             opacity: 0.12;
             pointer-events: none;
             z-index: 0;
@@ -943,6 +949,31 @@
             color: var(--bg-dark);
             box-shadow: 0 0 14px rgba(196, 30, 58, 0.8);
             border-color: var(--accent-primary);
+        }
+
+        /* Special styling for shuffle + repeat mode buttons */
+        #elkShuffleBtn,
+        #elkRepeatBtn {
+            min-width: 80px;
+            justify-content: center;
+            letter-spacing: 0.04em;
+        }
+
+        #elkShuffleBtn::before,
+        #elkRepeatBtn::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            margin-right: 0.3rem;
+            background: rgba(196, 30, 58, 0.3);
+            box-shadow: 0 0 0 1px rgba(196, 30, 58, 0.5);
+        }
+
+        #elkShuffleBtn.active::before,
+        #elkRepeatBtn.active::before {
+            background: var(--accent-primary);
+            box-shadow: 0 0 8px rgba(196, 30, 58, 0.9);
         }
 
         .elk-playlist {
