@@ -38,15 +38,6 @@
         href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
 
-    <!-- Preload critical assets -->
-    <link rel="preload" as="image" href="crimsonherd.png">
-    <link rel="preload" as="image" href="elk2.png">
-    <link rel="preload" as="image" href="elk3.png">
-    <link rel="preload" as="image" href="realisticlook.png">
-    <link rel="preload" as="image" href="mountainantlers.png">
-    <link rel="preload" as="image" href="crimsonmoon.png">
-    <link rel="preload" as="image" href="crimsonstorm.png">
-
     <style>
         :root {
             --bg-dark: #050505;
@@ -402,7 +393,7 @@
         }
 
         /* =====================================================
-           QUOTE GENERATOR (unchanged core)
+           QUOTE GENERATOR
            ===================================================== */
         .quote-section {
             padding: clamp(8rem, 15vh, 12rem) 0;
@@ -427,7 +418,7 @@
         .quote-generator-bg {
             position: absolute;
             inset: 0;
-            background-image: url('https://exelkonsol.github.io/elk/generatewisdom.png');
+            background-image: url('generatewisdom.png');
             background-size: cover;
             background-position: center;
             opacity: 0.12;
@@ -674,7 +665,7 @@
         }
 
         /* =====================================================
-           MESMERIZING ELK AUDIO PLAYER (no SoundCloud)
+           MESMERIZING ELK AUDIO PLAYER
            ===================================================== */
         .audio-player {
             position: fixed;
@@ -882,7 +873,7 @@
             cursor: pointer;
             border-radius: 999px;
             padding: 0.3rem 0.4rem;
-            transition: background 0.25s ease, color 0.25s ease, transform 0.15s ease;
+            transition: background 0.25s.ease, color 0.25s ease, transform 0.15s ease;
         }
 
         .elk-btn:hover {
@@ -1473,13 +1464,9 @@
 
     <!-- Background System -->
     <div class="bg-elk-container" id="bgContainer">
-        <div class="bg-elk" id="bg0" style="background-image: url('crimsonherd.png');"></div>
-        <div class="bg-elk" id="bg1" style="background-image: url('elk2.png');"></div>
-        <div class="bg-elk" id="bg2" style="background-image: url('elk3.png');"></div>
-        <div class="bg-elk" id="bg3" style="background-image: url('realisticlook.png');"></div>
-        <div class="bg-elk" id="bg4" style="background-image: url('mountainantlers.png');"></div>
-        <div class="bg-elk" id="bg5" style="background-image: url('crimsonmoon.png');"></div>
-        <div class="bg-elk" id="bg6" style="background-image: url('crimsonstorm.png');"></div>
+        <!-- Two layers, artwork-driven, crossfaded by JS -->
+        <div class="bg-elk" id="bg0"></div>
+        <div class="bg-elk" id="bg1"></div>
     </div>
 
     <div class="atmospheric-overlay"></div>
@@ -1515,7 +1502,7 @@
             </div>
         </section>
 
-        <!-- Quote Generator (kept intact) -->
+        <!-- Quote Generator -->
         <section class="quote-section">
             <div class="quote-generator">
                 <div class="quote-generator-bg"></div>
@@ -1560,8 +1547,8 @@
                 <article class="mechanism-card" data-mechanism="isolation">
                     <div class="subtitle">BURN</div>
                     <h3>Isolation</h3>
-                    <p>Permanently remove tokens from circulation. Suppress the noise, reduce the supply, face the void.
-                    </p>
+                    <p>Permanently remove tokens from circulation. Suppress the noise, reduce the supply, face the
+                        void.</p>
                     <p class="mechanism-card-hint">Click to explore deeper →</p>
                 </article>
 
@@ -1625,7 +1612,6 @@
 
             <div class="elk-main-row">
                 <div class="elk-artwork" id="elkArtwork"></div>
-
                 <div class="elk-center">
                     <div class="elk-time-row">
                         <span id="elkCurrentTime">0:00</span>
@@ -1686,21 +1672,29 @@
         'use strict';
 
         // ========================================================
-        // BACKGROUND SYSTEM – controlled by audio tracks
+        // BACKGROUND SYSTEM – driven by track artwork
         // ========================================================
         const backgrounds = Array.from(document.querySelectorAll('.bg-elk'));
         let activeBgIndex = 0;
 
-        function setBackground(index) {
-            if (!backgrounds.length) return;
-            const clamped = Math.max(0, Math.min(index, backgrounds.length - 1));
-            backgrounds.forEach((bg, i) => {
-                bg.classList.toggle('active', i === clamped);
-            });
-            activeBgIndex = clamped;
+        function setBackgroundImage(url) {
+            if (!backgrounds.length || !url) return;
+
+            const currentEl = backgrounds[activeBgIndex];
+            const nextIndex = (activeBgIndex + 1) % backgrounds.length;
+            const nextEl = backgrounds[nextIndex];
+
+            nextEl.style.backgroundImage = `url("${url}")`;
+            nextEl.classList.add('active');
+            currentEl.classList.remove('active');
+
+            activeBgIndex = nextIndex;
         }
 
-        setBackground(0);
+        // Start with the first layer visible (blank until a track loads)
+        if (backgrounds[0]) {
+            backgrounds[0].classList.add('active');
+        }
 
         // ========================================================
         // MESMERIZING ELK AUDIO PLAYER
@@ -1743,7 +1737,6 @@
                 subtitle: "The hush before the herd moves.",
                 src: "Before the Clearing.mp3",
                 durationLabel: "--:--",
-                bgIndex: 0,
                 artwork: "Before the Clearing.png"
             },
             {
@@ -1752,7 +1745,6 @@
                 subtitle: "Evening light on heavy antlers.",
                 src: "Crimson Twilight.mp3",
                 durationLabel: "--:--",
-                bgIndex: 1,
                 artwork: "Crimson Twilight.png"
             },
             {
@@ -1761,7 +1753,6 @@
                 subtitle: "Old answers fading in the valley.",
                 src: "Echoes Where Meaning Was.mp3",
                 durationLabel: "--:--",
-                bgIndex: 2,
                 artwork: "Echoes Where Meaning Was.png"
             },
             {
@@ -1770,7 +1761,6 @@
                 subtitle: "The burden that never sets down.",
                 src: "Eternal Weight.mp3",
                 durationLabel: "--:--",
-                bgIndex: 3,
                 artwork: "Eternal Weight.png"
             },
             {
@@ -1779,7 +1769,6 @@
                 subtitle: "Breathing with the dark pines.",
                 src: "Forest Depths.mp3",
                 durationLabel: "--:--",
-                bgIndex: 4,
                 artwork: "Forest Depths.png"
             },
             {
@@ -1788,7 +1777,6 @@
                 subtitle: "Steps converging in the distance.",
                 src: "Herd Gathering.mp3",
                 durationLabel: "--:--",
-                bgIndex: 5,
                 artwork: "Herd Gathering.png"
             },
             {
@@ -1797,7 +1785,6 @@
                 subtitle: "Procession beneath the crimson sky.",
                 src: "Herd Through the Valley.mp3",
                 durationLabel: "--:--",
-                bgIndex: 6,
                 artwork: "Herd Through the Valley.png"
             },
             {
@@ -1806,7 +1793,6 @@
                 subtitle: "Carrying weight across seasons.",
                 src: "Migration of the Burdened.mp3",
                 durationLabel: "--:--",
-                bgIndex: 0,
                 artwork: "Migration of the Burdened.png"
             },
             {
@@ -1815,7 +1801,6 @@
                 subtitle: "The ridge repeats what we won’t say.",
                 src: "Mountain Echo.mp3",
                 durationLabel: "--:--",
-                bgIndex: 1,
                 artwork: "Mountain Echo.png"
             },
             {
@@ -1824,7 +1809,6 @@
                 subtitle: "The herd holds the invisible weight.",
                 src: "No Elk Walks Alone.mp3",
                 durationLabel: "--:--",
-                bgIndex: 2,
                 artwork: "No Elk Walks Alone.png"
             },
             {
@@ -1833,7 +1817,6 @@
                 subtitle: "A distant call through thin air.",
                 src: "Signal from the Ridge.mp3",
                 durationLabel: "--:--",
-                bgIndex: 3,
                 artwork: "Signal from the Ridge.png"
             },
             {
@@ -1842,7 +1825,6 @@
                 subtitle: "What consciousness costs the herd.",
                 src: "The Burden.mp3",
                 durationLabel: "--:--",
-                bgIndex: 4,
                 artwork: "The Burden.png"
             },
             {
@@ -1851,7 +1833,6 @@
                 subtitle: "Memory written in tracks and scars.",
                 src: "The Herd Remembers.mp3",
                 durationLabel: "--:--",
-                bgIndex: 5,
                 artwork: "The Herd Remembers.png"
             },
             {
@@ -1860,7 +1841,6 @@
                 subtitle: "When awareness grows heavier than bone.",
                 src: "The Weight of Knowing.mp3",
                 durationLabel: "--:--",
-                bgIndex: 6,
                 artwork: "The Weight of Knowing.png"
             },
             {
@@ -1869,7 +1849,6 @@
                 subtitle: "Loss rising as ritual and flame.",
                 src: "Turning Ash to Altar.mp3",
                 durationLabel: "--:--",
-                bgIndex: 1,
                 artwork: "Turning Ash to Altar.png"
             },
             {
@@ -1878,11 +1857,9 @@
                 subtitle: "The final tally of the burden.",
                 src: "What Consciousness Costs.mp3",
                 durationLabel: "--:--",
-                bgIndex: 2,
                 artwork: "What Consciousness Costs.png"
             }
         ];
-
 
         let elkCurrentIndex = 0;
         let elkIsPlaying = false;
@@ -1992,8 +1969,8 @@
             elkAudio.src = track.src;
             elkTrackTitle.textContent = track.title;
             elkTrackSubtitle.textContent = track.subtitle;
-            elkArtwork.style.backgroundImage = `url('${track.artwork}')`;
-            setBackground(track.bgIndex);
+            elkArtwork.style.backgroundImage = `url("${track.artwork}")`;
+            setBackgroundImage(track.artwork);
             elkHighlightActiveTrack();
             elkSave('currentIndex', elkCurrentIndex);
 
@@ -2072,12 +2049,16 @@
             elkShuffleBtn.classList.toggle('active', elkIsShuffle);
         }
 
-        function elkCycleSpeed() {
-            elkSpeedIndex = (elkSpeedIndex + 1) % elkSpeeds.length;
+        function elkUpdateSpeedUI() {
             const speed = elkSpeeds[elkSpeedIndex];
             elkAudio.playbackRate = speed;
-            elkSpeedBtn.textContent = speed.toFixed(speed === 1 ? 0 : 2).replace(/\.00$/, '') + '×';
+            elkSpeedBtn.textContent = (speed === 1 ? '1×' : speed.toFixed(2).replace(/\.00$/, '') + '×');
             elkSpeedBtn.classList.toggle('active', speed !== 1);
+        }
+
+        function elkCycleSpeed() {
+            elkSpeedIndex = (elkSpeedIndex + 1) % elkSpeeds.length;
+            elkUpdateSpeedUI();
             elkSave('speedIndex', elkSpeedIndex);
         }
 
@@ -2153,9 +2134,10 @@
             const rect = elkProgress.getBoundingClientRect();
             const ratio = (e.clientX - rect.left) / rect.width;
             if (!isFinite(elkAudio.duration)) return;
-            elkAudio.currentTime = Math.max(0, Math.min(1, ratio)) * elkAudio.duration;
+            const clamped = Math.max(0, Math.min(1, ratio));
+            elkAudio.currentTime = clamped * elkAudio.duration;
             elkCurrentTimeEl.textContent = elkFormatTime(elkAudio.currentTime);
-            elkProgressFill.style.transform = `scaleX(${Math.max(0, Math.min(1, ratio))})`;
+            elkProgressFill.style.transform = `scaleX(${clamped})`;
         });
 
         elkVolumeBar.addEventListener('click', (e) => {
@@ -2221,8 +2203,7 @@
             elkSetVolumeFromRatio(savedVolume);
             elkUpdateRepeatButton();
             elkShuffleBtn.classList.toggle('active', elkIsShuffle);
-            elkCycleSpeed(); // sets playback rate & button from elkSpeedIndex
-            elkSpeedIndex = savedSpeedIndex; // reset index after one cycle
+            elkUpdateSpeedUI(); // default or restored speed, 1× by default
         })();
 
         // ========================================================
