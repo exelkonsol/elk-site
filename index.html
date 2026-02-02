@@ -22,6 +22,146 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, increment, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
+        // Fallback for local testing without the specialized environment
+        if (Object.keys(firebaseConfig).length === 0) {
+            console.warn("Firebase config not found. Voting will simulate locally.");
+        }
+
+        const app = Object.keys(firebaseConfig).length ? initializeApp(firebaseConfig) : null;
+        const auth = app ? getAuth(app) : null;
+        const db = app ? getFirestore(app) : null;
+        const appId = window.__app_id || 'default-elk-app';
+
+        // --- AUTH & REALTIME VOTING ---
+        let currentUser = null;
+
+        // AUTH INIT: Check for custom token first to fix permission errors
+        const initAuthentication = async () => {
+            if (!auth) {
+                initLocalSimulation();
+                return;
+            }
+            try {
+                if (window.__initial_auth_token) {
+                    await signInWithCustomToken(auth, window.__initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth failed:", error);
+                // Fallback to simulation on hard failure
+                initLocalSimulation();
+            }
+        };
+
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    initRealtimeVotes();
+                }
+            });
+            initAuthentication();
+        } else {
+            // Local fallback simulation if Firebase isn't configured in environment
+            initLocalSimulation();
+        }
+
+        function initRealtimeVotes() {
+            if (!db) return;
+            // RULE 1: Correct Path
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'mechanisms', 'counts');
+            
+            // RULE 2: onSnapshot listener
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    updateVoteUI(data);
+                } else {
+                    // Initialize if missing
+                    setDoc(docRef, { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 }, { merge: true });
+                }
+            }, (error) => {
+                console.error("Vote sync error:", error);
+                // Optional: Fallback to local if sync fails
+                initLocalSimulation();
+            });
+        }
+
+        function initLocalSimulation() {
+             // Just load from local storage for simulation
+             const localVotes = JSON.parse(localStorage.getItem('elk_votes')) || { isolation: 120, anchoring: 85, distraction: 200, sublimation: 340 };
+             updateVoteUI(localVotes);
+        }
+
+        // Expose vote function globally
+        window.handleVote = async (mech) => {
+            // Check local "has voted" state to prevent spamming from same browser
+            if (localStorage.getItem('elk_has_voted') === 'true') {
+                showToast("ALREADY VOTED");
+                return;
+            }
+
+            if (db && currentUser) {
+                // Realtime update
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'mechanisms', 'counts');
+                
+                // Optimistic UI update handled by snapshot, but we disable button immediately
+                try {
+                    // Try update first
+                    await updateDoc(docRef, {
+                        [mech]: increment(1)
+                    });
+                } catch (e) {
+                    // If doc doesn't exist, set it
+                    await setDoc(docRef, { [mech]: 1 }, { merge: true });
+                }
+            } else {
+                // Local simulation
+                let localVotes = JSON.parse(localStorage.getItem('elk_votes')) || { isolation: 120, anchoring: 85, distraction: 200, sublimation: 340 };
+                localVotes[mech]++;
+                localStorage.setItem('elk_votes', JSON.stringify(localVotes));
+                updateVoteUI(localVotes);
+            }
+
+            // Lock voting locally
+            localStorage.setItem('elk_has_voted', 'true');
+            localStorage.setItem('elk_voted_mech', mech);
+            applyVoteLock(mech);
+            showToast("VOTE RECORDED");
+        };
+
+        function updateVoteUI(data) {
+            for (const [key, val] of Object.entries(data)) {
+                const el = document.querySelector(`[data-mechanism="${key}"] .vote-count`);
+                if (el) el.textContent = val.toLocaleString();
+            }
+        }
+
+        function applyVoteLock(mech) {
+            document.querySelectorAll('.vote-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.textContent = "Voted";
+            });
+            
+            const card = document.querySelector(`[data-mechanism="${mech}"]`);
+            if (card) card.classList.add('voted');
+        }
+
+        // Check lock on load
+        if (localStorage.getItem('elk_has_voted') === 'true') {
+            applyVoteLock(localStorage.getItem('elk_voted_mech'));
+        }
+    </script>
+
     <style>
         /* Removed global transition * { ... } to fix mobile glitching */
 
@@ -46,7 +186,7 @@
         .global-bg {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('https://raw.githubusercontent.com/exelkonsol/elk/main/elk2.png');
+            background-image: url('https://raw.githubusercontent.com/exelkonsol/elk/main/newbackground.png');
             background-size: cover;
             background-position: center;
             filter: grayscale(100%) opacity(0.3) contrast(1.1);
@@ -109,7 +249,7 @@
 
         .buy-btn:active { transform: scale(0.98); }
 
-        /* Quote Section - Fixed Mobile Layout */
+        /* Quote Section */
         .quote-section { position: relative; overflow: hidden; }
         
         .quote-bg {
@@ -242,6 +382,7 @@
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.04);
             transition: transform 0.3s ease, background-color 0.3s ease;
+            position: relative;
         }
 
         .mechanism-card:hover {
@@ -255,7 +396,40 @@
             border-color: rgba(139, 0, 0, 0.2);
         }
 
-        .mechanism-card button { touch-action: manipulation; min-height: 44px; transition: opacity 0.3s ease; }
+        .mechanism-card button { touch-action: manipulation; min-height: 44px; transition: all 0.3s ease; }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 1.5rem;
+        }
+
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+        .modal-content {
+            background: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            border-radius: 8px;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .modal-overlay.open .modal-content { transform: scale(1); }
 
         /* Footer Background */
         .footer-bg-layer {
@@ -277,6 +451,22 @@
         .audio-player-container {
             position: relative;
             overflow: hidden;
+            container-type: inline-size;
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease;
+        }
+
+        /* Dark overlay for audio player background */
+        .audio-player-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 0;
+            pointer-events: none;
         }
 
         #visualizer-canvas {
@@ -285,13 +475,45 @@
             width: 100%; height: 100%;
             pointer-events: none;
             opacity: 0.3;
-            z-index: 0;
+            z-index: 1;
+        }
+
+        /* Responsive Audio Grid */
+        .player-grid {
+            display: grid;
+            gap: 2rem;
+            grid-template-columns: 1fr;
+            position: relative;
+            z-index: 2;
+        }
+
+        @media (min-width: 768px) {
+            .player-grid {
+                grid-template-columns: 200px 1fr;
+                gap: 3rem;
+                align-items: center;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .player-grid {
+                grid-template-columns: 240px 1fr;
+            }
         }
 
         /* Vinyl Record */
+        .vinyl-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
         .vinyl-record {
             position: relative;
-            width: 220px; height: 220px;
+            width: 100%;
+            max-width: 280px; /* Increased size on desktop */
+            aspect-ratio: 1/1;
             border-radius: 50%;
             background: repeating-radial-gradient(circle at center, #111 0px, #111 2px, #0a0a0a 3px, #0a0a0a 4px);
             box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.9);
@@ -300,11 +522,17 @@
             transform: translateZ(0);
         }
 
+        /* Mobile Vinyl Rotation Animation */
+        @keyframes vinyl-spin {
+            from { transform: translateZ(0) rotate(0deg); }
+            to { transform: translateZ(0) rotate(360deg); }
+        }
+
         .vinyl-label {
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px; height: 80px;
+            width: 35%; height: 35%;
             border-radius: 50%;
             background: #000;
             border: 2px solid rgba(139, 0, 0, 0.3);
@@ -317,7 +545,7 @@
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 8px; height: 8px;
+            width: 4%; height: 4%;
             border-radius: 50%;
             background: #000;
             border: 1px solid rgba(255,255,255,0.2);
@@ -385,6 +613,14 @@
         .track-item.active { background: rgba(139, 0, 0, 0.05); border-left-color: rgba(139, 0, 0, 0.5); }
         .track-item.active::before { transform: scaleY(1); }
 
+        .controls-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
         .control-btn {
             transition: transform 0.2s, color 0.2s;
             touch-action: manipulation;
@@ -422,7 +658,7 @@
             border-radius: 50%;
             background: rgba(0,0,0,0.9);
             border: 1px solid rgba(255,255,255,0.2);
-            z-index: 100;
+            z-index: 90;
             cursor: pointer;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0,0,0,0.8);
@@ -459,12 +695,16 @@
         button:focus-visible, a:focus-visible { outline: 1px solid rgba(139, 0, 0, 0.5); outline-offset: 2px; }
 
         @media (max-width: 640px) {
-            .vinyl-record { width: 160px; height: 160px; }
-            .vinyl-label { width: 60px; height: 60px; }
             .quote-container { min-height: 400px; padding: 3rem 1rem; }
             #mute-toggle-btn { bottom: 16px; right: 16px; width: 50px; height: 50px; }
             .hero-image { width: 180px !important; height: 180px !important; }
             .quote-text { font-size: 1.5rem; }
+            
+            /* Apply slow rotation only on mobile */
+            .vinyl-record.playing {
+                animation: vinyl-spin 8s linear infinite;
+            }
+            .vinyl-record { max-width: 220px; } /* Increased size on mobile */
         }
 
         @media (pointer: coarse) {
@@ -490,6 +730,15 @@
     <div class="vignette"></div>
     <div class="bg-overlay"></div>
     
+    <!-- Modal Container -->
+    <div id="modal-overlay" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content relative">
+            <button onclick="closeModal(event, true)" class="absolute top-4 right-4 text-white/50 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            <h3 id="modal-title" class="font-serif text-3xl text-white/90 mb-4"></h3>
+            <div id="modal-body" class="font-body text-white/70 leading-relaxed text-lg space-y-4"></div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div id="toast" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 blur-fade px-6 py-3 translate-y-full opacity-0 transition-all duration-500 z-[100] rounded-full border border-white/10">
         <span class="font-mono text-xs text-white/70 tracking-wider flex items-center gap-2">
@@ -507,7 +756,6 @@
                     <a href="#manifesto" class="text-white/20 hover:text-white/60 transition-colors duration-300 py-2">Manifesto</a>
                     <a href="#soundscape" class="text-white/20 hover:text-white/60 transition-colors duration-300 py-2">Soundscape</a>
                 </div>
-                <!-- INCREASED OPACITY FOR CA BUTTON -->
                 <button onclick="copyToClipboard('8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump', 'CA COPIED')" 
                         class="font-mono text-[8px] sm:text-[9px] text-white/60 hover:text-white/90 transition-all duration-500 tracking-wider uppercase border border-white/5 px-3 py-1.5 rounded hover:bg-white/5 active:scale-95 touch-manipulation min-h-[44px]">
                     <span class="hidden sm:inline">8DaLP...Gpump</span>
@@ -574,63 +822,79 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="isolation">
-                    <div>
-                        <h3 class="font-serif text-2xl text-white/70 mb-4">Isolation</h3>
+                <!-- Isolation -->
+                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg group" data-mechanism="isolation">
+                    <div class="cursor-pointer" onclick="openModal('isolation')">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-serif text-2xl text-white/70 mb-4 group-hover:text-white transition-colors">Isolation</h3>
+                            <i data-lucide="info" class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
+                        </div>
                         <p class="text-white/30 text-sm leading-relaxed mb-4">Remove tokens from circulation. Confine anxiety to manageable compartments.</p>
                         <p class="text-[10px] text-white/20 font-mono uppercase">Suppression through reduction</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs text-white/30 font-mono">Cast</span>
+                            <span class="text-xs text-white/30 font-mono">Votes</span>
                             <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('isolation')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">Vote</button>
+                        <button onclick="handleVote('isolation')" class="vote-btn w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px]">Vote</button>
                     </div>
                 </div>
 
-                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="anchoring">
-                    <div>
-                        <h3 class="font-serif text-2xl text-white/70 mb-4">Anchoring</h3>
+                <!-- Anchoring -->
+                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg group" data-mechanism="anchoring">
+                    <div class="cursor-pointer" onclick="openModal('anchoring')">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-serif text-2xl text-white/70 mb-4 group-hover:text-white transition-colors">Anchoring</h3>
+                            <i data-lucide="info" class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
+                        </div>
                         <p class="text-white/30 text-sm leading-relaxed mb-4">Permanent liquidity. Fixed points preventing drift into the chaotic void.</p>
                         <p class="text-[10px] text-white/20 font-mono uppercase">Structure against entropy</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs text-white/30 font-mono">Cast</span>
+                            <span class="text-xs text-white/30 font-mono">Votes</span>
                             <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('anchoring')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">Vote</button>
+                        <button onclick="handleVote('anchoring')" class="vote-btn w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px]">Vote</button>
                     </div>
                 </div>
 
-                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="distraction">
-                    <div>
-                        <h3 class="font-serif text-2xl text-white/70 mb-4">Distraction</h3>
+                <!-- Distraction -->
+                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg group" data-mechanism="distraction">
+                    <div class="cursor-pointer" onclick="openModal('distraction')">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-serif text-2xl text-white/70 mb-4 group-hover:text-white transition-colors">Distraction</h3>
+                            <i data-lucide="info" class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
+                        </div>
                         <p class="text-white/30 text-sm leading-relaxed mb-4">Marketing, raids, content. Keep the mind moving against the abyss.</p>
                         <p class="text-[10px] text-white/20 font-mono uppercase">Motion against stillness</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs text-white/30 font-mono">Cast</span>
+                            <span class="text-xs text-white/30 font-mono">Votes</span>
                             <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('distraction')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">Vote</button>
+                        <button onclick="handleVote('distraction')" class="vote-btn w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px]">Vote</button>
                     </div>
                 </div>
 
-                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="sublimation">
-                    <div>
-                        <h3 class="font-serif text-2xl text-white/70 mb-4">Sublimation</h3>
+                <!-- Sublimation -->
+                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg group" data-mechanism="sublimation">
+                    <div class="cursor-pointer" onclick="openModal('sublimation')">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-serif text-2xl text-white/70 mb-4 group-hover:text-white transition-colors">Sublimation</h3>
+                            <i data-lucide="info" class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
+                        </div>
                         <p class="text-white/30 text-sm leading-relaxed mb-4">Transform suffering into art. Philosophy as evolutionary bypass.</p>
                         <p class="text-[10px] text-white/20 font-mono uppercase">Pain becomes meaning</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs text-white/30 font-mono">Cast</span>
+                            <span class="text-xs text-white/30 font-mono">Votes</span>
                             <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('sublimation')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">Vote</button>
+                        <button onclick="handleVote('sublimation')" class="vote-btn w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px]">Vote</button>
                     </div>
                 </div>
             </div>
@@ -663,14 +927,13 @@
         </div>
     </section>
 
-    <!-- Soundscape -->
+    <!-- Soundscape (Improved Responsive Design) -->
     <section id="soundscape" class="relative py-20 sm:py-32 px-4 sm:px-6 min-h-[800px] overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/50 pointer-events-none"></div>
         
         <div class="max-w-5xl mx-auto h-full flex flex-col relative z-10">
             <div class="text-center mb-12 sm:mb-20 space-y-4">
                 <span class="font-mono text-[9px] tracking-[0.5em] text-white/10 uppercase block">Auditory Space</span>
-                <!-- RENAMED TITLE -->
                 <h2 class="font-serif text-3xl sm:text-5xl font-light text-white/50">HYMNS FOR THE HERD</h2>
             </div>
 
@@ -678,10 +941,10 @@
             <div id="audio-interface" class="audio-player-container blur-fade p-6 sm:p-12 rounded-xl border border-white/5 relative bg-black/60">
                 <canvas id="visualizer-canvas"></canvas>
                 
-                <div class="player-grid grid md:grid-cols-5 gap-8 md:gap-12 relative z-10">
+                <div class="player-grid relative z-10">
                     
                     <!-- Left: Vinyl & Visuals -->
-                    <div class="md:col-span-2 flex flex-col items-center justify-center">
+                    <div class="vinyl-wrapper">
                         <div class="vinyl-record" id="vinyl-disc" onclick="togglePlay()">
                             <div class="vinyl-label">
                                 <img id="album-art-small" src="" alt="" class="w-full h-full object-cover opacity-80" decoding="async">
@@ -695,8 +958,8 @@
                     </div>
 
                     <!-- Right: Controls -->
-                    <div class="md:col-span-3 flex flex-col h-full justify-center space-y-6">
-                        <div>
+                    <div class="flex flex-col h-full justify-center space-y-6 w-full">
+                        <div class="text-center md:text-left">
                             <h3 id="track-title" class="font-serif text-xl sm:text-2xl text-white/80 mb-1 leading-tight truncate">Before the Clearing</h3>
                             <p id="track-desc" class="text-white/30 text-xs sm:text-sm italic truncate">"The silence before revelation"</p>
                         </div>
@@ -713,7 +976,7 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-center gap-6">
+                        <div class="controls-wrapper">
                             <button onclick="toggleShuffle()" id="shuffle-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Shuffle"><i data-lucide="shuffle" class="w-4 h-4"></i></button>
                             <button onclick="prevTrack()" class="control-btn text-white/30 hover:text-white/80" aria-label="Previous"><i data-lucide="skip-back" class="w-6 h-6"></i></button>
                             <button onclick="togglePlay()" id="play-btn" class="play-btn-main" aria-label="Play/Pause"><i data-lucide="play" id="play-icon" class="w-6 h-6 text-white/80 ml-1"></i></button>
@@ -721,11 +984,11 @@
                             <button onclick="toggleRepeat()" id="repeat-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Repeat"><i data-lucide="repeat" class="w-4 h-4"></i></button>
                         </div>
 
-                        <div class="flex-1 overflow-y-auto max-h-48 space-y-1 pr-2 custom-scrollbar" id="playlist">
+                        <div class="flex-1 overflow-y-auto max-h-48 space-y-1 pr-2 custom-scrollbar border-t border-b border-white/5 py-2" id="playlist">
                             <!-- JS Generated -->
                         </div>
 
-                        <div class="flex items-center gap-3 px-2">
+                        <div class="flex items-center gap-3 px-2 pt-2">
                             <i data-lucide="volume-2" class="w-4 h-4 text-white/20"></i>
                             <input type="range" min="0" max="100" value="60" class="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white/30 hover:accent-white/50" oninput="setVolume(this.value)" aria-label="Volume">
                         </div>
@@ -737,18 +1000,16 @@
         </div>
     </section>
 
-    <!-- Footer - INCREASED VISIBILITY -->
+    <!-- Footer -->
     <footer class="relative py-16 sm:py-24 px-6 border-t border-white/5 bg-black overflow-hidden">
         <div class="footer-bg-layer z-0"></div>
         <div class="relative z-10 max-w-2xl mx-auto text-center space-y-12">
-            <!-- Increased text opacity to white/60 -->
             <blockquote class="font-body text-white/60 text-sm sm:text-base leading-relaxed italic px-4">"The tragedy of man is that he is constituted to strive for goals he can never fully attain, and to seek answers he can never fully comprehend."</blockquote>
             <div class="flex justify-center gap-12">
                 <a href="https://github.com/exelkonsol/elk" target="_blank" class="text-white/20 hover:text-white/60 transition-colors duration-300 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="GitHub"><i data-lucide="github" class="w-5 h-5"></i></a>
                 <a href="https://x.com/ElkBurden" target="_blank" class="text-white/20 hover:text-white/60 transition-colors duration-300 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Twitter"><i data-lucide="twitter" class="w-5 h-5"></i></a>
                 <a href="https://birdeye.so/solana/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank" class="text-white/20 hover:text-white/60 transition-colors duration-300 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Chart"><i data-lucide="activity" class="w-5 h-5"></i></a>
             </div>
-            <!-- Increased text opacity to white/30 -->
             <p class="font-mono text-[8px] text-white/30 tracking-[0.4em] uppercase">The Antlers Are Heavy // We Carry Them Together</p>
         </div>
     </footer>
@@ -776,6 +1037,23 @@
         }
         document.addEventListener('touchstart', unlockAudioContext, { once: true, passive: true });
         document.addEventListener('click', unlockAudioContext, { once: true });
+
+        // --- AUDIO STABILITY & VISIBILITY HANDLING ---
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // When hidden, we don't force pause because we want background audio,
+                // but mobile browsers might suspend the context.
+            } else {
+                // When coming back, ensure context is running and visualizer loop is active
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                // Restart visualizer if playing and the loop isn't running
+                if (playing && !visualizerAnimationId) {
+                    drawVisualizer();
+                }
+            }
+        });
 
         // Toast
         function showToast(msg) {
@@ -848,63 +1126,43 @@
             copyToClipboard(document.getElementById('quote-display').innerText, 'WISDOM COPIED');
         }
 
-        // --- PERSISTENT VOTING SYSTEM ---
-        
-        // Initial state from LocalStorage or 0
-        let votes = JSON.parse(localStorage.getItem('elk_votes')) || { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
-        // Check if user has voted
-        let hasVoted = localStorage.getItem('elk_has_voted') === 'true';
-        // Get which mechanism they voted for (to highlight it)
-        let votedMech = localStorage.getItem('elk_voted_mech');
-
-        // Function to update the UI based on current state
-        function updateVoteUI() {
-            for (const [mech, count] of Object.entries(votes)) {
-                const card = document.querySelector(`[data-mechanism="${mech}"]`);
-                if (card) {
-                    card.querySelector('.vote-count').textContent = count.toLocaleString();
-                }
+        // --- INFO MODALS ---
+        const modalContent = {
+            isolation: {
+                title: "Isolation",
+                body: "By removing tokens from the circulating supply, we create a void—a scarcity that mirrors the existential fear of nothingness. This contraction forces value inward, intensifying the weight of what remains. It is suppression through reduction, cutting away the noise until only value survives."
+            },
+            anchoring: {
+                title: "Anchoring",
+                body: "In a volatile world, stability is a rebellion. The liquidity pool is not just a market mechanism; it is an anchor against the entropy of the chain, a fixed point in the chaos. When all else drifts into the abyss, the anchor holds the herd together."
+            },
+            distraction: {
+                title: "Distraction",
+                body: "Consciousness is a burden. To survive, we distract ourselves. Marketing, raids, and constant motion serve as necessary diversions, keeping the crushing reality of the bear market at bay. We move not because we want to, but because stillness is terrifying."
+            },
+            sublimation: {
+                title: "Sublimation",
+                body: "The highest form of coping. We take the pain of the grind and transmute it into something higher—community, art, and philosophy. We do not just survive the chart; we create meaning from the struggle. Pain becomes aesthetic."
             }
-            
-            // If already voted, disable all buttons and highlight the choice
-            if (hasVoted) {
-                document.querySelectorAll('.mechanism-card button').forEach(btn => {
-                    btn.style.opacity = '0.5';
-                    btn.style.cursor = 'not-allowed';
-                    btn.textContent = "Voted";
-                    btn.onclick = null; // Remove click handler
-                });
+        };
 
-                if (votedMech) {
-                    const chosenCard = document.querySelector(`[data-mechanism="${votedMech}"]`);
-                    if (chosenCard) chosenCard.classList.add('voted');
-                }
+        function openModal(mech) {
+            const data = modalContent[mech];
+            if(!data) return;
+            document.getElementById('modal-title').textContent = data.title;
+            document.getElementById('modal-body').textContent = data.body;
+            document.getElementById('modal-overlay').classList.add('open');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+
+        function closeModal(e, force = false) {
+            if (force || e.target.id === 'modal-overlay') {
+                document.getElementById('modal-overlay').classList.remove('open');
+                document.body.style.overflow = '';
             }
         }
 
-        function vote(mech) {
-            if (hasVoted) { showToast("ALREADY VOTED"); return; }
-            
-            // Update state
-            votes[mech]++;
-            hasVoted = true;
-            votedMech = mech;
-            
-            // Save to LocalStorage
-            localStorage.setItem('elk_votes', JSON.stringify(votes));
-            localStorage.setItem('elk_has_voted', 'true');
-            localStorage.setItem('elk_voted_mech', mech);
-            
-            // Update UI
-            updateVoteUI();
-            showToast("VOTE CAST");
-        }
-
-        // Initialize Voting UI on Load
-        updateVoteUI();
-
-
-        // Audio Player
+        // --- AUDIO PLAYER ---
         const tracks = [
             { title: "Before the Clearing", file: "Before the Clearing", desc: "The silence before revelation" },
             { title: "Crimson Twilight", file: "Crimson Twilight", desc: "Day bleeds into night" },
@@ -1026,6 +1284,12 @@
             const artUrl = `${base}${encodeURIComponent(t.file)}.png`;
             document.getElementById('album-art-small').src = artUrl;
             document.getElementById('btn-art').src = artUrl;
+
+            // Set Background Image for Audio Interface
+            const interfaceEl = document.getElementById('audio-interface');
+            if (interfaceEl) {
+                interfaceEl.style.backgroundImage = `url('${artUrl}')`;
+            }
             
             document.querySelectorAll('.track-item').forEach((e, i) => {
                 e.classList.toggle('active', i === idx);
@@ -1058,6 +1322,9 @@
                 document.getElementById('play-icon').setAttribute('data-lucide', 'pause');
                 document.getElementById('track-status').textContent = "Playing";
                 lucide.createIcons();
+                
+                // Restart visualizer if needed
+                if (!visualizerAnimationId) drawVisualizer();
             }).catch(e => {
                 console.log('Playback prevented', e);
                 showToast("TAP TO PLAY");
