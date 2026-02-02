@@ -2,9 +2,9 @@
 <html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <meta name="description" content="$ELK - A Solana memecoin rooted in existential philosophy. The antlers are heavy. We carry them together.">
-    <meta name="theme-color" content="#050505">
+    <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
@@ -29,6 +29,7 @@
             touch-action: manipulation;
             -webkit-text-size-adjust: 100%;
             -webkit-tap-highlight-color: transparent;
+            scroll-padding-top: 80px; /* Prevents header obscuring content on anchor jump */
         }
 
         body {
@@ -41,11 +42,6 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* iOS Momentum Scrolling */
-        .overflow-y-auto {
-            -webkit-overflow-scrolling: touch;
-        }
-
         /* Global Background */
         .global-bg {
             position: fixed;
@@ -55,8 +51,7 @@
             background-position: center;
             filter: grayscale(100%) opacity(0.3) contrast(1.1);
             z-index: -10;
-            transform: translateZ(0);
-            will-change: transform;
+            transform: translateZ(0); /* Hardware accel */
         }
 
         .vignette {
@@ -93,7 +88,6 @@
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             background: rgba(5, 5, 5, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            contain: layout style paint;
         }
 
         .buy-btn {
@@ -102,7 +96,6 @@
             color: rgba(255, 100, 100, 0.8);
             transition: all 0.5s ease;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
 
@@ -114,16 +107,10 @@
             box-shadow: 0 10px 40px rgba(139, 0, 0, 0.3);
         }
 
-        .buy-btn:active { 
-            transform: scale(0.98); 
-        }
+        .buy-btn:active { transform: scale(0.98); }
 
         /* Quote Section */
-        .quote-section { 
-            position: relative; 
-            overflow: hidden; 
-            contain: layout style paint;
-        }
+        .quote-section { position: relative; overflow: hidden; }
         
         .quote-bg {
             position: absolute;
@@ -136,7 +123,6 @@
             z-index: 0;
             mix-blend-mode: screen;
             transform: translateZ(0);
-            will-change: transform;
         }
 
         .quote-container {
@@ -165,10 +151,7 @@
             will-change: opacity, transform;
         }
 
-        .quote-text.visible { 
-            opacity: 1; 
-            transform: translateY(0); 
-        }
+        .quote-text.visible { opacity: 1; transform: translateY(0); }
 
         .quote-btn-group button {
             backdrop-filter: blur(5px);
@@ -182,7 +165,6 @@
             cursor: pointer;
             transition: all 0.3s ease;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
             user-select: none;
             min-height: 44px;
             min-width: 44px;
@@ -197,9 +179,7 @@
             border-color: rgba(255, 255, 255, 0.3);
         }
 
-        .quote-btn-group button:active { 
-            transform: scale(0.95); 
-        }
+        .quote-btn-group button:active { transform: scale(0.95); }
 
         .mode-selector {
             display: flex;
@@ -221,7 +201,6 @@
             transition: all 0.3s ease;
             background: transparent;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
             user-select: none;
             min-height: 44px;
         }
@@ -232,18 +211,10 @@
             background: rgba(139, 0, 0, 0.1);
         }
 
-        /* Hero Entrance Animation - Materialize on Load */
+        /* Hero Entrance Animation */
         @keyframes materialize {
-            0% {
-                opacity: 0;
-                transform: scale(1.15) translateY(40px);
-                filter: blur(12px);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-                filter: blur(0);
-            }
+            0% { opacity: 0; transform: scale(1.15) translateY(40px); filter: blur(12px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
         }
 
         .hero-content {
@@ -251,7 +222,6 @@
             will-change: transform, opacity, filter;
         }
 
-        /* Hero Image - Smaller + Blending */
         .hero-image {
             filter: blur(0px) brightness(0.9) contrast(1.05);
             transition: all 1.5s ease;
@@ -270,7 +240,6 @@
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.04);
             transition: all 0.6s ease;
-            contain: layout style;
         }
 
         .mechanism-card:hover {
@@ -284,21 +253,14 @@
             border-color: rgba(139, 0, 0, 0.2);
         }
 
-        .mechanism-card button { 
-            touch-action: manipulation; 
-            -webkit-tap-highlight-color: transparent;
-            min-height: 44px;
-            min-width: 44px;
-        }
+        .mechanism-card button { touch-action: manipulation; min-height: 44px; }
 
         /* Footer Background */
         .footer-bg-layer {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             background-image: url('https://raw.githubusercontent.com/exelkonsol/elk/main/logo.png');
             background-repeat: no-repeat;
             background-position: center;
@@ -314,58 +276,40 @@
         .audio-player-container {
             position: relative;
             overflow: hidden;
-            contain: layout style paint;
+            /* contain: layout style paint; removed to fix potential rendering clips on some browsers */
         }
 
         #visualizer-canvas {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
             opacity: 0.3;
             z-index: 0;
         }
 
-        /* Vinyl Record - Slow synchronized rotation (25s) */
+        /* Vinyl Record */
         .vinyl-record {
             position: relative;
-            width: 220px;
-            height: 220px;
+            width: 220px; height: 220px;
             border-radius: 50%;
-            background: 
-                repeating-radial-gradient(
-                    circle at center,
-                    #111 0px,
-                    #111 2px,
-                    #0a0a0a 3px,
-                    #0a0a0a 4px
-                );
-            box-shadow: 
-                0 0 0 1px rgba(255,255,255,0.1),
-                0 10px 30px rgba(0,0,0,0.8),
-                inset 0 0 30px rgba(0,0,0,0.9);
+            background: repeating-radial-gradient(circle at center, #111 0px, #111 2px, #0a0a0a 3px, #0a0a0a 4px);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.9);
             animation: spin 25s linear infinite;
             animation-play-state: paused;
             will-change: transform;
             cursor: pointer;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
             transform: translateZ(0);
         }
 
-        .vinyl-record.playing { 
-            animation-play-state: running; 
-        }
+        .vinyl-record.playing { animation-play-state: running; }
 
         .vinyl-label {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
+            width: 80px; height: 80px;
             border-radius: 50%;
             background: #000;
             border: 2px solid rgba(139, 0, 0, 0.3);
@@ -376,11 +320,9 @@
 
         .vinyl-hole {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
+            width: 8px; height: 8px;
             border-radius: 50%;
             background: #000;
             border: 1px solid rgba(255,255,255,0.2);
@@ -414,11 +356,9 @@
 
         .progress-handle {
             position: absolute;
-            right: -6px;
-            top: 50%;
+            right: -6px; top: 50%;
             transform: translateY(-50%) scale(0);
-            width: 12px;
-            height: 12px;
+            width: 12px; height: 12px;
             background: #fff;
             border-radius: 50%;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -437,7 +377,6 @@
             position: relative;
             overflow: hidden;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
             min-height: 44px;
             display: flex;
             align-items: center;
@@ -445,65 +384,38 @@
 
         .track-item::before {
             content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 3px;
+            position: absolute; left: 0; top: 0;
+            height: 100%; width: 3px;
             background: rgba(139, 0, 0, 0.5);
             transform: scaleY(0);
             transition: transform 0.3s;
         }
 
-        .track-item:hover {
-            background: rgba(255,255,255,0.03);
-            padding-left: 1rem;
-        }
-
-        .track-item.active {
-            background: rgba(139, 0, 0, 0.05);
-            border-left-color: rgba(139, 0, 0, 0.5);
-        }
-
-        .track-item.active::before { 
-            transform: scaleY(1); 
-        }
+        .track-item:hover { background: rgba(255,255,255,0.03); padding-left: 1rem; }
+        .track-item.active { background: rgba(139, 0, 0, 0.05); border-left-color: rgba(139, 0, 0, 0.5); }
+        .track-item.active::before { transform: scaleY(1); }
 
         .control-btn {
             transition: all 0.2s;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            min-height: 44px;
-            min-width: 44px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            min-height: 44px; min-width: 44px;
+            display: inline-flex; align-items: center; justify-content: center;
             user-select: none;
         }
 
-        .control-btn:hover { 
-            transform: scale(1.1); 
-            color: rgba(255,255,255,0.9); 
-        }
-        
-        .control-btn:active { 
-            transform: scale(0.95); 
-        }
+        .control-btn:hover { transform: scale(1.1); color: rgba(255,255,255,0.9); }
+        .control-btn:active { transform: scale(0.95); }
 
         .play-btn-main {
-            width: 60px;
-            height: 60px;
+            width: 60px; height: 60px;
             border-radius: 50%;
             border: 1px solid rgba(255,255,255,0.2);
             background: rgba(255,255,255,0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             cursor: pointer;
             transition: all 0.3s;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
 
@@ -513,13 +425,10 @@
             box-shadow: 0 0 30px rgba(139,0,0,0.2);
         }
 
-        /* Floating Mute Button - Synchronized slow rotation (25s) */
+        /* Floating Button */
         #mute-toggle-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
+            position: fixed; bottom: 20px; right: 20px;
+            width: 60px; height: 60px;
             border-radius: 50%;
             background: rgba(0,0,0,0.9);
             border: 1px solid rgba(255,255,255,0.2);
@@ -528,28 +437,17 @@
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0,0,0,0.8);
             transition: transform 0.3s, border-color 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
             user-select: none;
             transform: translateZ(0);
-            will-change: transform;
         }
 
-        #mute-toggle-btn:hover {
-            transform: scale(1.1);
-            border-color: rgba(255,255,255,0.5);
-        }
+        #mute-toggle-btn:hover { transform: scale(1.1); border-color: rgba(255,255,255,0.5); }
 
-        /* Button vinyl art rotation - Synced with player at 25s */
         #mute-toggle-btn img.btn-art {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.6;
+            position: absolute; width: 100%; height: 100%;
+            object-fit: cover; opacity: 0.6;
             animation: spin 25s linear infinite;
             animation-play-state: paused;
             pointer-events: none;
@@ -557,139 +455,52 @@
             transform: translateZ(0);
         }
         
-        #mute-toggle-btn.playing img.btn-art { 
-            animation-play-state: running; 
-        }
+        #mute-toggle-btn.playing img.btn-art { animation-play-state: running; }
 
         .mute-icon-overlay {
-            position: relative;
-            z-index: 2;
+            position: relative; z-index: 2;
             color: rgba(255,255,255,0.9);
             background: rgba(0,0,0,0.6);
-            border-radius: 50%;
-            padding: 4px;
+            border-radius: 50%; padding: 4px;
             pointer-events: none;
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { 
-            width: 4px; 
-        }
-        
-        ::-webkit-scrollbar-track { 
-            background: transparent; 
-        }
-        
-        ::-webkit-scrollbar-thumb { 
-            background: rgba(255,255,255,0.1); 
-            border-radius: 2px; 
-        }
-        
-        ::-webkit-scrollbar-thumb:hover { 
-            background: rgba(255,255,255,0.2); 
-        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-        .text-balance { 
-            text-wrap: balance; 
-        }
-
-        button:focus-visible, a:focus-visible {
-            outline: 1px solid rgba(139, 0, 0, 0.5);
-            outline-offset: 2px;
-        }
+        .text-balance { text-wrap: balance; }
+        button:focus-visible, a:focus-visible { outline: 1px solid rgba(139, 0, 0, 0.5); outline-offset: 2px; }
 
         @media (max-width: 640px) {
-            .vinyl-record { 
-                width: 160px; 
-                height: 160px; 
-            }
-            
-            .vinyl-label { 
-                width: 60px; 
-                height: 60px; 
-            }
-            
-            .quote-container { 
-                min-height: 400px; 
-            }
-            
-            #mute-toggle-btn {
-                bottom: 16px;
-                right: 16px;
-                width: 50px;
-                height: 50px;
-            }
-            
-            .hero-image {
-                width: 180px !important;
-                height: 180px !important;
-            }
+            .vinyl-record { width: 160px; height: 160px; }
+            .vinyl-label { width: 60px; height: 60px; }
+            .quote-container { min-height: 400px; }
+            #mute-toggle-btn { bottom: 16px; right: 16px; width: 50px; height: 50px; }
+            .hero-image { width: 180px !important; height: 180px !important; }
         }
 
         @media (pointer: coarse) {
-            /* Touch-specific optimizations */
-            .progress-container {
-                height: 20px;
-                margin: -8px 0;
-                background: transparent;
-            }
-            
+            .progress-container { height: 20px; margin: -8px 0; background: transparent; }
             .progress-container::before {
-                content: '';
-                position: absolute;
-                top: 8px;
-                left: 0;
-                right: 0;
-                height: 4px;
-                background: rgba(255,255,255,0.1);
-                border-radius: 2px;
+                content: ''; position: absolute; top: 8px; left: 0; right: 0;
+                height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;
             }
-            
-            .progress-fill {
-                position: absolute;
-                top: 8px;
-                left: 0;
-                height: 4px;
-            }
-            
-            .progress-handle {
-                right: -8px;
-                width: 16px;
-                height: 16px;
-                transform: translateY(-50%) scale(1);
-            }
-            
-            .track-item {
-                padding-top: 12px;
-                padding-bottom: 12px;
-            }
+            .progress-fill { top: 8px; height: 4px; }
+            .progress-handle { right: -8px; width: 16px; height: 16px; transform: translateY(-50%) scale(1); }
+            .track-item { padding-top: 12px; padding-bottom: 12px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            * { 
-                animation-duration: 0.01ms !important; 
-                transition-duration: 0.01ms !important; 
-            }
-            
-            .hero-content { 
-                opacity: 1; 
-                transform: none; 
-                filter: none; 
-            }
-            
-            .vinyl-record, #mute-toggle-btn img.btn-art {
-                animation: none !important;
-            }
-        }
-        
-        /* Content visibility for performance */
-        section {
-            content-visibility: auto;
-            contain-intrinsic-size: 0 500px;
+            * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+            .hero-content { opacity: 1; transform: none; filter: none; }
+            .vinyl-record, #mute-toggle-btn img.btn-art { animation: none !important; }
         }
     </style>
 </head>
-<body class="font-body antialiased selection:bg-white/10 selection:text-white relative" ontouchstart="">
+<body class="font-body antialiased selection:bg-white/10 selection:text-white relative">
     <div class="noise"></div>
     <div class="global-bg"></div>
     <div class="vignette"></div>
@@ -721,19 +532,18 @@
         </div>
     </nav>
 
-    <!-- Floating Mute Button -->
-    <div id="mute-toggle-btn" onclick="toggleMute()" role="button" aria-label="Toggle mute">
+    <!-- Floating Play/Pause Button -->
+    <div id="mute-toggle-btn" onclick="togglePlay()" role="button" aria-label="Toggle Play/Pause">
         <img id="btn-art" src="https://raw.githubusercontent.com/exelkonsol/elk/main/Before%20the%20Clearing.png" alt="Album Art" class="btn-art" decoding="async">
         <div class="mute-icon-overlay">
             <i id="mute-icon" data-lucide="volume-2" class="w-5 h-5"></i>
         </div>
     </div>
 
-    <!-- Hero Section - Scaled Down with Entrance Animation -->
+    <!-- Hero Section -->
     <section class="relative min-h-screen flex items-center justify-center py-20 px-4 overflow-hidden">
         <div class="hero-content relative z-10 max-w-4xl mx-auto text-center w-full flex flex-col items-center">
             
-            <!-- Reduced Size pumpfun.png -->
             <div class="mb-6 sm:mb-8 w-full flex justify-center items-center relative">
                 <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none z-10"></div>
                 <img src="https://raw.githubusercontent.com/exelkonsol/elk/main/pumpfun.png" 
@@ -780,12 +590,11 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <!-- Cards same as previous but button sizing ensured -->
                 <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="isolation">
                     <div>
                         <h3 class="font-serif text-2xl text-white/70 mb-4">Isolation</h3>
-                        <p class="text-white/30 text-sm leading-relaxed mb-4">
-                            Remove tokens from circulation. Confine anxiety to manageable compartments.
-                        </p>
+                        <p class="text-white/30 text-sm leading-relaxed mb-4">Remove tokens from circulation. Confine anxiety to manageable compartments.</p>
                         <p class="text-[10px] text-white/20 font-mono uppercase">Suppression through reduction</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
@@ -793,19 +602,14 @@
                             <span class="text-xs text-white/30 font-mono">Cast</span>
                             <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('isolation')" 
-                                class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">
-                            Vote
-                        </button>
+                        <button onclick="vote('isolation')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">Vote</button>
                     </div>
                 </div>
 
                 <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="anchoring">
                     <div>
                         <h3 class="font-serif text-2xl text-white/70 mb-4">Anchoring</h3>
-                        <p class="text-white/30 text-sm leading-relaxed mb-4">
-                            Permanent liquidity. Fixed points preventing drift into the chaotic void.
-                        </p>
+                        <p class="text-white/30 text-sm leading-relaxed mb-4">Permanent liquidity. Fixed points preventing drift into the chaotic void.</p>
                         <p class="text-[10px] text-white/20 font-mono uppercase">Structure against entropy</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
@@ -813,19 +617,14 @@
                             <span class="text-xs text-white/30 font-mono">Cast</span>
                             <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('anchoring')" 
-                                class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">
-                            Vote
-                        </button>
+                        <button onclick="vote('anchoring')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">Vote</button>
                     </div>
                 </div>
 
                 <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="distraction">
                     <div>
                         <h3 class="font-serif text-2xl text-white/70 mb-4">Distraction</h3>
-                        <p class="text-white/30 text-sm leading-relaxed mb-4">
-                            Marketing, raids, content. Keep the mind moving against the abyss.
-                        </p>
+                        <p class="text-white/30 text-sm leading-relaxed mb-4">Marketing, raids, content. Keep the mind moving against the abyss.</p>
                         <p class="text-[10px] text-white/20 font-mono uppercase">Motion against stillness</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
@@ -833,19 +632,14 @@
                             <span class="text-xs text-white/30 font-mono">Cast</span>
                             <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('distraction')" 
-                                class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">
-                            Vote
-                        </button>
+                        <button onclick="vote('distraction')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">Vote</button>
                     </div>
                 </div>
 
                 <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="sublimation">
                     <div>
                         <h3 class="font-serif text-2xl text-white/70 mb-4">Sublimation</h3>
-                        <p class="text-white/30 text-sm leading-relaxed mb-4">
-                            Transform suffering into art. Philosophy as evolutionary bypass.
-                        </p>
+                        <p class="text-white/30 text-sm leading-relaxed mb-4">Transform suffering into art. Philosophy as evolutionary bypass.</p>
                         <p class="text-[10px] text-white/20 font-mono uppercase">Pain becomes meaning</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
@@ -853,17 +647,14 @@
                             <span class="text-xs text-white/30 font-mono">Cast</span>
                             <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('sublimation')" 
-                                class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">
-                            Vote
-                        </button>
+                        <button onclick="vote('sublimation')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100 touch-manipulation min-h-[44px]">Vote</button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Manifesto / Quote Generator Section -->
+    <!-- Manifesto -->
     <section id="manifesto" class="relative py-20 sm:py-32 px-4 sm:px-6">
         <div class="max-w-5xl mx-auto">
             <div class="quote-section blur-fade mb-10 rounded-xl border border-white/5">
@@ -884,15 +675,8 @@
                     </div>
                     
                     <div class="quote-btn-group mt-12 flex gap-4 relative z-10">
-                        <button onclick="generateQuote()" 
-                                class="px-8 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 uppercase tracking-widest text-[10px] transition-all active:scale-95 touch-manipulation min-h-[44px]">
-                            Generate Echo
-                        </button>
-                        <button onclick="copyQuote()" 
-                                class="px-4 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 text-white/50 hover:text-white transition-all active:scale-95 touch-manipulation min-h-[44px] min-w-[44px]" 
-                                aria-label="Copy Quote">
-                            <i data-lucide="copy" class="w-4 h-4"></i>
-                        </button>
+                        <button onclick="generateQuote()" class="px-8 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 uppercase tracking-widest text-[10px] transition-all active:scale-95 touch-manipulation min-h-[44px]">Generate Echo</button>
+                        <button onclick="copyQuote()" class="px-4 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 text-white/50 hover:text-white transition-all active:scale-95 touch-manipulation min-h-[44px] min-w-[44px]" aria-label="Copy Quote"><i data-lucide="copy" class="w-4 h-4"></i></button>
                     </div>
                 </div>
             </div>
@@ -917,7 +701,6 @@
                     
                     <!-- Left: Vinyl & Visuals -->
                     <div class="md:col-span-2 flex flex-col items-center justify-center">
-                        <!-- Vinyl Record with synchronized slow rotation -->
                         <div class="vinyl-record" id="vinyl-disc" onclick="togglePlay()">
                             <div class="vinyl-label">
                                 <img id="album-art-small" src="" alt="" class="w-full h-full object-cover opacity-80" decoding="async">
@@ -930,16 +713,13 @@
                         </div>
                     </div>
 
-                    <!-- Right: Controls & Playlist -->
+                    <!-- Right: Controls -->
                     <div class="md:col-span-3 flex flex-col h-full justify-center space-y-6">
-                        
-                        <!-- Header -->
                         <div>
                             <h3 id="track-title" class="font-serif text-xl sm:text-2xl text-white/80 mb-1 leading-tight truncate">Before the Clearing</h3>
                             <p id="track-desc" class="text-white/30 text-xs sm:text-sm italic truncate">"The silence before revelation"</p>
                         </div>
 
-                        <!-- Progress -->
                         <div class="space-y-2">
                             <div class="progress-container" id="progress-container">
                                 <div class="progress-fill" id="progress-fill">
@@ -952,45 +732,26 @@
                             </div>
                         </div>
 
-                        <!-- Controls -->
                         <div class="flex items-center justify-center gap-6">
-                            <button onclick="toggleShuffle()" id="shuffle-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Shuffle">
-                                <i data-lucide="shuffle" class="w-4 h-4"></i>
-                            </button>
-                            
-                            <button onclick="prevTrack()" class="control-btn text-white/30 hover:text-white/80" aria-label="Previous">
-                                <i data-lucide="skip-back" class="w-6 h-6"></i>
-                            </button>
-                            
-                            <button onclick="togglePlay()" id="play-btn" class="play-btn-main" aria-label="Play/Pause">
-                                <i data-lucide="play" id="play-icon" class="w-6 h-6 text-white/80 ml-1"></i>
-                            </button>
-                            
-                            <button onclick="nextTrack()" class="control-btn text-white/30 hover:text-white/80" aria-label="Next">
-                                <i data-lucide="skip-forward" class="w-6 h-6"></i>
-                            </button>
-                            
-                            <button onclick="toggleRepeat()" id="repeat-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Repeat">
-                                <i data-lucide="repeat" class="w-4 h-4"></i>
-                            </button>
+                            <button onclick="toggleShuffle()" id="shuffle-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Shuffle"><i data-lucide="shuffle" class="w-4 h-4"></i></button>
+                            <button onclick="prevTrack()" class="control-btn text-white/30 hover:text-white/80" aria-label="Previous"><i data-lucide="skip-back" class="w-6 h-6"></i></button>
+                            <button onclick="togglePlay()" id="play-btn" class="play-btn-main" aria-label="Play/Pause"><i data-lucide="play" id="play-icon" class="w-6 h-6 text-white/80 ml-1"></i></button>
+                            <button onclick="nextTrack()" class="control-btn text-white/30 hover:text-white/80" aria-label="Next"><i data-lucide="skip-forward" class="w-6 h-6"></i></button>
+                            <button onclick="toggleRepeat()" id="repeat-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Repeat"><i data-lucide="repeat" class="w-4 h-4"></i></button>
                         </div>
 
-                        <!-- Playlist -->
                         <div class="flex-1 overflow-y-auto max-h-48 space-y-1 pr-2 custom-scrollbar" id="playlist">
                             <!-- JS Generated -->
                         </div>
 
-                        <!-- Volume -->
                         <div class="flex items-center gap-3 px-2">
                             <i data-lucide="volume-2" class="w-4 h-4 text-white/20"></i>
-                            <input type="range" min="0" max="100" value="60" 
-                                   class="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white/30 hover:accent-white/50"
-                                   oninput="setVolume(this.value)" aria-label="Volume">
+                            <input type="range" min="0" max="100" value="60" class="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white/30 hover:accent-white/50" oninput="setVolume(this.value)" aria-label="Volume">
                         </div>
                     </div>
                 </div>
 
-                <audio id="audio-player" preload="metadata" crossorigin="anonymous" playsinline webkit-playsinline x5-playsinline></audio>
+                <audio id="audio-player" preload="metadata" crossorigin="anonymous" playsinline webkit-playsinline></audio>
             </div>
         </div>
     </section>
@@ -998,75 +759,43 @@
     <!-- Footer -->
     <footer class="relative py-20 sm:py-32 px-6 border-t border-white/5 bg-black overflow-hidden">
         <div class="footer-bg-layer"></div>
-
         <div class="relative z-10 max-w-2xl mx-auto text-center space-y-12">
-            <blockquote class="font-body text-white/30 text-sm sm:text-base leading-relaxed italic px-4">
-                "The tragedy of man is that he is constituted to strive for goals he can never fully attain, and to seek answers he can never fully comprehend."
-            </blockquote>
-
+            <blockquote class="font-body text-white/30 text-sm sm:text-base leading-relaxed italic px-4">"The tragedy of man is that he is constituted to strive for goals he can never fully attain, and to seek answers he can never fully comprehend."</blockquote>
             <div class="flex justify-center gap-12">
-                <a href="https://github.com/exelkonsol/elk" target="_blank" class="text-white/20 hover:text-white/60 transition-all duration-700 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="GitHub">
-                    <i data-lucide="github" class="w-5 h-5"></i>
-                </a>
-                <a href="https://x.com/ElkBurden" target="_blank" class="text-white/20 hover:text-white/60 transition-all duration-700 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Twitter">
-                    <i data-lucide="twitter" class="w-5 h-5"></i>
-                </a>
-                <a href="https://birdeye.so/solana/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank" class="text-white/20 hover:text-white/60 transition-all duration-700 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Chart">
-                    <i data-lucide="activity" class="w-5 h-5"></i>
-                </a>
+                <a href="https://github.com/exelkonsol/elk" target="_blank" class="text-white/20 hover:text-white/60 transition-all duration-700 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="GitHub"><i data-lucide="github" class="w-5 h-5"></i></a>
+                <a href="https://x.com/ElkBurden" target="_blank" class="text-white/20 hover:text-white/60 transition-all duration-700 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Twitter"><i data-lucide="twitter" class="w-5 h-5"></i></a>
+                <a href="https://birdeye.so/solana/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank" class="text-white/20 hover:text-white/60 transition-all duration-700 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Chart"><i data-lucide="activity" class="w-5 h-5"></i></a>
             </div>
-
             <p class="font-mono text-[8px] text-white/[0.08] tracking-[0.4em] uppercase">The Antlers Are Heavy // We Carry Them Together</p>
         </div>
     </footer>
 
     <script>
-        // Initialize Icons
         lucide.createIcons();
 
-        // iOS Audio Context Unlock
+        // Audio Context Handling
         let audioContextUnlocked = false;
-        
         function unlockAudioContext() {
             if (audioContextUnlocked) return;
-            
             const audio = document.getElementById('audio-player');
-            const playPromise = audio.play();
-            
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                    audioContextUnlocked = true;
-                }).catch(() => {
-                    // Autoplay prevented, will unlock on first user interaction
-                });
-            }
-            
-            // Create and resume AudioContext if needed
+            // Do not play/pause here, just resume context if it exists
             if (typeof AudioContext !== 'undefined' && AudioContext.state === 'suspended') {
-                AudioContext.resume();
+                AudioContext.resume().then(() => { audioContextUnlocked = true; });
             } else if (typeof webkitAudioContext !== 'undefined') {
                 const ctx = new webkitAudioContext();
-                if (ctx.state === 'suspended') {
-                    ctx.resume();
-                }
+                if (ctx.state === 'suspended') ctx.resume();
+                audioContextUnlocked = true;
             }
         }
-
-        // Unlock on first touch/click anywhere
         document.addEventListener('touchstart', unlockAudioContext, { once: true, passive: true });
         document.addEventListener('click', unlockAudioContext, { once: true });
 
-        // Toast System
+        // Toast
         function showToast(msg) {
             const t = document.getElementById('toast');
-            const m = document.getElementById('toast-msg');
-            m.innerText = msg;
+            document.getElementById('toast-msg').innerText = msg;
             t.classList.remove('translate-y-full', 'opacity-0');
-            
             if (navigator.vibrate) navigator.vibrate(10);
-            
             setTimeout(() => t.classList.add('translate-y-full', 'opacity-0'), 2000);
         }
 
@@ -1081,61 +810,23 @@
         function fallbackCopy(text, msg) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-9999px";
+            textArea.style.cssText = "position:fixed;left:-9999px";
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
-            
             try {
                 document.execCommand('copy');
                 showToast(msg);
             } catch (err) {
                 console.error('Fallback copy failed', err);
             }
-            
             document.body.removeChild(textArea);
         }
 
-        // Quote Systems
-        const quotesExistential = [
-            "We built machines to save time, and now we kill time staring at them, waiting for something to happen.",
-            "Man is the only animal that refuses to be what he is.",
-            "Anxiety is the dizziness of freedom.",
-            "To live is to suffer, to survive is to find some meaning in the suffering.",
-            "He who has a why to live can bear almost any how.",
-            "We are condemned to be free.",
-            "Existence precedes essence.",
-            "The struggle itself towards the heights is enough to fill a man's heart.",
-            "One must imagine Sisyphus happy.",
-            "Hell is other people."
-        ];
-
-        const quotesDegen = [
-            "Buy high, sell low, cry in the shower.",
-            "My portfolio is red, my eyes are too.",
-            "Sleep is for those without leverage.",
-            "I checked the chart 400 times today, nothing changed but my sanity.",
-            "WAGMI is a lie we tell ourselves to keep holding.",
-            "Diamond hands? More like heavy bags.",
-            "I'm in it for the tech (I'm down 90%).",
-            "Liquidation emails are my morning alarm.",
-            "Just one more pump, I promise I'll exit.",
-            "The devs did something... they sold."
-        ];
-
-        const quotesElk = [
-            "The antlers are heavy, but they are ours.",
-            "We do not choose the burden, we only choose how to carry it.",
-            "In the forest of the market, the Elk stands still.",
-            "The herd survives not by speed, but by endurance.",
-            "Shedding velvet is painful, but growth requires blood.",
-            "The wilderness cares not for your wallet.",
-            "We graze on the volatility of the world.",
-            "To be an Elk is to carry the weight of the sky on your head.",
-            "The clearing comes only after the thickest woods.",
-            "Tracks in the snow fade, but the path remains."
-        ];
+        // Quotes
+        const quotesExistential = ["We built machines to save time, and now we kill time staring at them, waiting for something to happen.", "Man is the only animal that refuses to be what he is.", "Anxiety is the dizziness of freedom.", "To live is to suffer, to survive is to find some meaning in the suffering.", "He who has a why to live can bear almost any how.", "We are condemned to be free.", "Existence precedes essence.", "The struggle itself towards the heights is enough to fill a man's heart.", "One must imagine Sisyphus happy.", "Hell is other people."];
+        const quotesDegen = ["Buy high, sell low, cry in the shower.", "My portfolio is red, my eyes are too.", "Sleep is for those without leverage.", "I checked the chart 400 times today, nothing changed but my sanity.", "WAGMI is a lie we tell ourselves to keep holding.", "Diamond hands? More like heavy bags.", "I'm in it for the tech (I'm down 90%).", "Liquidation emails are my morning alarm.", "Just one more pump, I promise I'll exit.", "The devs did something... they sold."];
+        const quotesElk = ["The antlers are heavy, but they are ours.", "We do not choose the burden, we only choose how to carry it.", "In the forest of the market, the Elk stands still.", "The herd survives not by speed, but by endurance.", "Shedding velvet is painful, but growth requires blood.", "The wilderness cares not for your wallet.", "We graze on the volatility of the world.", "To be an Elk is to carry the weight of the sky on your head.", "The clearing comes only after the thickest woods.", "Tracks in the snow fade, but the path remains."];
 
         let currentMode = 'existential';
         let currentQuote = -1;
@@ -1154,17 +845,12 @@
         function generateQuote() {
             const display = document.getElementById('quote-display');
             display.classList.remove('visible');
-
             setTimeout(() => {
                 let pool = quotesExistential;
                 if (currentMode === 'degen') pool = quotesDegen;
                 else if (currentMode === 'elk') pool = quotesElk;
-
                 let newQuote;
-                do {
-                    newQuote = Math.floor(Math.random() * pool.length);
-                } while (newQuote === currentQuote && pool.length > 1);
-                
+                do { newQuote = Math.floor(Math.random() * pool.length); } while (newQuote === currentQuote && pool.length > 1);
                 currentQuote = newQuote;
                 display.textContent = '"' + pool[currentQuote] + '"';
                 display.classList.add('visible');
@@ -1172,19 +858,14 @@
         }
 
         function copyQuote() {
-            const text = document.getElementById('quote-display').innerText;
-            copyToClipboard(text, 'WISDOM COPIED');
+            copyToClipboard(document.getElementById('quote-display').innerText, 'WISDOM COPIED');
         }
 
-        // Voting System
+        // Voting
         const votes = { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
         let hasVoted = false;
-
         function vote(mech) {
-            if (hasVoted) {
-                showToast("ALREADY VOTED");
-                return;
-            }
+            if (hasVoted) { showToast("ALREADY VOTED"); return; }
             votes[mech]++;
             const card = document.querySelector(`[data-mechanism="${mech}"]`);
             card.querySelector('.vote-count').textContent = votes[mech].toLocaleString();
@@ -1193,7 +874,7 @@
             showToast("VOTE CAST");
         }
 
-        // Enhanced Audio Player
+        // Audio Player
         const tracks = [
             { title: "Before the Clearing", file: "Before the Clearing", desc: "The silence before revelation" },
             { title: "Crimson Twilight", file: "Crimson Twilight", desc: "Day bleeds into night" },
@@ -1216,106 +897,77 @@
         let current = 0, playing = false, muted = false, shuffle = false, repeat = false;
         const audio = document.getElementById('audio-player');
         
-        // Audio Context for Visualizer
-        let audioContext, analyser, dataArray, source;
-        let isVisualizerInitialized = false;
-        
+        let audioContext, analyser, dataArray, source, isVisualizerInitialized = false;
+
         function initAudioContext() {
             if (isVisualizerInitialized) {
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
+                if (audioContext && audioContext.state === 'suspended') audioContext.resume();
                 return;
             }
-            
             try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (!AudioContext) return;
-                
-                audioContext = new AudioContext();
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return;
+                audioContext = new AC();
                 analyser = audioContext.createAnalyser();
-                
-                // Lower FFT size for mobile performance
                 const isMobile = window.matchMedia('(pointer: coarse)').matches;
                 analyser.fftSize = isMobile ? 128 : 256;
-                
                 source = audioContext.createMediaElementSource(audio);
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
-                
-                const bufferLength = analyser.frequencyBinCount;
-                dataArray = new Uint8Array(bufferLength);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
                 isVisualizerInitialized = true;
                 drawVisualizer();
-            } catch (e) {
-                console.log('Audio context init failed:', e);
-            }
+            } catch (e) { console.log('Audio init error:', e); }
         }
 
         let visualizerAnimationId;
-        let lastDrawTime = 0;
-        
         function drawVisualizer() {
             const canvas = document.getElementById('visualizer-canvas');
             if (!canvas) return;
-            
             const ctx = canvas.getContext('2d');
             
-            function resize() {
-                const dpr = window.devicePixelRatio || 1;
+            const resize = () => {
                 const rect = canvas.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
                 canvas.width = rect.width * dpr;
                 canvas.height = rect.height * dpr;
                 ctx.scale(dpr, dpr);
-            }
-            
+            };
+            new ResizeObserver(resize).observe(canvas);
             resize();
-            
-            const resizeObserver = new ResizeObserver(() => {
-                resize();
-            });
-            resizeObserver.observe(canvas);
 
-            function animate(timestamp) {
+            function animate() {
                 visualizerAnimationId = requestAnimationFrame(animate);
-                
-                // Throttle to 30fps on mobile for battery
-                const isMobile = window.matchMedia('(pointer: coarse)').matches;
-                if (isMobile && timestamp - lastDrawTime < 33) return;
-                lastDrawTime = timestamp;
-                
                 if (!playing || !analyser) {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height); // Use raw dimensions to clear everything
                     return;
                 }
-                
                 analyser.getByteFrequencyData(dataArray);
                 
+                // Get logical dimensions for drawing
                 const dpr = window.devicePixelRatio || 1;
                 const width = canvas.width / dpr;
                 const height = canvas.height / dpr;
-                
+
                 ctx.clearRect(0, 0, width, height);
                 
+                const isMobile = window.matchMedia('(pointer: coarse)').matches;
                 const bars = isMobile ? 30 : 50;
                 const barWidth = width / bars;
                 
                 for (let i = 0; i < bars; i++) {
-                    const dataIndex = Math.floor(i * (dataArray.length / bars));
-                    const barHeight = (dataArray[dataIndex] / 255) * height * 0.5;
+                    const idx = Math.floor(i * (dataArray.length / bars));
+                    const barHeight = (dataArray[idx] / 255) * height * 0.5;
                     const x = i * barWidth;
                     const y = height - barHeight;
-                    
                     const gradient = ctx.createLinearGradient(0, y, 0, height);
                     gradient.addColorStop(0, 'rgba(139, 0, 0, 0.3)');
                     gradient.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
-                    
                     ctx.fillStyle = gradient;
                     ctx.fillRect(x, y, barWidth - 2, barHeight);
                 }
             }
-            
-            animate(0);
+            animate();
         }
 
         function initPlaylist() {
@@ -1324,17 +976,16 @@
             tracks.forEach((t, i) => {
                 const d = document.createElement('div');
                 d.className = `track-item p-3 cursor-pointer flex items-center justify-between text-sm ${i === 0 ? 'active' : ''} rounded`;
-                d.onclick = () => loadTrack(i);
-                d.innerHTML = `
-                    <span class="text-white/40 truncate mr-2 font-mono text-xs">${t.title}</span>
-                    <span class="text-[10px] text-white/20 shrink-0">${String(i+1).padStart(2,'0')}</span>
-                `;
+                // Pass true for scroll on click
+                d.onclick = () => loadTrack(i, true, true);
+                d.innerHTML = `<span class="text-white/40 truncate mr-2 font-mono text-xs">${t.title}</span><span class="text-[10px] text-white/20 shrink-0">${String(i+1).padStart(2,'0')}</span>`;
                 pl.appendChild(d);
             });
-            loadTrack(0, false);
+            // Initial load: auto=false, scroll=false to prevent jump
+            loadTrack(0, false, false);
         }
 
-        function loadTrack(idx, auto = true) {
+        function loadTrack(idx, auto = true, scroll = true) {
             current = idx;
             const t = tracks[idx];
             const base = 'https://raw.githubusercontent.com/exelkonsol/elk/main/';
@@ -1342,9 +993,8 @@
             document.getElementById('track-title').textContent = t.title;
             document.getElementById('track-desc').textContent = '"' + t.desc + '"';
             
-            // Cache-busting for iOS
-            const cacheBuster = '?v=' + Date.now();
-            audio.src = `${base}${encodeURIComponent(t.file)}.mp3${cacheBuster}`;
+            const cb = '?v=' + Date.now();
+            audio.src = `${base}${encodeURIComponent(t.file)}.mp3${cb}`;
             
             const artUrl = `${base}${encodeURIComponent(t.file)}.png`;
             document.getElementById('album-art-small').src = artUrl;
@@ -1352,7 +1002,8 @@
             
             document.querySelectorAll('.track-item').forEach((e, i) => {
                 e.classList.toggle('active', i === idx);
-                if (i === idx) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                // Only scroll if explicitly requested (user interaction)
+                if (i === idx && scroll) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
             
             document.getElementById('progress-fill').style.width = '0%';
@@ -1364,51 +1015,34 @@
             
             audio.removeEventListener('loadedmetadata', loadHandler);
             audio.addEventListener('loadedmetadata', loadHandler, { once: true });
-            
-            // iOS buffering fix
             audio.load();
         }
 
         function togglePlay() {
-            // Ensure audio context is ready (required for iOS)
             initAudioContext();
-            
-            if (audioContext && audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-            
+            if (audioContext && audioContext.state === 'suspended') audioContext.resume();
             playing ? pauseAudio() : playAudio();
         }
 
         function playAudio() {
-            // Mobile requires user interaction to play
-            const playPromise = audio.play();
-            
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    playing = true;
-                    
-                    document.getElementById('vinyl-disc').classList.add('playing');
-                    document.getElementById('mute-toggle-btn').classList.add('playing');
-                    
-                    document.getElementById('play-icon').setAttribute('data-lucide', 'pause');
-                    document.getElementById('track-status').textContent = "Playing";
-                    lucide.createIcons();
-                }).catch(error => {
-                    console.log('Playback prevented:', error);
-                    // Show visual feedback that interaction is needed
-                    showToast("TAP TO PLAY");
-                });
-            }
+            audio.play().then(() => {
+                playing = true;
+                document.getElementById('vinyl-disc').classList.add('playing');
+                document.getElementById('mute-toggle-btn').classList.add('playing');
+                document.getElementById('play-icon').setAttribute('data-lucide', 'pause');
+                document.getElementById('track-status').textContent = "Playing";
+                lucide.createIcons();
+            }).catch(e => {
+                console.log('Playback prevented', e);
+                showToast("TAP TO PLAY");
+            });
         }
 
         function pauseAudio() {
             audio.pause();
             playing = false;
-            
             document.getElementById('vinyl-disc').classList.remove('playing');
             document.getElementById('mute-toggle-btn').classList.remove('playing');
-            
             document.getElementById('play-icon').setAttribute('data-lucide', 'play');
             document.getElementById('track-status').textContent = "Paused";
             lucide.createIcons();
@@ -1431,12 +1065,10 @@
         function nextTrack() {
             if (shuffle) {
                 let next;
-                do {
-                    next = Math.floor(Math.random() * tracks.length);
-                } while (next === current && tracks.length > 1);
-                loadTrack(next);
+                do { next = Math.floor(Math.random() * tracks.length); } while (next === current && tracks.length > 1);
+                loadTrack(next, true, true);
             } else {
-                loadTrack((current + 1) % tracks.length);
+                loadTrack((current + 1) % tracks.length, true, true);
             }
         }
 
@@ -1444,7 +1076,7 @@
             if (audio.currentTime > 3) {
                 audio.currentTime = 0;
             } else {
-                loadTrack((current - 1 + tracks.length) % tracks.length);
+                loadTrack((current - 1 + tracks.length) % tracks.length, true, true);
             }
         }
 
@@ -1452,11 +1084,9 @@
             shuffle = !shuffle;
             const btn = document.getElementById('shuffle-btn');
             if (shuffle) {
-                btn.classList.add('text-white/80');
-                btn.classList.remove('text-white/20');
+                btn.classList.add('text-white/80'); btn.classList.remove('text-white/20');
             } else {
-                btn.classList.remove('text-white/80');
-                btn.classList.add('text-white/20');
+                btn.classList.remove('text-white/80'); btn.classList.add('text-white/20');
             }
             showToast(shuffle ? "SHUFFLE ON" : "SHUFFLE OFF");
         }
@@ -1466,16 +1096,13 @@
             audio.loop = repeat;
             const btn = document.getElementById('repeat-btn');
             if (repeat) {
-                btn.classList.add('text-white/80');
-                btn.classList.remove('text-white/20');
+                btn.classList.add('text-white/80'); btn.classList.remove('text-white/20');
             } else {
-                btn.classList.remove('text-white/80');
-                btn.classList.add('text-white/20');
+                btn.classList.remove('text-white/80'); btn.classList.add('text-white/20');
             }
             showToast(repeat ? "REPEAT ON" : "REPEAT OFF");
         }
 
-        // Progress Bar Interaction - Optimized for Touch
         let isDragging = false;
         const progressContainer = document.getElementById('progress-container');
 
@@ -1483,46 +1110,18 @@
             const rect = progressContainer.getBoundingClientRect();
             const pos = (clientX - rect.left) / rect.width;
             const clampedPos = Math.max(0, Math.min(1, pos));
-            
             if (audio.duration) {
                 audio.currentTime = clampedPos * audio.duration;
                 document.getElementById('progress-fill').style.width = (clampedPos * 100) + '%';
             }
         }
 
-        // Mouse events
-        progressContainer.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            updateProgress(e.clientX);
-        }, { passive: true });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                e.preventDefault();
-                updateProgress(e.clientX);
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-
-        // Touch events - Passive where possible
-        progressContainer.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            updateProgress(e.touches[0].clientX);
-        }, { passive: true });
-
-        document.addEventListener('touchmove', (e) => {
-            if (isDragging) {
-                e.preventDefault(); // Prevent scroll while dragging
-                updateProgress(e.touches[0].clientX);
-            }
-        }, { passive: false });
-
-        document.addEventListener('touchend', () => {
-            isDragging = false;
-        }, { passive: true });
+        progressContainer.addEventListener('mousedown', (e) => { isDragging = true; updateProgress(e.clientX); }, { passive: true });
+        document.addEventListener('mousemove', (e) => { if (isDragging) { e.preventDefault(); updateProgress(e.clientX); } });
+        document.addEventListener('mouseup', () => { isDragging = false; });
+        progressContainer.addEventListener('touchstart', (e) => { isDragging = true; updateProgress(e.touches[0].clientX); }, { passive: true });
+        document.addEventListener('touchmove', (e) => { if (isDragging) { e.preventDefault(); updateProgress(e.touches[0].clientX); } }, { passive: false });
+        document.addEventListener('touchend', () => { isDragging = false; }, { passive: true });
 
         function setVolume(v) {
             audio.volume = v / 100;
@@ -1535,28 +1134,22 @@
             return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
         }
 
-        // Throttled timeupdate for performance
         let lastTimeUpdate = 0;
         audio.addEventListener('timeupdate', () => {
-            if (isDragging) return;
-            
-            const now = Date.now();
-            if (now - lastTimeUpdate < 250) return; // Update max 4 times per second
-            lastTimeUpdate = now;
-            
-            const p = (audio.currentTime / audio.duration) * 100;
-            document.getElementById('progress-fill').style.width = p + '%';
-            document.getElementById('time-current').textContent = fmt(audio.currentTime);
+            if (!isDragging) {
+                const now = Date.now();
+                if (now - lastTimeUpdate < 200) return; 
+                lastTimeUpdate = now;
+                const p = (audio.currentTime / audio.duration) * 100;
+                document.getElementById('progress-fill').style.width = p + '%';
+                document.getElementById('time-current').textContent = fmt(audio.currentTime);
+            }
         });
 
-        audio.addEventListener('ended', () => {
-            if (!repeat) nextTrack();
-        });
-
-        // Handle iOS audio interruptions (calls, notifications)
+        audio.addEventListener('ended', () => { if (!repeat) nextTrack(); });
         audio.addEventListener('pause', () => {
-            if (playing && audio.currentTime !== audio.duration) {
-                // External pause (not our code)
+            if (playing && audio.currentTime !== audio.duration && !audio.ended) {
+                // External pause logic
                 playing = false;
                 document.getElementById('vinyl-disc').classList.remove('playing');
                 document.getElementById('mute-toggle-btn').classList.remove('playing');
@@ -1566,49 +1159,25 @@
             }
         });
 
-        // Keyboard Shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT') return;
-            
             switch(e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    togglePlay();
-                    break;
-                case 'ArrowLeft':
-                    if (e.shiftKey) prevTrack();
-                    else audio.currentTime -= 5;
-                    break;
-                case 'ArrowRight':
-                    if (e.shiftKey) nextTrack();
-                    else audio.currentTime += 5;
-                    break;
-                case 'KeyM':
-                    toggleMute();
-                    break;
+                case 'Space': e.preventDefault(); togglePlay(); break;
+                case 'ArrowLeft': e.shiftKey ? prevTrack() : audio.currentTime -= 5; break;
+                case 'ArrowRight': e.shiftKey ? nextTrack() : audio.currentTime += 5; break;
+                case 'KeyM': toggleMute(); break;
             }
         });
 
-        // Visibility change handling (pause when tab hidden to save battery)
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && playing) {
-                // Optional: pause automatically when tab hidden
-                // pauseAudio();
-            }
+            // Optional: logic if needed when switching tabs
         });
 
-        // Initialize
         initPlaylist();
-        
-        // Cleanup on page unload
+
         window.addEventListener('beforeunload', () => {
-            if (visualizerAnimationId) {
-                cancelAnimationFrame(visualizerAnimationId);
-            }
-            if (audio) {
-                audio.pause();
-                audio.src = '';
-            }
+            if (visualizerAnimationId) cancelAnimationFrame(visualizerAnimationId);
+            if (audio) { audio.pause(); audio.src = ''; }
         });
     </script>
 </body>
