@@ -2,16 +2,16 @@
 <html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="description" content="$ELK - A Solana memecoin rooted in existential philosophy. The antlers are heavy. We carry them together.">
     <meta name="theme-color" content="#050505">
 
     <meta property="og:title" content="$ELK - The Burden We Carry Together">
     <meta property="og:description" content="We are carried through life by a series of sublimations—fleeting release valves for the pressure of being.">
-    <meta property="og:image" content="https://raw.githubusercontent.com/exelkonsol/elk/main/pumpfun.png">
+    <meta property="og:image" content="https://raw.githubusercontent.com/exelkonsol/elk/main/newpreview.png">
     <meta property="og:type" content="website">
 
-    <title>$ELK - The Burden We Carry Together</title>
+    <title>🦌 $ELK - The Burden We Carry Together</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -27,9 +27,10 @@
             color: #e5e5e5;
             overflow-x: hidden;
             position: relative;
+            font-family: 'Crimson Text', serif;
         }
 
-        /* 1. Global Background (Newbackground.png) - Grayscale & Reduced Opacity */
+        /* Global Background */
         .global-bg {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -40,16 +41,11 @@
             z-index: -10;
         }
 
-        /* 2. Vignette (Darken Right & Left Edges) */
         .vignette {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to right, 
-                rgba(0,0,0,0.9) 0%, 
-                rgba(0,0,0,0.2) 20%, 
-                rgba(0,0,0,0.2) 80%, 
-                rgba(0,0,0,0.9) 100%
-            );
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.95) 100%),
+                        linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0.9) 100%);
             pointer-events: none;
             z-index: -5;
         }
@@ -57,30 +53,9 @@
         .bg-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7); /* Slightly reduced overlay to let bg show through */
+            background: rgba(0, 0, 0, 0.6);
             pointer-events: none;
             z-index: -4;
-        }
-
-        /* Soundscape Background (newpreview.png) - Soft & Colorful */
-        .soundscape-bg-layer {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
-            background-image: url('https://raw.githubusercontent.com/exelkonsol/elk/main/newpreview.png');
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: cover;
-            opacity: 0.15; /* Soft background presence */
-            pointer-events: none;
-            z-index: 0;
-            /* Keep colors, just soften the edges */
-            filter: blur(1px) contrast(1.1) brightness(0.9);
-            mask-image: radial-gradient(circle, black 40%, transparent 80%);
-            -webkit-mask-image: radial-gradient(circle, black 40%, transparent 80%);
         }
 
         .noise {
@@ -98,7 +73,6 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Red BUY Button */
         .buy-btn {
             background: rgba(139, 0, 0, 0.2);
             border: 1px solid rgba(220, 38, 38, 0.3);
@@ -114,28 +88,27 @@
             box-shadow: 0 10px 40px rgba(139, 0, 0, 0.3);
         }
 
-        /* Quote Generator */
-        .quote-section {
-            position: relative;
-            overflow: hidden;
-        }
+        .buy-btn:active { transform: scale(0.98); }
 
+        /* Quote Section */
+        .quote-section { position: relative; overflow: hidden; }
+        
         .quote-bg {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background-image: url('https://raw.githubusercontent.com/exelkonsol/elk/main/generatewisdom.png');
             background-size: cover;
             background-position: center;
-            opacity: 0.25; /* Increased visibility */
-            filter: blur(0px) contrast(1.1); /* Removed grayscale, reduced blur, soft colors */
+            opacity: 0.25;
+            filter: blur(0px) contrast(1.1);
             z-index: 0;
-            mix-blend-mode: screen; /* Blend nicely with dark bg */
+            mix-blend-mode: screen;
         }
 
         .quote-container {
             position: relative;
             z-index: 1;
-            min-height: 600px; /* Made bigger */
+            min-height: 600px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -157,10 +130,7 @@
             text-shadow: 0 4px 30px rgba(0,0,0,1);
         }
 
-        .quote-text.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .quote-text.visible { opacity: 1; transform: translateY(0); }
 
         .quote-btn-group button {
             backdrop-filter: blur(5px);
@@ -172,6 +142,7 @@
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.3s ease;
+            touch-action: manipulation;
         }
 
         .quote-btn-group button:hover {
@@ -180,11 +151,63 @@
             border-color: rgba(255, 255, 255, 0.3);
         }
 
+        .quote-btn-group button:active { transform: scale(0.95); }
+
+        .mode-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+        }
+
+        .mode-btn:hover, .mode-btn.active {
+            border-color: rgba(139, 0, 0, 0.5);
+            color: rgba(255,255,255,0.9);
+            background: rgba(139, 0, 0, 0.1);
+        }
+
+        /* Hero Entrance Animation - Materialize on Load */
+        @keyframes materialize {
+            0% {
+                opacity: 0;
+                transform: scale(1.15) translateY(40px);
+                filter: blur(12px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+                filter: blur(0);
+            }
+        }
+
+        .hero-content {
+            animation: materialize 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            will-change: transform, opacity, filter;
+        }
+
+        /* Hero Image - Smaller + Blending */
         .hero-image {
+            filter: blur(0px) brightness(0.9) contrast(1.05);
+            transition: all 1.5s ease;
             mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
             -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
-            filter: blur(0px) brightness(0.85) contrast(1.05);
-            transition: all 1.5s ease;
+            object-fit: contain;
+            mix-blend-mode: soft-light;
+            opacity: 0.9;
         }
 
         .mechanism-card {
@@ -205,41 +228,97 @@
             border-color: rgba(139, 0, 0, 0.2);
         }
 
-        /* Audio Player Animations & States */
-        .waveform {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            height: 40px;
-            opacity: 0.5;
+        .mechanism-card button { touch-action: manipulation; }
+
+        /* Footer Background */
+        .footer-bg-layer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            background-image: url('https://raw.githubusercontent.com/exelkonsol/elk/main/logo.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: clamp(300px, 60vw, 800px);
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+            filter: grayscale(0%) contrast(1.2);
         }
 
-        .wave-bar {
-            width: 3px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 100%);
-            border-radius: 2px;
+        /* Audio Player */
+        .audio-player-container {
+            position: relative;
+            overflow: hidden;
         }
 
-        .playing .wave-bar {
-            animation: wave 1s ease-in-out infinite;
+        #visualizer-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 0;
         }
 
-        .wave-bar:nth-child(odd) { animation-duration: 0.8s; }
-        .wave-bar:nth-child(even) { animation-duration: 1.1s; }
-
-        @keyframes wave {
-            0%, 100% { transform: scaleY(0.3); opacity: 0.3; }
-            50% { transform: scaleY(1); opacity: 0.8; }
-        }
-
-        .vinyl-spin {
-            animation: spin 8s linear infinite;
+        /* Vinyl Record - Slow synchronized rotation (25s) */
+        .vinyl-record {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: 
+                repeating-radial-gradient(
+                    circle at center,
+                    #111 0px,
+                    #111 2px,
+                    #0a0a0a 3px,
+                    #0a0a0a 4px
+                );
+            box-shadow: 
+                0 0 0 1px rgba(255,255,255,0.1),
+                0 10px 30px rgba(0,0,0,0.8),
+                inset 0 0 30px rgba(0,0,0,0.9);
+            animation: spin 25s linear infinite;  /* Slowed to 25s */
             animation-play-state: paused;
+            will-change: transform;
+            cursor: pointer;
         }
 
-        .playing .vinyl-spin {
-            animation-play-state: running;
+        .vinyl-record.playing { 
+            animation-play-state: running; 
+        }
+
+        .vinyl-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #000;
+            border: 2px solid rgba(139, 0, 0, 0.3);
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        .vinyl-hole {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #000;
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 2;
         }
 
         @keyframes spin {
@@ -247,23 +326,98 @@
             to { transform: rotate(360deg); }
         }
 
+        .progress-container {
+            position: relative;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            cursor: pointer;
+            overflow: visible;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, rgba(139,0,0,0.5), rgba(255,255,255,0.3));
+            width: 0%;
+            position: relative;
+            border-radius: 2px;
+        }
+
+        .progress-handle {
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%) scale(0);
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+        }
+
+        .progress-container:hover .progress-handle { transform: translateY(-50%) scale(1); }
+
         .track-item {
             transition: all 0.3s ease;
-            border-left: 1px solid transparent;
+            border-left: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .track-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: rgba(139, 0, 0, 0.5);
+            transform: scaleY(0);
+            transition: transform 0.3s;
         }
 
         .track-item:hover {
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.03);
             padding-left: 1rem;
-            border-left-color: rgba(255,255,255,0.1);
         }
 
         .track-item.active {
             background: rgba(139, 0, 0, 0.05);
-            border-left-color: rgba(139, 0, 0, 0.3);
+            border-left-color: rgba(139, 0, 0, 0.5);
         }
 
-        /* Floating Mute Button */
+        .track-item.active::before { transform: scaleY(1); }
+
+        .control-btn {
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        .control-btn:hover { transform: scale(1.1); color: rgba(255,255,255,0.9); }
+        .control-btn:active { transform: scale(0.95); }
+
+        .play-btn-main {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .play-btn-main:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.4);
+            box-shadow: 0 0 30px rgba(139,0,0,0.2);
+        }
+
+        /* Floating Mute Button - Synchronized slow rotation (25s) */
         #mute-toggle-btn {
             position: fixed;
             bottom: 20px;
@@ -271,13 +425,13 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
             border: 1px solid rgba(255,255,255,0.2);
             z-index: 100;
             cursor: pointer;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            transition: transform 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            transition: transform 0.3s, border-color 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -288,37 +442,67 @@
             border-color: rgba(255,255,255,0.5);
         }
 
+        /* Button vinyl art rotation - Synced with player at 25s */
         #mute-toggle-btn img.btn-art {
             position: absolute;
             width: 100%;
             height: 100%;
             object-fit: cover;
             opacity: 0.6;
-            animation: spin 8s linear infinite;
+            animation: spin 25s linear infinite;  /* Matched to 25s */
             animation-play-state: paused;
+            pointer-events: none;
+            will-change: transform;
         }
         
-        #mute-toggle-btn.playing img.btn-art {
-            animation-play-state: running;
+        #mute-toggle-btn.playing img.btn-art { 
+            animation-play-state: running; 
         }
 
-        #mute-toggle-btn .mute-icon-overlay {
+        .mute-icon-overlay {
             position: relative;
             z-index: 2;
             color: rgba(255,255,255,0.9);
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            padding: 4px;
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 2px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
-        
-        /* Utility for text balancing */
-        .text-balance {
-            text-wrap: balance;
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        .text-balance { text-wrap: balance; }
+
+        button:focus-visible, a:focus-visible {
+            outline: 1px solid rgba(139, 0, 0, 0.5);
+            outline-offset: 2px;
         }
 
+        @media (max-width: 640px) {
+            .vinyl-record { width: 160px; height: 160px; }
+            .vinyl-label { width: 60px; height: 60px; }
+            .quote-container { min-height: 400px; }
+            #mute-toggle-btn {
+                bottom: 16px;
+                right: 16px;
+                width: 50px;
+                height: 50px;
+            }
+            .hero-image {
+                width: 180px !important;
+                height: 180px !important;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+            .hero-content { opacity: 1; transform: none; filter: none; }
+        }
     </style>
+<base target="_blank">
 <base target="_blank">
 </head>
 <body class="font-body antialiased selection:bg-white/10 selection:text-white relative">
@@ -338,13 +522,14 @@
     <nav class="fixed top-0 w-full z-40 blur-fade border-b-0 h-16 sm:h-20 flex items-center">
         <div class="w-full max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between items-center">
-                <span class="font-serif text-base sm:text-lg font-bold tracking-[0.3em] text-white/60">$ELK</span>
+                <a href="#" class="font-serif text-base sm:text-lg font-bold tracking-[0.3em] text-white/60 hover:text-white/90 transition-colors">$ELK</a>
                 <div class="hidden md:flex items-center gap-8 lg:gap-12 font-mono text-[10px] tracking-[0.3em] uppercase">
-                    <a href="#mechanisms" class="text-white/20 hover:text-white/60 transition-all duration-700">Mechanisms</a>
-                    <a href="#manifesto" class="text-white/20 hover:text-white/60 transition-all duration-700">Manifesto</a>
-                    <a href="#soundscape" class="text-white/20 hover:text-white/60 transition-all duration-700">Soundscape</a>
+                    <a href="#mechanisms" class="text-white/20 hover:text-white/60 transition-all duration-700 py-2">Mechanisms</a>
+                    <a href="#manifesto" class="text-white/20 hover:text-white/60 transition-all duration-700 py-2">Manifesto</a>
+                    <a href="#soundscape" class="text-white/20 hover:text-white/60 transition-all duration-700 py-2">Soundscape</a>
                 </div>
-                <button onclick="copyToClipboard('8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump', 'CA COPIED')" class="font-mono text-[8px] sm:text-[9px] text-white/20 hover:text-white/50 transition-all duration-500 tracking-wider uppercase border border-white/5 px-3 py-1.5 rounded hover:bg-white/5">
+                <button onclick="copyToClipboard('8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump', 'CA COPIED')" 
+                        class="font-mono text-[8px] sm:text-[9px] text-white/20 hover:text-white/50 transition-all duration-500 tracking-wider uppercase border border-white/5 px-3 py-1.5 rounded hover:bg-white/5 active:scale-95">
                     <span class="hidden sm:inline">8DaLP...Gpump</span>
                     <span class="sm:hidden">CA</span>
                 </button>
@@ -353,24 +538,26 @@
     </nav>
 
     <!-- Floating Mute Button -->
-    <div id="mute-toggle-btn" onclick="toggleMute()">
-        <img id="btn-art" src="https://raw.githubusercontent.com/exelkonsol/elk/main/Before%20the%20Clearing.png" alt="Art" class="btn-art">
+    <div id="mute-toggle-btn" onclick="toggleMute()" role="button" aria-label="Toggle mute">
+        <img id="btn-art" src="https://raw.githubusercontent.com/exelkonsol/elk/main/Before%20the%20Clearing.png" alt="Album Art" class="btn-art">
         <div class="mute-icon-overlay">
-            <i id="mute-icon" data-lucide="volume-2" class="w-6 h-6"></i>
+            <i id="mute-icon" data-lucide="volume-2" class="w-5 h-5"></i>
         </div>
     </div>
 
-    <!-- Hero Section -->
+    <!-- Hero Section - Scaled Down with Entrance Animation -->
     <section class="relative min-h-screen flex items-center justify-center py-20 px-4 overflow-hidden">
-        <div class="relative z-10 max-w-4xl mx-auto text-center w-full flex flex-col items-center">
-            <!-- Increased Logo Size -->
-            <div class="mb-12 sm:mb-16">
+        <div class="hero-content relative z-10 max-w-4xl mx-auto text-center w-full flex flex-col items-center">
+            
+            <!-- Reduced Size pumpfun.png -->
+            <div class="mb-6 sm:mb-8 w-full flex justify-center items-center relative">
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none z-10"></div>
                 <img src="https://raw.githubusercontent.com/exelkonsol/elk/main/pumpfun.png" 
-                     alt="$ELK" 
-                     class="w-56 h-56 sm:w-72 sm:h-72 md:w-96 md:h-96 mx-auto hero-image opacity-90 object-contain">
+                     alt="$ELK Stag" 
+                     class="hero-image w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] md:w-[320px] md:h-[320px] lg:w-[400px] lg:h-[400px] mx-auto object-contain select-none">
             </div>
 
-            <div class="space-y-6 sm:space-y-8 mb-12 sm:mb-16 max-w-4xl px-4">
+            <div class="space-y-6 sm:space-y-8 mb-12 sm:mb-16 max-w-4xl px-4 relative z-20">
                 <p class="font-mono text-[8px] sm:text-[9px] tracking-[0.4em] sm:tracking-[0.5em] text-white/10 uppercase">Peter Wessel Zapffe // On The Tragic</p>
 
                 <h1 class="font-serif text-xl sm:text-3xl md:text-5xl font-light text-white/60 leading-normal sm:leading-relaxed tracking-wide text-balance">
@@ -380,17 +567,17 @@
                 </h1>
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full px-8">
-                <a href="https://pump.fun/coin/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank"
-                   class="buy-btn w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 text-[10px] font-mono tracking-[0.2em] uppercase text-center">
+            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full px-8 relative z-20">
+                <a href="https://pump.fun/coin/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" 
+                   class="buy-btn w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 text-[10px] font-mono tracking-[0.2em] uppercase text-center rounded">
                     BUY
                 </a>
-                <a href="https://x.com/i/communities/2014904566983094598" target="_blank"
-                   class="blur-fade w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 text-[10px] font-mono tracking-[0.2em] text-white/40 hover:text-white/80 uppercase transition-all hover:scale-105 text-center">
+                <a href="https://x.com/i/communities/2014904566983094598" 
+                   class="blur-fade w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 text-[10px] font-mono tracking-[0.2em] text-white/40 hover:text-white/80 uppercase transition-all hover:scale-105 text-center rounded">
                     Join The Silence
                 </a>
-                <a href="https://birdeye.so/solana/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank"
-                   class="blur-fade w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-[9px] font-mono tracking-[0.2em] text-white/30 hover:text-white/70 uppercase transition-all hover:scale-105 text-center">
+                <a href="https://birdeye.so/solana/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" 
+                   class="blur-fade w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-[9px] font-mono tracking-[0.2em] text-white/30 hover:text-white/70 uppercase transition-all hover:scale-105 text-center rounded">
                     Chart
                 </a>
             </div>
@@ -406,7 +593,6 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <!-- Card 1 -->
                 <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="isolation">
                     <div>
                         <h3 class="font-serif text-2xl text-white/70 mb-4">Isolation</h3>
@@ -418,15 +604,15 @@
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-xs text-white/30 font-mono">Cast</span>
-                            <span class="vote-count font-mono text-lg text-white/50" data-count="2847">2,847</span>
+                            <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('isolation')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100">
+                        <button onclick="vote('isolation')" 
+                                class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100">
                             Vote
                         </button>
                     </div>
                 </div>
 
-                <!-- Card 2 -->
                 <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="anchoring">
                     <div>
                         <h3 class="font-serif text-2xl text-white/70 mb-4">Anchoring</h3>
@@ -438,15 +624,15 @@
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-xs text-white/30 font-mono">Cast</span>
-                            <span class="vote-count font-mono text-lg text-white/50" data-count="1923">1,923</span>
+                            <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('anchoring')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100">
+                        <button onclick="vote('anchoring')" 
+                                class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100">
                             Vote
                         </button>
                     </div>
                 </div>
 
-                <!-- Card 3 -->
                 <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="distraction">
                     <div>
                         <h3 class="font-serif text-2xl text-white/70 mb-4">Distraction</h3>
@@ -458,15 +644,15 @@
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-xs text-white/30 font-mono">Cast</span>
-                            <span class="vote-count font-mono text-lg text-white/50" data-count="3156">3,156</span>
+                            <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('distraction')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100">
+                        <button onclick="vote('distraction')" 
+                                class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100">
                             Vote
                         </button>
                     </div>
                 </div>
 
-                <!-- Card 4 -->
                 <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg" data-mechanism="sublimation">
                     <div>
                         <h3 class="font-serif text-2xl text-white/70 mb-4">Sublimation</h3>
@@ -478,9 +664,10 @@
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-xs text-white/30 font-mono">Cast</span>
-                            <span class="vote-count font-mono text-lg text-white/50" data-count="156">156</span>
+                            <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
                         </div>
-                        <button onclick="vote('sublimation')" class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100">
+                        <button onclick="vote('sublimation')" 
+                                class="w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/20 hover:text-white/60 border border-white/5 hover:border-white/20 transition-all opacity-0 hover:opacity-100 focus:opacity-100">
                             Vote
                         </button>
                     </div>
@@ -492,23 +679,31 @@
     <!-- Manifesto / Quote Generator Section -->
     <section id="manifesto" class="relative py-20 sm:py-32 px-4 sm:px-6">
         <div class="max-w-5xl mx-auto">
-            <!-- Quote Generator -->
             <div class="quote-section blur-fade mb-10 rounded-xl border border-white/5">
                 <div class="quote-bg"></div>
                 <div class="quote-container">
                     <div class="absolute top-6 left-1/2 -translate-x-1/2 w-full">
                          <p class="font-mono text-[9px] tracking-[0.4em] text-white/20 uppercase text-center">Echoes of the Present Void</p>
                     </div>
+
+                    <div class="mode-selector absolute top-16 left-1/2 -translate-x-1/2 w-full z-10">
+                        <button class="mode-btn active" onclick="setMode('existential', this)" aria-pressed="true">EXISTENTIAL</button>
+                        <button class="mode-btn" onclick="setMode('degen', this)" aria-pressed="false">DEGEN</button>
+                        <button class="mode-btn" onclick="setMode('elk', this)" aria-pressed="false">ELK WISDOM</button>
+                    </div>
                    
-                    <div id="quote-display" class="quote-text visible">
+                    <div id="quote-display" class="quote-text visible mt-12 px-4">
                         "We built machines to save time, and now we kill time staring at them, waiting for something to happen."
                     </div>
                     
                     <div class="quote-btn-group mt-12 flex gap-4 relative z-10">
-                        <button onclick="generateQuote()" class="px-8 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 uppercase tracking-widest text-[10px] transition-all">
+                        <button onclick="generateQuote()" 
+                                class="px-8 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 uppercase tracking-widest text-[10px] transition-all active:scale-95">
                             Generate Echo
                         </button>
-                        <button onclick="copyQuote()" class="px-4 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 text-white/50 hover:text-white transition-all" aria-label="Copy Quote">
+                        <button onclick="copyQuote()" 
+                                class="px-4 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 text-white/50 hover:text-white transition-all active:scale-95" 
+                                aria-label="Copy Quote">
                             <i data-lucide="copy" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -518,11 +713,9 @@
     </section>
 
     <!-- Soundscape -->
-    <section id="soundscape" class="relative py-20 sm:py-32 px-4 sm:px-6 min-h-[700px] overflow-hidden">
+    <section id="soundscape" class="relative py-20 sm:py-32 px-4 sm:px-6 min-h-[800px] overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/50 pointer-events-none"></div>
         
-        <!-- Background Specific to Soundscape (newpreview.png) -->
-        <div class="soundscape-bg-layer"></div>
-
         <div class="max-w-5xl mx-auto h-full flex flex-col relative z-10">
             <div class="text-center mb-12 sm:mb-20 space-y-4">
                 <span class="font-mono text-[9px] tracking-[0.5em] text-white/10 uppercase block">Auditory Space</span>
@@ -530,102 +723,129 @@
             </div>
 
             <!-- Audio Interface -->
-            <div id="audio-interface" class="blur-fade p-6 sm:p-12 rounded-xl border border-white/5 relative bg-black/40">
+            <div id="audio-interface" class="audio-player-container blur-fade p-6 sm:p-12 rounded-xl border border-white/5 relative bg-black/60">
+                <canvas id="visualizer-canvas"></canvas>
                 
-                <div class="player-grid grid md:grid-cols-5 gap-8 md:gap-12">
+                <div class="player-grid grid md:grid-cols-5 gap-8 md:gap-12 relative z-10">
                     
                     <!-- Left: Vinyl & Visuals -->
-                    <div class="md:col-span-2 flex flex-col items-center justify-center vinyl-container">
-                        <div class="relative w-48 h-48 sm:w-56 sm:h-56 mb-8">
-                            <div class="absolute inset-0 rounded-full border border-white/5 vinyl-spin" id="vinyl-disc"></div>
-                            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="48" fill="none" stroke="#111" stroke-width="1"/>
-                                <circle id="progress-ring" cx="50" cy="50" r="48" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" 
-                                        stroke-dasharray="301.59" stroke-dashoffset="301.59" stroke-linecap="round"
-                                        style="transform: rotate(-90deg); transform-origin: center; transition: stroke-dashoffset 0.1s;"/>
-                            </svg>
-                            <div class="absolute inset-10 rounded-full overflow-hidden bg-black/80 border border-white/10 cursor-pointer shadow-2xl" onclick="togglePlay()">
-                                <img id="album-art" src="https://raw.githubusercontent.com/exelkonsol/elk/main/Before%20the%20Clearing.png" 
-                                     alt="Album" class="w-full h-full object-cover opacity-60">
+                    <div class="md:col-span-2 flex flex-col items-center justify-center">
+                        <!-- Vinyl Record with synchronized slow rotation -->
+                        <div class="vinyl-record" id="vinyl-disc" onclick="togglePlay()">
+                            <div class="vinyl-label">
+                                <img id="album-art-small" src="" alt="" class="w-full h-full object-cover opacity-80">
                             </div>
+                            <div class="vinyl-hole"></div>
                         </div>
-
-                        <div id="wave-container" class="waveform mb-4">
-                            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
-                            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                        
+                        <div class="mt-6 text-center">
+                            <div id="track-status" class="font-mono text-[9px] tracking-widest text-white/20 uppercase">Paused</div>
                         </div>
                     </div>
 
-                    <!-- Right: Info, Playlist, Controls -->
-                    <div class="md:col-span-3 flex flex-col h-full justify-center">
+                    <!-- Right: Controls & Playlist -->
+                    <div class="md:col-span-3 flex flex-col h-full justify-center space-y-6">
                         
                         <!-- Header -->
-                        <div class="mb-6">
-                            <h3 id="track-title" class="font-serif text-xl sm:text-2xl text-white/70 mb-1 leading-tight">Before the Clearing</h3>
-                            <p id="track-desc" class="text-white/20 text-xs sm:text-sm italic">"The silence before revelation"</p>
+                        <div>
+                            <h3 id="track-title" class="font-serif text-xl sm:text-2xl text-white/80 mb-1 leading-tight truncate">Before the Clearing</h3>
+                            <p id="track-desc" class="text-white/30 text-xs sm:text-sm italic truncate">"The silence before revelation"</p>
                         </div>
 
-                        <!-- Progress Bar -->
-                        <div class="flex items-center gap-4 mb-6 mt-4 text-[10px] font-mono text-white/20">
-                            <span id="time-current">00:00</span>
-                            <div class="flex-1 h-1.5 bg-white/5 relative cursor-pointer rounded-full overflow-hidden group" onclick="seek(event)">
-                                <div id="progress-fill" class="absolute left-0 top-0 h-full bg-white/30 w-0 group-hover:bg-white/50 transition-colors"></div>
+                        <!-- Progress -->
+                        <div class="space-y-2">
+                            <div class="progress-container" id="progress-container">
+                                <div class="progress-fill" id="progress-fill">
+                                    <div class="progress-handle"></div>
+                                </div>
                             </div>
-                            <span id="time-total">00:00</span>
+                            <div class="flex justify-between text-[10px] font-mono text-white/30">
+                                <span id="time-current">00:00</span>
+                                <span id="time-total">00:00</span>
+                            </div>
                         </div>
 
-                        <!-- Main Controls -->
-                         <div class="controls-row flex items-center justify-center gap-8 mb-8">
-                            <button onclick="prevTrack()" class="text-white/10 hover:text-white/40 transition-all hover:scale-110"><i data-lucide="skip-back" class="w-6 h-6"></i></button>
-                            <button onclick="togglePlay()" id="play-btn" class="w-14 h-14 rounded-full border border-white/10 hover:border-white/30 hover:bg-white/5 flex items-center justify-center transition-all hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-                                <i data-lucide="play" id="play-icon" class="w-6 h-6 text-white/70 ml-1"></i>
+                        <!-- Controls -->
+                        <div class="flex items-center justify-center gap-6">
+                            <button onclick="toggleShuffle()" id="shuffle-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Shuffle">
+                                <i data-lucide="shuffle" class="w-4 h-4"></i>
                             </button>
-                            <button onclick="nextTrack()" class="text-white/10 hover:text-white/40 transition-all hover:scale-110"><i data-lucide="skip-forward" class="w-6 h-6"></i></button>
+                            
+                            <button onclick="prevTrack()" class="control-btn text-white/30 hover:text-white/80" aria-label="Previous">
+                                <i data-lucide="skip-back" class="w-6 h-6"></i>
+                            </button>
+                            
+                            <button onclick="togglePlay()" id="play-btn" class="play-btn-main" aria-label="Play/Pause">
+                                <i data-lucide="play" id="play-icon" class="w-6 h-6 text-white/80 ml-1"></i>
+                            </button>
+                            
+                            <button onclick="nextTrack()" class="control-btn text-white/30 hover:text-white/80" aria-label="Next">
+                                <i data-lucide="skip-forward" class="w-6 h-6"></i>
+                            </button>
+                            
+                            <button onclick="toggleRepeat()" id="repeat-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Repeat">
+                                <i data-lucide="repeat" class="w-4 h-4"></i>
+                            </button>
                         </div>
 
                         <!-- Playlist -->
-                        <div class="flex-1 overflow-y-auto max-h-48 space-y-1 pr-2 mb-6" id="playlist">
+                        <div class="flex-1 overflow-y-auto max-h-48 space-y-1 pr-2 custom-scrollbar" id="playlist">
                             <!-- JS Generated -->
                         </div>
 
-                        <!-- Volume (Visual only as floating controls main mute) -->
-                        <div class="volume-container px-4">
-                             <input type="range" min="0" max="100" value="60" class="w-full h-1 bg-white/5 rounded-lg appearance-none cursor-pointer" style="accent-color: rgba(255,255,255,0.3);" oninput="setVolume(this.value)">
+                        <!-- Volume -->
+                        <div class="flex items-center gap-3 px-2">
+                            <i data-lucide="volume-2" class="w-4 h-4 text-white/20"></i>
+                            <input type="range" min="0" max="100" value="60" 
+                                   class="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white/30 hover:accent-white/50"
+                                   oninput="setVolume(this.value)" aria-label="Volume">
                         </div>
                     </div>
                 </div>
 
-                <audio id="audio-player" preload="metadata"></audio>
+                <audio id="audio-player" preload="metadata" crossorigin="anonymous"></audio>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="relative py-20 sm:py-32 px-6 border-t border-white/5 bg-transparent overflow-hidden">
+    <footer class="relative py-20 sm:py-32 px-6 border-t border-white/5 bg-black overflow-hidden">
+        <div class="footer-bg-layer"></div>
+
         <div class="relative z-10 max-w-2xl mx-auto text-center space-y-12">
-            <blockquote class="font-body text-white/20 text-sm sm:text-base leading-relaxed italic px-4">
+            <blockquote class="font-body text-white/30 text-sm sm:text-base leading-relaxed italic px-4">
                 "The tragedy of man is that he is constituted to strive for goals he can never fully attain, and to seek answers he can never fully comprehend."
             </blockquote>
 
             <div class="flex justify-center gap-12">
-                <a href="https://github.com/exelkonsol/elk" target="_blank" class="text-white/10 hover:text-white/50 transition-all duration-700 hover:scale-110"><i data-lucide="github" class="w-5 h-5"></i></a>
-                <a href="https://x.com/ElkBurden" target="_blank" class="text-white/10 hover:text-white/50 transition-all duration-700 hover:scale-110"><i data-lucide="twitter" class="w-5 h-5"></i></a>
-                <a href="https://birdeye.so/solana/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank" class="text-white/10 hover:text-white/50 transition-all duration-700 hover:scale-110"><i data-lucide="activity" class="w-5 h-5"></i></a>
+                <a href="https://github.com/exelkonsol/elk" target="_blank" class="text-white/20 hover:text-white/60 transition-all duration-700 hover:scale-110" aria-label="GitHub">
+                    <i data-lucide="github" class="w-5 h-5"></i>
+                </a>
+                <a href="https://x.com/ElkBurden" target="_blank" class="text-white/20 hover:text-white/60 transition-all duration-700 hover:scale-110" aria-label="Twitter">
+                    <i data-lucide="twitter" class="w-5 h-5"></i>
+                </a>
+                <a href="https://birdeye.so/solana/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank" class="text-white/20 hover:text-white/60 transition-all duration-700 hover:scale-110" aria-label="Chart">
+                    <i data-lucide="activity" class="w-5 h-5"></i>
+                </a>
             </div>
 
-            <p class="font-mono text-[8px] text-white/[0.05] tracking-[0.4em] uppercase">The Antlers Are Heavy // We Carry Them Together</p>
+            <p class="font-mono text-[8px] text-white/[0.08] tracking-[0.4em] uppercase">The Antlers Are Heavy // We Carry Them Together</p>
         </div>
     </footer>
 
     <script>
+        // Initialize Icons
         lucide.createIcons();
 
-        // --- TOAST NOTIFICATION ---
+        // Toast System
         function showToast(msg) {
             const t = document.getElementById('toast');
             const m = document.getElementById('toast-msg');
             m.innerText = msg;
             t.classList.remove('translate-y-full', 'opacity-0');
+            
+            if (navigator.vibrate) navigator.vibrate(10);
+            
             setTimeout(() => t.classList.add('translate-y-full', 'opacity-0'), 2000);
         }
 
@@ -633,113 +853,76 @@
             navigator.clipboard.writeText(text).then(() => showToast(msg));
         }
 
-        // --- MASSIVE QUOTE POOL ---
-        const quotes = [
+        // Quote Systems
+        const quotesExistential = [
             "We built machines to save time, and now we kill time staring at them, waiting for something to happen.",
-            "The notification bell rings and we salivate, Pavlov's heirs in a digital age.",
-            "We are the first generation to document our own collapse in real-time.",
-            "The void stares back through every loading screen, every buffer wheel, every unread message.",
-            "We traded silence for signal, then discovered the signal was noise.",
-            "Each like is a small anchoring against the drift, temporary buoys in an endless sea.",
-            "The algorithm knows our anxieties better than we do, feeds them back disguised as content.",
-            "We scroll to escape thought, then think about why we scroll.",
-            "The burden of infinite choice in a finite existence.",
-            "Every screen is a mirror that reflects not our faces, but our need to be seen.",
-            "We have mapped the world and lost our place within it.",
-            "The meme is our century's sigh, compressed despair packaged as humor.",
-            "Connection at scale has produced isolation at depth.",
-            "We optimize for engagement while disengaging from ourselves.",
-            "The blockchain remembers what we wish to forget about ourselves.",
-            "In the liquidity of modern life, we seek permanent locks.",
-            "The antlers grow heavier with each season of awareness.",
-            "We carry devices that connect us to everyone and tether us to loneliness.",
-            "The feed is infinite but our time is not.",
-            "Every transaction is a small death, every coin a tiny coffin.",
-            "We mint meaning in a universe that burns it.",
-            "The herd moves as one, each alone in their burden.",
-            "Trading is just anxiety with a chart.",
-            "The red candle and the green are just different shades of the same blood.",
-            "We worship at the altar of liquidity.",
-            "Value is consensus, consensus is trust, trust is faith, faith is the last anchor.",
-            "The wallet shows what we are: digits waiting to be spent.",
-            "Pump and dump is the rhythm of modern existence.",
-            "We are all just temporary custodians of value that outlives us.",
-            "The blockchain doesn't care about your feelings, and neither does the market.",
-            "Community is the new cult, token the new sacrament.",
-            "We burn tokens like we burn years: hoping the reduction creates value.",
-            "The chart moves because we are afraid it will.",
-            "Decentralization just means we are all equally lost.",
-            "The whitepaper is scripture, the devs are priests, we are the congregation.",
-            "We look for signals in noise because the silence is unbearable.",
-            "FOMO is just mortality wearing a trading mask.",
-            "The next block will save us, or the one after that, or the one after that.",
-            "We are early, they say, but early for what and for whom?",
-            "The bull runs, the bear sleeps, we wait in purgatory.",
-            "Every wallet is a diary written in transactions.",
-            "We don't buy tokens, we buy hope in divisible units.",
-            "The moon is just another way of saying the end of anxiety.",
-            "Diamond hands are just scar tissue from previous burns.",
-            "We ape in because standing still feels like dying.",
-            "The community votes, the devs build, the market decides, nobody wins.",
-            "Gas fees are the price of participating in the void.",
-            "We stake our claims on digital land that doesn't exist.",
-            "The drop is coming, always, but never for us.",
-            "We are bagholders in the economy of meaning.",
-            "The liquidity pool is just a reflection of collective desperation.",
-            "Every rally is a revolt against the silence, every crash a return to it.",
-            "We chart patterns because randomness is too terrifying to accept.",
-            "The wallet connects but the user disconnects.",
-            "We measure life in percentage gains and emotional losses.",
-            "The contract is immutable, our understanding is not.",
-            "Success is just failure that hasn't happened yet.",
-            "We don't trade assets, we trade versions of ourselves.",
-            "The ATH is a memory of a future that never happened.",
-            "We burn the past to heat the present, knowing winter comes.",
-            "The address is anonymous, the patterns reveal everything.",
-            "We are all just noise in the signal, waiting to be filtered.",
-            "The buy button is hope, the sell button is despair, the hodl is purgatory.",
-            "Every transaction leaves a trace, every trace fades, every fade is forgotten.",
-            "We seek alpha in a world of random walks.",
-            "The token rises, our spirits rise with it, both temporarily.",
-            "We are early adopters of our own obsolescence.",
-            "The DAO deliberates, the code executes, the user suffers.",
-            "We vote with our wallets because our voices lost meaning long ago.",
-            "The bridge connects chains but not souls.",
-            "Every layer 2 is just another layer of abstraction from the real.",
-            "We seek decentralization and find ourselves more centralized in our loneliness.",
-            "The metaverse is just reality with fewer textures.",
-            "We mint NFTs to prove we existed, knowing the blockchain forgets no one.",
-            "The floor price is the basement of our expectations.",
-            "We are all just liquidity for someone else's exit.",
-            "The airdrop is grace, the dump is nature, the hold is faith.",
-            "We calculate risk while time calculates us.",
-            "Solana is speed, but we are stuck in the slow lane of consciousness.",
-            "The green candle cures depression, the red candle confirms it.",
-            "We are looking for the 100x to escape the 9-to-5 of the soul.",
-            "WAGMI is a prayer whispered in a crowded room of strangers.",
-            "Rugpulls are just sudden reminders of impermanence.",
-            "The memecoin is the purest form of financial nihilism.",
-            "We lock liquidity to pretend we can lock time.",
-            "The slippage is the friction of existence.",
-            "We refresh the page to refresh our dopamine.",
-            "The bot trades faster than we can feel.",
-            "We are liquidity providers for the universe's entropy."
+            "Man is the only animal that refuses to be what he is.",
+            "Anxiety is the dizziness of freedom.",
+            "To live is to suffer, to survive is to find some meaning in the suffering.",
+            "He who has a why to live can bear almost any how.",
+            "We are condemned to be free.",
+            "Existence precedes essence.",
+            "The struggle itself towards the heights is enough to fill a man's heart.",
+            "One must imagine Sisyphus happy.",
+            "Hell is other people."
         ];
 
-        let currentQuote = 0;
+        const quotesDegen = [
+            "Buy high, sell low, cry in the shower.",
+            "My portfolio is red, my eyes are too.",
+            "Sleep is for those without leverage.",
+            "I checked the chart 400 times today, nothing changed but my sanity.",
+            "WAGMI is a lie we tell ourselves to keep holding.",
+            "Diamond hands? More like heavy bags.",
+            "I'm in it for the tech (I'm down 90%).",
+            "Liquidation emails are my morning alarm.",
+            "Just one more pump, I promise I'll exit.",
+            "The devs did something... they sold."
+        ];
+
+        const quotesElk = [
+            "The antlers are heavy, but they are ours.",
+            "We do not choose the burden, we only choose how to carry it.",
+            "In the forest of the market, the Elk stands still.",
+            "The herd survives not by speed, but by endurance.",
+            "Shedding velvet is painful, but growth requires blood.",
+            "The wilderness cares not for your wallet.",
+            "We graze on the volatility of the world.",
+            "To be an Elk is to carry the weight of the sky on your head.",
+            "The clearing comes only after the thickest woods.",
+            "Tracks in the snow fade, but the path remains."
+        ];
+
+        let currentMode = 'existential';
+        let currentQuote = -1;
+
+        function setMode(mode, btn) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-pressed', 'false');
+            });
+            btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
+            generateQuote();
+        }
 
         function generateQuote() {
             const display = document.getElementById('quote-display');
             display.classList.remove('visible');
 
             setTimeout(() => {
+                let pool = quotesExistential;
+                if (currentMode === 'degen') pool = quotesDegen;
+                else if (currentMode === 'elk') pool = quotesElk;
+
                 let newQuote;
                 do {
-                    newQuote = Math.floor(Math.random() * quotes.length);
-                } while (newQuote === currentQuote);
+                    newQuote = Math.floor(Math.random() * pool.length);
+                } while (newQuote === currentQuote && pool.length > 1);
                 
                 currentQuote = newQuote;
-                display.textContent = '"' + quotes[currentQuote] + '"';
+                display.textContent = '"' + pool[currentQuote] + '"';
                 display.classList.add('visible');
             }, 400);
         }
@@ -749,8 +932,8 @@
             copyToClipboard(text, 'WISDOM COPIED');
         }
 
-        // --- VOTING SYSTEM ---
-        const votes = { isolation: 2847, anchoring: 1923, distraction: 3156, sublimation: 156 };
+        // Voting System
+        const votes = { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
         let hasVoted = false;
 
         function vote(mech) {
@@ -766,7 +949,7 @@
             showToast("VOTE CAST");
         }
 
-        // --- AUDIO PLAYER ---
+        // Enhanced Audio Player
         const tracks = [
             { title: "Before the Clearing", file: "Before the Clearing", desc: "The silence before revelation" },
             { title: "Crimson Twilight", file: "Crimson Twilight", desc: "Day bleeds into night" },
@@ -786,14 +969,65 @@
             { title: "What Consciousness Costs", file: "What Consciousness Costs", desc: "The price of awakening" }
         ];
 
-        let current = 0, playing = false, muted = false;
+        let current = 0, playing = false, muted = false, shuffle = false, repeat = false;
         const audio = document.getElementById('audio-player');
-        const circumference = 2 * Math.PI * 48;
         
-        // Elements
-        const muteBtn = document.getElementById('mute-toggle-btn');
-        const btnArt = document.getElementById('btn-art');
-        const muteIcon = document.getElementById('mute-icon');
+        // Audio Context for Visualizer
+        let audioContext, analyser, dataArray, source;
+        
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                source = audioContext.createMediaElementSource(audio);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                drawVisualizer();
+            }
+        }
+
+        function drawVisualizer() {
+            const canvas = document.getElementById('visualizer-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            function resize() {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            function animate() {
+                requestAnimationFrame(animate);
+                if (!playing) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    return;
+                }
+                
+                analyser.getByteFrequencyData(dataArray);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const bars = 50;
+                const barWidth = canvas.width / bars;
+                
+                for (let i = 0; i < bars; i++) {
+                    const barHeight = (dataArray[i] / 255) * canvas.height * 0.5;
+                    const x = i * barWidth;
+                    const y = canvas.height - barHeight;
+                    
+                    const gradient = ctx.createLinearGradient(0, y, 0, canvas.height);
+                    gradient.addColorStop(0, 'rgba(139, 0, 0, 0.3)');
+                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, y, barWidth - 2, barHeight);
+                }
+            }
+            animate();
+        }
 
         function initPlaylist() {
             const pl = document.getElementById('playlist');
@@ -802,7 +1036,10 @@
                 const d = document.createElement('div');
                 d.className = `track-item p-3 cursor-pointer flex items-center justify-between text-sm ${i === 0 ? 'active' : ''} rounded`;
                 d.onclick = () => loadTrack(i);
-                d.innerHTML = `<span class="text-white/30 truncate mr-2">${t.title}</span><span class="text-[10px] text-white/10 shrink-0">${String(i+1).padStart(2,'0')}</span>`;
+                d.innerHTML = `
+                    <span class="text-white/40 truncate mr-2 font-mono text-xs">${t.title}</span>
+                    <span class="text-[10px] text-white/20 shrink-0">${String(i+1).padStart(2,'0')}</span>
+                `;
                 pl.appendChild(d);
             });
             loadTrack(0, false);
@@ -810,78 +1047,170 @@
 
         function loadTrack(idx, auto = true) {
             current = idx;
-            const t = tracks[idx], base = 'https://raw.githubusercontent.com/exelkonsol/elk/main/';
-            audio.src = `${base}${encodeURIComponent(t.file)}.mp3`;
+            const t = tracks[idx];
+            const base = 'https://raw.githubusercontent.com/exelkonsol/elk/main/';
             
-            // Update Main UI
             document.getElementById('track-title').textContent = t.title;
             document.getElementById('track-desc').textContent = '"' + t.desc + '"';
+            
+            audio.src = `${base}${encodeURIComponent(t.file)}.mp3`;
+            
             const artUrl = `${base}${encodeURIComponent(t.file)}.png`;
-            document.getElementById('album-art').src = artUrl;
+            document.getElementById('album-art-small').src = artUrl;
+            document.getElementById('btn-art').src = artUrl;
             
-            // Update Mute Btn Art
-            btnArt.src = artUrl;
-
-            // Update List Active State
-            document.querySelectorAll('.track-item').forEach((e, i) => e.classList.toggle('active', i === idx));
+            document.querySelectorAll('.track-item').forEach((e, i) => {
+                e.classList.toggle('active', i === idx);
+                if (i === idx) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
             
-            if (auto) playAudio();
+            document.getElementById('progress-fill').style.width = '0%';
+            
+            if (auto) {
+                audio.addEventListener('loadedmetadata', () => {
+                    document.getElementById('time-total').textContent = fmt(audio.duration);
+                    playAudio();
+                }, { once: true });
+            } else {
+                audio.addEventListener('loadedmetadata', () => {
+                    document.getElementById('time-total').textContent = fmt(audio.duration);
+                }, { once: true });
+            }
         }
 
         function togglePlay() {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
             playing ? pauseAudio() : playAudio();
         }
 
         function playAudio() {
-            audio.play().catch(e => console.log("User interaction required"));
+            initAudioContext();
+            audio.play().catch(e => console.log("Interaction required"));
             playing = true;
-            document.getElementById('vinyl-disc').classList.add('playing');
-            document.getElementById('wave-container').classList.add('playing');
-            muteBtn.classList.add('playing');
             
-            // Update Icons
+            // Sync both vinyls - add playing class to trigger animation
+            document.getElementById('vinyl-disc').classList.add('playing');
+            document.getElementById('mute-toggle-btn').classList.add('playing');
+            
             document.getElementById('play-icon').setAttribute('data-lucide', 'pause');
+            document.getElementById('track-status').textContent = "Playing";
             lucide.createIcons();
         }
 
         function pauseAudio() {
             audio.pause();
             playing = false;
-            document.getElementById('vinyl-disc').classList.remove('playing');
-            document.getElementById('wave-container').classList.remove('playing');
-            muteBtn.classList.remove('playing');
             
-            // Update Icons
+            // Sync both vinyls - remove playing class to pause animation
+            document.getElementById('vinyl-disc').classList.remove('playing');
+            document.getElementById('mute-toggle-btn').classList.remove('playing');
+            
             document.getElementById('play-icon').setAttribute('data-lucide', 'play');
+            document.getElementById('track-status').textContent = "Paused";
             lucide.createIcons();
         }
 
         function toggleMute() {
             muted = !muted;
             audio.muted = muted;
+            const icon = document.getElementById('mute-icon');
             if (muted) {
-                muteIcon.setAttribute('data-lucide', 'volume-x');
-                muteBtn.style.opacity = "0.7";
+                icon.setAttribute('data-lucide', 'volume-x');
+                document.getElementById('mute-toggle-btn').style.opacity = "0.7";
             } else {
-                muteIcon.setAttribute('data-lucide', 'volume-2');
-                muteBtn.style.opacity = "1";
+                icon.setAttribute('data-lucide', 'volume-2');
+                document.getElementById('mute-toggle-btn').style.opacity = "1";
             }
             lucide.createIcons();
         }
 
-        function nextTrack() { loadTrack((current + 1) % tracks.length); }
-        function prevTrack() { loadTrack((current - 1 + tracks.length) % tracks.length); }
-        
-        function seek(e) {
-            const r = e.currentTarget.getBoundingClientRect();
-            audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+        function nextTrack() {
+            if (shuffle) {
+                loadTrack(Math.floor(Math.random() * tracks.length));
+            } else {
+                loadTrack((current + 1) % tracks.length);
+            }
         }
-        
-        function setVolume(v) { 
-            audio.volume = v / 100; 
-            if (v > 0 && muted) toggleMute(); // Unmute if dragging volume
+
+        function prevTrack() {
+            if (audio.currentTime > 3) {
+                audio.currentTime = 0;
+            } else {
+                loadTrack((current - 1 + tracks.length) % tracks.length);
+            }
         }
-        
+
+        function toggleShuffle() {
+            shuffle = !shuffle;
+            const btn = document.getElementById('shuffle-btn');
+            if (shuffle) {
+                btn.classList.add('text-white/80');
+                btn.classList.remove('text-white/20');
+            } else {
+                btn.classList.remove('text-white/80');
+                btn.classList.add('text-white/20');
+            }
+            showToast(shuffle ? "SHUFFLE ON" : "SHUFFLE OFF");
+        }
+
+        function toggleRepeat() {
+            repeat = !repeat;
+            audio.loop = repeat;
+            const btn = document.getElementById('repeat-btn');
+            if (repeat) {
+                btn.classList.add('text-white/80');
+                btn.classList.remove('text-white/20');
+            } else {
+                btn.classList.remove('text-white/80');
+                btn.classList.add('text-white/20');
+            }
+            showToast(repeat ? "REPEAT ON" : "REPEAT OFF");
+        }
+
+        // Progress Bar Interaction
+        let isDragging = false;
+        const progressContainer = document.getElementById('progress-container');
+
+        function updateProgress(e) {
+            const rect = progressContainer.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            const clampedPos = Math.max(0, Math.min(1, pos));
+            audio.currentTime = clampedPos * audio.duration;
+        }
+
+        progressContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateProgress(e);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) updateProgress(e);
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        progressContainer.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            updateProgress(e.touches[0]);
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) updateProgress(e.touches[0]);
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        function setVolume(v) {
+            audio.volume = v / 100;
+            if (v > 0 && muted) toggleMute();
+        }
+
         function fmt(s) {
             if (isNaN(s)) return '00:00';
             const m = Math.floor(s / 60), sec = Math.floor(s % 60);
@@ -889,19 +1218,40 @@
         }
 
         audio.addEventListener('timeupdate', () => {
-            const p = (audio.currentTime / audio.duration) * 100;
-            document.getElementById('progress-fill').style.width = p + '%';
+            if (!isDragging) {
+                const p = (audio.currentTime / audio.duration) * 100;
+                document.getElementById('progress-fill').style.width = p + '%';
+            }
             document.getElementById('time-current').textContent = fmt(audio.currentTime);
-            document.getElementById('progress-ring').style.strokeDashoffset = circumference - (p/100) * circumference;
         });
 
-        audio.addEventListener('loadedmetadata', () => {
-            document.getElementById('time-total').textContent = fmt(audio.duration);
+        audio.addEventListener('ended', () => {
+            if (!repeat) nextTrack();
         });
 
-        audio.addEventListener('ended', nextTrack);
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            
+            switch(e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    togglePlay();
+                    break;
+                case 'ArrowLeft':
+                    if (e.shiftKey) prevTrack();
+                    else audio.currentTime -= 5;
+                    break;
+                case 'ArrowRight':
+                    if (e.shiftKey) nextTrack();
+                    else audio.currentTime += 5;
+                    break;
+                case 'KeyM':
+                    toggleMute();
+                    break;
+            }
+        });
 
-        // Init
         initPlaylist();
     </script>
 </body>
