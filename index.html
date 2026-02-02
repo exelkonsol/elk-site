@@ -79,15 +79,17 @@
             if (!db) return;
             // RULE 1: Correct Path
             const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'mechanisms', 'counts');
-            
+            const initialVotes = { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
+
             // RULE 2: onSnapshot listener
             onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    // We simply update UI with whatever is in the DB (real values)
                     updateVoteUI(data);
                 } else {
-                    // Initialize if missing
-                    setDoc(docRef, { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 }, { merge: true });
+                    // Initialize if missing with 0s
+                    setDoc(docRef, initialVotes, { merge: true });
                 }
             }, (error) => {
                 console.error("Vote sync error:", error);
@@ -98,7 +100,7 @@
 
         function initLocalSimulation() {
              // Just load from local storage for simulation
-             const localVotes = JSON.parse(localStorage.getItem('elk_votes')) || { isolation: 120, anchoring: 85, distraction: 200, sublimation: 340 };
+             const localVotes = JSON.parse(localStorage.getItem('elk_votes')) || { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
              updateVoteUI(localVotes);
         }
 
@@ -126,7 +128,7 @@
                 }
             } else {
                 // Local simulation
-                let localVotes = JSON.parse(localStorage.getItem('elk_votes')) || { isolation: 120, anchoring: 85, distraction: 200, sublimation: 340 };
+                let localVotes = JSON.parse(localStorage.getItem('elk_votes')) || { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
                 localVotes[mech]++;
                 localStorage.setItem('elk_votes', JSON.stringify(localVotes));
                 updateVoteUI(localVotes);
@@ -711,11 +713,7 @@
         }
 
         .mute-icon-overlay {
-            position: relative; z-index: 2;
-            color: rgba(255,255,255,0.9);
-            background: rgba(0,0,0,0.6);
-            border-radius: 50%; padding: 4px;
-            pointer-events: none;
+            display: none; /* Hidden as requested */
         }
 
         /* Scrollbar */
@@ -744,6 +742,24 @@
             }
 
             .vinyl-record { max-width: 220px; } /* Increased size on mobile */
+
+            /* Scale down controls on mobile */
+            .controls-wrapper {
+                gap: 1.25rem;
+                margin: 1.5rem 0;
+            }
+            .play-btn-main {
+                width: 56px; height: 56px;
+            }
+            .play-btn-main svg {
+                width: 24px; height: 24px;
+            }
+            .control-btn {
+                min-width: 36px; min-height: 36px;
+            }
+            .control-btn svg {
+                width: 20px; height: 20px;
+            }
         }
 
         @media (pointer: coarse) {
