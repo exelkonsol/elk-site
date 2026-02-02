@@ -462,9 +462,9 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: rgba(0,0,0,0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(0,0,0,0.5); /* Reduced from 0.75 for better visibility */
+            backdrop-filter: blur(8px); /* Reduced blur from 12px */
+            -webkit-backdrop-filter: blur(8px);
             z-index: 0;
             pointer-events: none;
         }
@@ -617,39 +617,71 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 1.5rem;
-            margin: 1.5rem 0;
+            align-items: center;
+            gap: 2rem; /* Increased gap */
+            margin: 2rem 0; /* Increased margin */
         }
 
         .control-btn {
-            transition: transform 0.2s, color 0.2s;
+            transition: all 0.2s ease;
             touch-action: manipulation;
             min-height: 44px; min-width: 44px;
             display: inline-flex; align-items: center; justify-content: center;
             user-select: none;
+            opacity: 0.6; /* clearer default state */
         }
 
-        .control-btn:hover { transform: scale(1.1); color: rgba(255,255,255,0.9); }
+        .control-btn:hover { 
+            transform: scale(1.1); 
+            opacity: 1;
+            color: #fff;
+            filter: drop-shadow(0 0 8px rgba(255,255,255,0.3));
+        }
         .control-btn:active { transform: scale(0.95); }
 
+        /* Icons inside control buttons */
+        .control-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 1.5px; /* Thinner, more elegant lines */
+        }
+
         .play-btn-main {
-            width: 60px; height: 60px;
+            width: 70px; height: 70px; /* Larger */
             border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.3); /* Brighter border */
+            background: rgba(255,255,255,0.1);
             display: flex; align-items: center; justify-content: center;
             cursor: pointer;
-            transition: background 0.3s, box-shadow 0.3s;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 0px rgba(255,255,255,0);
             touch-action: manipulation;
             user-select: none;
+            backdrop-filter: blur(4px);
+        }
+
+        .play-btn-main svg {
+            width: 32px;
+            height: 32px;
+            fill: rgba(255,255,255,0.9); /* Filled icon for impact */
+            stroke: none; /* Remove stroke for filled look, or keep strictly outline if preferred */
+            margin-left: 4px; /* Optical centering for play icon */
+        }
+        
+        /* Adjust pause icon centering */
+        .play-btn-main svg[data-lucide="pause"] {
+            margin-left: 0;
+            fill: rgba(255,255,255,0.9);
         }
 
         .play-btn-main:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.4);
-            box-shadow: 0 0 30px rgba(139,0,0,0.2);
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.8);
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255,255,255,0.15);
         }
+
+        .play-btn-main:active { transform: scale(0.95); }
 
         /* Floating Button */
         #mute-toggle-btn {
@@ -704,6 +736,12 @@
             .vinyl-record.playing {
                 animation: vinyl-spin 8s linear infinite;
             }
+            
+            /* Rotate the art inside the floating button on mobile */
+            #mute-toggle-btn.playing .btn-art {
+                animation: vinyl-spin 8s linear infinite;
+            }
+
             .vinyl-record { max-width: 220px; } /* Increased size on mobile */
         }
 
@@ -977,11 +1015,11 @@
                         </div>
 
                         <div class="controls-wrapper">
-                            <button onclick="toggleShuffle()" id="shuffle-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Shuffle"><i data-lucide="shuffle" class="w-4 h-4"></i></button>
-                            <button onclick="prevTrack()" class="control-btn text-white/30 hover:text-white/80" aria-label="Previous"><i data-lucide="skip-back" class="w-6 h-6"></i></button>
-                            <button onclick="togglePlay()" id="play-btn" class="play-btn-main" aria-label="Play/Pause"><i data-lucide="play" id="play-icon" class="w-6 h-6 text-white/80 ml-1"></i></button>
-                            <button onclick="nextTrack()" class="control-btn text-white/30 hover:text-white/80" aria-label="Next"><i data-lucide="skip-forward" class="w-6 h-6"></i></button>
-                            <button onclick="toggleRepeat()" id="repeat-btn" class="control-btn text-white/20 hover:text-white/60" aria-label="Repeat"><i data-lucide="repeat" class="w-4 h-4"></i></button>
+                            <button onclick="toggleShuffle()" id="shuffle-btn" class="control-btn text-white" aria-label="Shuffle"><i data-lucide="shuffle"></i></button>
+                            <button onclick="prevTrack()" class="control-btn text-white" aria-label="Previous"><i data-lucide="skip-back" class="w-8 h-8"></i></button>
+                            <button onclick="togglePlay()" id="play-btn" class="play-btn-main" aria-label="Play/Pause"><i data-lucide="play" id="play-icon"></i></button>
+                            <button onclick="nextTrack()" class="control-btn text-white" aria-label="Next"><i data-lucide="skip-forward" class="w-8 h-8"></i></button>
+                            <button onclick="toggleRepeat()" id="repeat-btn" class="control-btn text-white" aria-label="Repeat"><i data-lucide="repeat"></i></button>
                         </div>
 
                         <div class="flex-1 overflow-y-auto max-h-48 space-y-1 pr-2 custom-scrollbar border-t border-b border-white/5 py-2" id="playlist">
@@ -1319,7 +1357,11 @@
                 playing = true;
                 document.getElementById('vinyl-disc').classList.add('playing');
                 document.getElementById('mute-toggle-btn').classList.add('playing');
-                document.getElementById('play-icon').setAttribute('data-lucide', 'pause');
+                
+                // Update Play Button Icon
+                const playIcon = document.getElementById('play-icon');
+                playIcon.setAttribute('data-lucide', 'pause');
+                
                 document.getElementById('track-status').textContent = "Playing";
                 lucide.createIcons();
                 
@@ -1336,7 +1378,11 @@
             playing = false;
             document.getElementById('vinyl-disc').classList.remove('playing');
             document.getElementById('mute-toggle-btn').classList.remove('playing');
-            document.getElementById('play-icon').setAttribute('data-lucide', 'play');
+            
+            // Update Play Button Icon
+            const playIcon = document.getElementById('play-icon');
+            playIcon.setAttribute('data-lucide', 'play');
+            
             document.getElementById('track-status').textContent = "Paused";
             lucide.createIcons();
         }
@@ -1377,9 +1423,13 @@
             shuffle = !shuffle;
             const btn = document.getElementById('shuffle-btn');
             if (shuffle) {
-                btn.classList.add('text-white/80'); btn.classList.remove('text-white/20');
+                btn.style.opacity = '1';
+                btn.style.color = '#fff';
+                btn.style.filter = 'drop-shadow(0 0 5px rgba(255,255,255,0.5))';
             } else {
-                btn.classList.remove('text-white/80'); btn.classList.add('text-white/20');
+                btn.style.opacity = '0.6';
+                btn.style.color = '';
+                btn.style.filter = 'none';
             }
             showToast(shuffle ? "SHUFFLE ON" : "SHUFFLE OFF");
         }
@@ -1389,9 +1439,13 @@
             audio.loop = repeat;
             const btn = document.getElementById('repeat-btn');
             if (repeat) {
-                btn.classList.add('text-white/80'); btn.classList.remove('text-white/20');
+                btn.style.opacity = '1';
+                btn.style.color = '#fff';
+                btn.style.filter = 'drop-shadow(0 0 5px rgba(255,255,255,0.5))';
             } else {
-                btn.classList.remove('text-white/80'); btn.classList.add('text-white/20');
+                btn.style.opacity = '0.6';
+                btn.style.color = '';
+                btn.style.filter = 'none';
             }
             showToast(repeat ? "REPEAT ON" : "REPEAT OFF");
         }
