@@ -7,6 +7,16 @@
     <meta name="description"
         content="$ELK - A Solana memecoin rooted in existential philosophy. The antlers are heavy. We carry them together.">
     <meta name="theme-color" content="#000000">
+
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self'; 
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com; 
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+        font-src 'self' https://fonts.gstatic.com; 
+        img-src 'self' data: https://raw.githubusercontent.com; 
+        connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://raw.githubusercontent.com;
+    ">
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
@@ -36,7 +46,19 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, setDoc, increment, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
+        // ==========================================
+        // PASTE YOUR FIREBASE CONFIG HERE
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "PASTE_YOUR_API_KEY_HERE",
+            authDomain: "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "PASTE_YOUR_PROJECT_ID",
+            storageBucket: "PASTE_YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "PASTE_YOUR_SENDER_ID",
+            appId: "PASTE_YOUR_APP_ID"
+        };
+        // ==========================================
+
         const appId = window.__app_id || 'elk';
 
         let app = null;
@@ -46,7 +68,7 @@
         let votingEnabled = false;
 
         // Initialize Firebase if config exists
-        if (firebaseConfig && firebaseConfig.apiKey) {
+        if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY_HERE") {
             try {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
@@ -2026,35 +2048,8 @@
             "I'm a crypto veteran... of multiple wars I lost.",
             "My bags are premium assets... in an alternate reality where they have value.",
             "The community is strong... like the smell of cope in the morning.",
-            "I bought because the dev said 'trust me bro'... and I trusted him, bro.",
-            "My financial plan is 'number stay same, I get older, somehow rich'.",
-            "The dev said 'contract safe'... from making anyone money.",
-            "I'm not YOLOing, I'm just allocating my entire existence to one trade.",
-            "My portfolio is a Jackson Pollock... if he only used red paint.",
-            "The only thing pumping is my readiness to delete Coinbase.",
-            "I'm a liquidity event... for everyone else.",
-            "My bags are vintage 2021... aged like milk.",
-            "The community is engaged... in a collective delusion.",
-            "I sold my time to buy more... time to regret it.",
-            "My chart analysis is 'line go up, line go down, I cry'.",
-            "The dev said 'we're early'... to the funeral of my portfolio.",
-            "I'm not panicking, I'm just performing an emergency restructuring... of my denial.",
-            "My wallet is a black hole... where hope goes to die.",
-            "The chart is forming a 'double bottom'... in the Mariana Trench.",
-            "I'm leveraged on dreams and margin called by the crushing weight of reality.",
-            "My bags are so heavy they need a U-Haul... to the dump.",
-            "The community is united... in our shared trauma.",
-            "I bought the top, married the bags, died with the portfolio.",
-            "My financial advisor is a Magic 8-Ball that just says 'Ask again later'... forever.",
-            "The dev said 'partnership'... with their own bank account.",
-            "I'm not coping, I'm just engaging in sophisticated psychological defense mechanisms.",
-            "My portfolio is a masterclass in what not to do.",
-            "The only thing green is the light on my router... watching me lose money 24/7.",
-            "I'm a crypto native... to the land of bagholding.",
-            "My bags are generational wealth... if my descendants inherit my debt.",
-            "The community is amazing... at rationalizing losses.",
             "I bought because the logo had an animal in it... my sophisticated DD.",
-            "My trading strategy is 'buy whatever hurts the most'.",
+            "My financial strategy is 'send it and forget it'... the money, that is.",
             "The dev said 'we're transparent'... like a ghost.",
             "I'm not rekt, I'm just experiencing extreme value fluctuation... permanently downward.",
             "My wallet is a cautionary tale that keeps writing itself.",
@@ -2442,7 +2437,7 @@
             "We are the shadows that the mountain casts to keep itself company.",
             "The antlers are the hands we raise to ask the sky for rain.",
             "In the rut, we pay the debt of being seen.",
-            "The old cow leads because she has forgotten how to follow fear.",
+            "The old cow knows the way because she has forgotten the wrong ways.",
             "We do not choose the path; we deepen it.",
             "The snow is the white board on which we write our brown testament.",
             "To be herd is to be a geometry of survival.",
@@ -2502,7 +2497,7 @@
 
         function setMode(mode, btn) {
             currentMode = mode;
-            quoteHistory = []; // Reset history on mode change
+            quoteHistory = [];
             document.querySelectorAll('.mode-btn').forEach(b => {
                 b.classList.remove('active');
                 b.setAttribute('aria-pressed', 'false');
@@ -2521,12 +2516,11 @@
                 else if (currentMode === 'degen') pool = quotesDegen;
                 else pool = quotesElk;
 
-                // Smart non-repeating selection
                 let newIndex;
-                const maxHistory = Math.min(50, pool.length - 1); // Keep last 50 in memory
+                const maxHistory = Math.min(50, pool.length - 1);
 
                 if (quoteHistory.length >= pool.length) {
-                    quoteHistory = []; // Reset if we've shown all
+                    quoteHistory = [];
                 }
 
                 do {
@@ -2582,22 +2576,86 @@
         }
 
         const tracks = [
-            { title: "Before the Clearing", file: "Before the Clearing", desc: "The silence before revelation" },
-            { title: "Crimson Twilight", file: "Crimson Twilight", desc: "Day bleeds into night" },
-            { title: "Echoes Where Meaning Was", file: "Echoes Where Meaning Was", desc: "Hollow chambers" },
-            { title: "Eternal Weight", file: "Eternal Weight", desc: "The paradox of being" },
-            { title: "Forest Depths", file: "Forest Depths", desc: "Dissolution of self" },
-            { title: "Herd Gathering", file: "Herd Gathering", desc: "Many antlers, one burden" },
-            { title: "Herd Through the Valley", file: "Herd Through the Valley", desc: "Moving through the low points" },
-            { title: "Migration of the Burdened", file: "Migration of the Burdened", desc: "Perpetual motion" },
-            { title: "Mountain Echo", file: "Mountain Echo", desc: "Voices returning to us" },
-            { title: "No Elk Walks Alone", file: "No Elk Walks Alone", desc: "Solitude in numbers" },
-            { title: "Signal from the Ridge", file: "Signal from the Ridge", desc: "A call to ascend" },
-            { title: "The Burden", file: "The Burden", desc: "We are our weight" },
-            { title: "The Herd Remembers", file: "The Herd Remembers", desc: "History carved in bone" },
-            { title: "The Weight of Knowing", file: "The Weight of Knowing", desc: "Awareness is heavy" },
-            { title: "Turning Ash to Altar", file: "Turning Ash to Altar", desc: "Sacred remnants" },
-            { title: "What Consciousness Costs", file: "What Consciousness Costs", desc: "The price of awakening" }
+            {
+                title: "Before the Clearing",
+                file: "Before the Clearing",
+                desc: "The silence before revelation"
+            },
+            {
+                title: "Crimson Twilight",
+                file: "Crimson Twilight",
+                desc: "Day bleeds into night"
+            },
+            {
+                title: "Echoes Where Meaning Was",
+                file: "Echoes Where Meaning Was",
+                desc: "Hollow chambers"
+            },
+            {
+                title: "Eternal Weight",
+                file: "Eternal Weight",
+                desc: "The paradox of being"
+            },
+            {
+                title: "Forest Depths",
+                file: "Forest Depths",
+                desc: "Dissolution of self"
+            },
+            {
+                title: "Herd Gathering",
+                file: "Herd Gathering",
+                desc: "Many antlers, one burden"
+            },
+            {
+                title: "Herd Through the Valley",
+                file: "Herd Through the Valley",
+                desc: "Moving through the low points"
+            },
+            {
+                title: "Migration of the Burdened",
+                file: "Migration of the Burdened",
+                desc: "Perpetual motion"
+            },
+            {
+                title: "Mountain Echo",
+                file: "Mountain Echo",
+                desc: "Voices returning to us"
+            },
+            {
+                title: "No Elk Walks Alone",
+                file: "No Elk Walks Alone",
+                desc: "Solitude in numbers"
+            },
+            {
+                title: "Signal from the Ridge",
+                file: "Signal from the Ridge",
+                desc: "A call to ascend"
+            },
+            {
+                title: "The Burden",
+                file: "The Burden",
+                desc: "We are our weight"
+            },
+            {
+                title: "The Herd Remembers",
+                file: "The Herd Remembers",
+                desc: "History carved in bone"
+            },
+            {
+                title: "The Weight of Knowing",
+                file: "The Weight of Knowing",
+                desc: "Awareness is heavy"
+            },
+            {
+                title: "Turning Ash to Altar",
+                file: "Turning Ash to Altar",
+                desc: "Sacred remnants"
+            },
+            {
+                title: "What Consciousness Costs",
+                file: "What Consciousness Costs",
+                desc: "The price of awakening"
+            }
         ];
 
         let current = 0, playing = false, muted = false, shuffle = false, repeat = false;
@@ -2623,10 +2681,13 @@
                 dataArray = new Uint8Array(analyser.frequencyBinCount);
                 isVisualizerInitialized = true;
                 drawVisualizer();
-            } catch (e) { console.log('Audio init error:', e); }
+            } catch (e) {
+                console.log('Audio init error:', e);
+            }
         }
 
         let visualizerAnimationId;
+
         function drawVisualizer() {
             const canvas = document.getElementById('visualizer-canvas');
             if (!canvas) return;
@@ -2710,7 +2771,10 @@
 
             document.querySelectorAll('.track-item').forEach((e, i) => {
                 e.classList.toggle('active', i === idx);
-                if (i === idx && scroll) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                if (i === idx && scroll) e.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
             });
 
             document.getElementById('progress-fill').style.width = '0%';
@@ -2721,7 +2785,9 @@
             };
 
             audio.removeEventListener('loadedmetadata', loadHandler);
-            audio.addEventListener('loadedmetadata', loadHandler, { once: true });
+            audio.addEventListener('loadedmetadata', loadHandler, {
+                once: true
+            });
             audio.load();
         }
 
@@ -2780,7 +2846,9 @@
         function nextTrack() {
             if (shuffle) {
                 let next;
-                do { next = Math.floor(Math.random() * tracks.length); } while (next === current && tracks.length > 1);
+                do {
+                    next = Math.floor(Math.random() * tracks.length);
+                } while (next === current && tracks.length > 1);
                 loadTrack(next, true, true);
             } else {
                 loadTrack((current + 1) % tracks.length, true, true);
@@ -2839,12 +2907,40 @@
             }
         }
 
-        progressContainer.addEventListener('mousedown', (e) => { isDragging = true; updateProgress(e.clientX); }, { passive: true });
-        document.addEventListener('mousemove', (e) => { if (isDragging) { e.preventDefault(); updateProgress(e.clientX); } });
-        document.addEventListener('mouseup', () => { isDragging = false; });
-        progressContainer.addEventListener('touchstart', (e) => { isDragging = true; updateProgress(e.touches[0].clientX); }, { passive: true });
-        document.addEventListener('touchmove', (e) => { if (isDragging) { e.preventDefault(); updateProgress(e.touches[0].clientX); } }, { passive: false });
-        document.addEventListener('touchend', () => { isDragging = false; }, { passive: true });
+        progressContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateProgress(e.clientX);
+        }, {
+            passive: true
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                updateProgress(e.clientX);
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        progressContainer.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            updateProgress(e.touches[0].clientX);
+        }, {
+            passive: true
+        });
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                updateProgress(e.touches[0].clientX);
+            }
+        }, {
+            passive: false
+        });
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        }, {
+            passive: true
+        });
 
         function setVolume(v) {
             audio.volume = v / 100;
@@ -2853,7 +2949,8 @@
 
         function fmt(s) {
             if (isNaN(s) || !isFinite(s)) return '00:00';
-            const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+            const m = Math.floor(s / 60),
+                sec = Math.floor(s % 60);
             return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
         }
 
@@ -2869,7 +2966,9 @@
             }
         });
 
-        audio.addEventListener('ended', () => { if (!repeat) nextTrack(); });
+        audio.addEventListener('ended', () => {
+            if (!repeat) nextTrack();
+        });
         audio.addEventListener('pause', () => {
             if (playing && audio.currentTime !== audio.duration && !audio.ended) {
                 playing = false;
@@ -2884,10 +2983,19 @@
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT') return;
             switch (e.code) {
-                case 'Space': e.preventDefault(); togglePlay(); break;
-                case 'ArrowLeft': e.shiftKey ? prevTrack() : audio.currentTime -= 5; break;
-                case 'ArrowRight': e.shiftKey ? nextTrack() : audio.currentTime += 5; break;
-                case 'KeyM': toggleMute(); break;
+                case 'Space':
+                    e.preventDefault();
+                    togglePlay();
+                    break;
+                case 'ArrowLeft':
+                    e.shiftKey ? prevTrack() : audio.currentTime -= 5;
+                    break;
+                case 'ArrowRight':
+                    e.shiftKey ? nextTrack() : audio.currentTime += 5;
+                    break;
+                case 'KeyM':
+                    toggleMute();
+                    break;
             }
         });
 
@@ -2895,7 +3003,10 @@
 
         window.addEventListener('beforeunload', () => {
             if (visualizerAnimationId) cancelAnimationFrame(visualizerAnimationId);
-            if (audio) { audio.pause(); audio.src = ''; }
+            if (audio) {
+                audio.pause();
+                audio.src = '';
+            }
         });
     </script>
 </body>
