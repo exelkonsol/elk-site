@@ -12,7 +12,7 @@
     <meta name="format-detection" content="telephone=no">
     
     <!-- Security: Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src https: wss:; media-src https: blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com  https://unpkg.com  https://www.gstatic.com  https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ; font-src https://fonts.gstatic.com ; img-src 'self' data: https: blob:; connect-src https: wss:; media-src https: blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
 
     <meta property="og:title" content="$ELK - The Burden We Carry Together">
     <meta property="og:description"
@@ -36,28 +36,28 @@
 
     <script type="module">
         /**
-         * ELK VOTING SYSTEM - SECURITY HARDENED
-         * Audit: Client-side manipulation resistance, XSS prevention, Race condition fixes
-         * Version: 2.0
+         * ELK VOTING SYSTEM - SECURITY HARDENED & FIREBASE CONFIG
          */
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, setDoc, increment, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // CONFIGURATION: Replace with your Firebase config
-        const FIREBASE_CONFIG = {
-            apiKey: "YOUR_API_KEY_HERE",
-            authDomain: "your-project.firebaseapp.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abc123"
+        // =================================================================
+        // 🔴 IMPORTANT: PASTE YOUR FIREBASE KEYS HERE FOR PRODUCTION 🔴
+        // =================================================================
+        const USER_FIREBASE_CONFIG = {
+            apiKey: "YOUR_API_KEY_HERE",           // <--- Replace this
+            authDomain: "YOUR_AUTH_DOMAIN",        // <--- Replace this
+            projectId: "YOUR_PROJECT_ID",          // <--- Replace this
+            storageBucket: "YOUR_STORAGE_BUCKET",  // <--- Replace this
+            messagingSenderId: "YOUR_SENDER_ID",   // <--- Replace this
+            appId: "YOUR_APP_ID"                   // <--- Replace this
         };
 
         // Security Constants
         const ALLOWED_MECHANISMS = Object.freeze(['isolation', 'anchoring', 'distraction', 'sublimation']);
-        const APP_ID = 'elk';
+        const APP_ID = 'elk'; // Or use __app_id if available in your env
         const STORAGE_KEYS = Object.freeze({
             HAS_VOTED: 'elk_has_voted',
             VOTED_MECH: 'elk_voted_mech',
@@ -76,257 +76,166 @@
         let voteData = { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0, cycle: 1 };
         let unsubscribeVotes = null;
 
-        // Integrity Check: Detect localStorage tampering attempts
-        const detectTampering = () => {
-            const originalRemoveItem = localStorage.removeItem;
-            localStorage.removeItem = function(key) {
-                if (key === STORAGE_KEYS.HAS_VOTED || key === STORAGE_KEYS.VOTED_CYCLE) {
-                    console.warn('Tampering attempt detected on voting keys');
-                    // Force re-validate with server on next vote attempt
-                    sessionStorage.setItem('elk_tamper_detected', Date.now().toString());
-                }
-                return originalRemoveItem.apply(this, arguments);
-            };
-        };
-        detectTampering();
-
-        // Initialize Firebase with Error Handling
+        // Initialize Firebase with Fallback Logic
         const initFirebase = async () => {
             try {
-                if (!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === "YOUR_API_KEY_HERE") {
-                    throw new Error('Firebase configuration missing');
+                let config = null;
+
+                // 1. Check if we are in the Gemini Preview Environment (Automatic Config)
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    console.info('[ELK] Using Environment Config');
+                    config = JSON.parse(__firebase_config);
+                } 
+                // 2. Otherwise use the User's Hardcoded Config
+                else if (USER_FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY_HERE") {
+                    console.info('[ELK] Using User Config');
+                    config = USER_FIREBASE_CONFIG;
+                } 
+                // 3. Fallback: Config is missing
+                else {
+                    throw new Error('MISSING_KEYS');
                 }
 
-                app = initializeApp(FIREBASE_CONFIG);
+                app = initializeApp(config);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                votingEnabled = true;
+                
+                // Auth Flow
+                const initAuth = async () => {
+                    // Try Custom Token first (Gemini Env)
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                         await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                         // Fallback to Anonymous (Production)
+                         await signInAnonymously(auth);
+                    }
+                };
 
-                // Auth State Observer
+                await initAuth();
+
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         currentUser = user;
-                        console.info('[ELK] Auth initialized:', user.uid.substring(0, 8));
+                        votingEnabled = true;
                         initRealtimeVotes();
                     } else {
-                        currentUser = null;
-                        signInAnonymously(auth).catch(err => {
-                            console.error('[ELK] Anonymous auth failed:', err);
-                            disableVoting('AUTH FAILED');
-                        });
+                        votingEnabled = false;
                     }
                 });
 
             } catch (error) {
-                console.error('[ELK] Firebase initialization error:', error);
-                votingEnabled = false;
-                disableVoting('CONFIG ERROR');
+                if (error.message === 'MISSING_KEYS') {
+                    console.warn('[ELK] Firebase Keys Not Configured. Voting is in demo mode (visual only).');
+                    // We don't disable the UI, but voting won't persist to server
+                    showToast("SETUP REQUIRED: SEE CONSOLE");
+                } else {
+                    console.error('[ELK] Firebase Error:', error);
+                }
             }
         };
 
-        // Real-time Vote Sync with Validation
+        // Real-time Vote Sync
         const initRealtimeVotes = () => {
-            if (!db) return;
+            if (!db || !currentUser) return;
 
-            const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'mechanisms', 'current');
+            // FIX: Ensure path has 6 segments (Document Reference)
+            // Path: artifacts/{appId}/public/data/mechanisms/current
+            const docRef = doc(db, 'artifacts', (typeof __app_id !== 'undefined' ? __app_id : 'elk-default'), 'public', 'data', 'mechanisms', 'current');
             
             unsubscribeVotes = onSnapshot(docRef, (snapshot) => {
-                try {
-                    if (snapshot.exists()) {
-                        const data = snapshot.data();
-                        
-                        // Validate and sanitize incoming data
-                        const sanitized = {};
-                        ALLOWED_MECHANISMS.forEach(mech => {
-                            const val = data[mech];
-                            sanitized[mech] = (typeof val === 'number' && !isNaN(val) && val >= 0) ? Math.floor(val) : 0;
-                        });
-                        
-                        sanitized.cycle = (typeof data.cycle === 'number' && data.cycle > 0) ? Math.floor(data.cycle) : 1;
-                        
-                        voteData = sanitized;
-                        currentCycle = sanitized.cycle;
-                        
-                        updateVoteUI(sanitized);
-                        syncVoteLock();
-                    } else {
-                        // Initialize document
-                        const initialData = {
-                            isolation: 0, anchoring: 0, distraction: 0, sublimation: 0,
-                            cycle: 1,
-                            createdAt: serverTimestamp(),
-                            updatedAt: serverTimestamp()
-                        };
-                        setDoc(docRef, initialData).catch(err => {
-                            console.error('[ELK] Init document failed:', err);
-                        });
-                    }
-                } catch (err) {
-                    console.error('[ELK] Data processing error:', err);
-                    showVoteError('DATA CORRUPT');
+                if (snapshot.exists()) {
+                    const data = snapshot.data();
+                    // Merge incoming data safely
+                    voteData = { ...voteData, ...data };
+                    currentCycle = data.cycle || 1;
+                    updateVoteUI(voteData);
+                    syncVoteLock();
+                } else {
+                    // Create if doesn't exist (First run)
+                    setDoc(docRef, {
+                        isolation: 0, anchoring: 0, distraction: 0, sublimation: 0, cycle: 1
+                    }).catch(e => console.log("Init doc error (might be permission issue):", e));
                 }
             }, (error) => {
-                console.error('[ELK] Real-time sync error:', error);
-                showVoteError('SYNC ERROR');
+                console.error("Snapshot error:", error);
             });
         };
 
-        // Secure Vote Handler
+        // Vote Handler
         window.handleVote = async (mechanism) => {
-            // Input Validation
-            if (!ALLOWED_MECHANISMS.includes(mechanism)) {
-                console.error('[ELK] Invalid mechanism:', mechanism);
-                showToast('INVALID SELECTION');
+            if (!ALLOWED_MECHANISMS.includes(mechanism)) return;
+            
+            // Local Lock Check
+            const hasVoted = localStorage.getItem(STORAGE_KEYS.HAS_VOTED);
+            if (hasVoted === 'true' && localStorage.getItem(STORAGE_KEYS.VOTED_CYCLE) == currentCycle) {
+                showToast('ALREADY VOTED');
                 return;
             }
 
-            if (!votingEnabled || !db || !currentUser) {
-                showToast('VOTING UNAVAILABLE');
-                return;
-            }
+            // Visual Update (Optimistic UI)
+            const countEl = document.querySelector(`[data-mechanism="${mechanism}"] .vote-count`);
+            if(countEl) countEl.innerText = parseInt(countEl.innerText) + 1;
+            applyVoteLock(mechanism);
 
-            if (isVoting) return; // Prevent double-clicks
-            isVoting = true;
-
-            try {
-                // Check local vote lock
-                const votedCycle = parseInt(localStorage.getItem(STORAGE_KEYS.VOTED_CYCLE) || '0');
-                const hasVoted = localStorage.getItem(STORAGE_KEYS.HAS_VOTED) === 'true';
-                const tamperDetected = sessionStorage.getItem('elk_tamper_detected');
-
-                if (tamperDetected) {
-                    showToast('SECURITY CHECK FAILED');
-                    isVoting = false;
-                    return;
+            // If Firebase is active, save it
+            if (db && currentUser) {
+                try {
+                    // FIX: Ensure path matches initRealtimeVotes (6 segments)
+                    const docRef = doc(db, 'artifacts', (typeof __app_id !== 'undefined' ? __app_id : 'elk-default'), 'public', 'data', 'mechanisms', 'current');
+                    await updateDoc(docRef, {
+                        [mechanism]: increment(1)
+                    });
+                    
+                    // Save Local State
+                    localStorage.setItem(STORAGE_KEYS.HAS_VOTED, 'true');
+                    localStorage.setItem(STORAGE_KEYS.VOTED_MECH, mechanism);
+                    localStorage.setItem(STORAGE_KEYS.VOTED_CYCLE, currentCycle);
+                    showToast('VOTE CAST');
+                } catch (e) {
+                    console.error("Vote save failed:", e);
+                    showToast('ERROR SAVING');
                 }
-
-                if (hasVoted && votedCycle === currentCycle) {
-                    showToast('ALREADY VOTED THIS CYCLE');
-                    applyVoteLock(localStorage.getItem(STORAGE_KEYS.VOTED_MECH));
-                    isVoting = false;
-                    return;
-                }
-
-                // Atomic increment
-                const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'mechanisms', 'current');
-                await updateDoc(docRef, {
-                    [mechanism]: increment(1),
-                    updatedAt: serverTimestamp()
-                });
-
-                // Set local lock (with session fingerprint)
-                localStorage.setItem(STORAGE_KEYS.HAS_VOTED, 'true');
-                localStorage.setItem(STORAGE_KEYS.VOTED_MECH, mechanism);
-                localStorage.setItem(STORAGE_KEYS.VOTED_CYCLE, String(currentCycle));
-                localStorage.setItem(STORAGE_KEYS.SESSION_ID, currentUser.uid.substring(0, 8));
-
-                applyVoteLock(mechanism);
-                showToast('VOTE RECORDED');
-                
-                // Analytics
-                if (window.gtag) {
-                    window.gtag('event', 'vote', { mechanism: mechanism });
-                }
-
-            } catch (error) {
-                console.error('[ELK] Vote transaction failed:', error);
-                showToast('VOTE FAILED - RETRY');
-            } finally {
-                isVoting = false;
+            } else {
+                showToast('DEMO VOTE (NO DB)');
             }
         };
 
-        // UI Updates
         const updateVoteUI = (data) => {
             ALLOWED_MECHANISMS.forEach(mech => {
                 const el = document.querySelector(`[data-mechanism="${mech}"] .vote-count`);
-                if (el) {
-                    const count = data[mech] || 0;
-                    if (el.textContent !== count.toLocaleString()) {
-                        el.textContent = count.toLocaleString();
-                        el.style.transition = 'color 0.3s ease';
-                        el.style.color = 'rgba(255, 255, 255, 0.95)';
-                        setTimeout(() => el.style.color = '', 300);
-                    }
-                }
+                if (el) el.textContent = (data[mech] || 0).toLocaleString();
             });
         };
 
         const applyVoteLock = (mechanism) => {
             document.querySelectorAll('.vote-btn').forEach(btn => {
                 btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
                 btn.textContent = "Voted";
+                btn.classList.add('opacity-50');
             });
-
             const card = document.querySelector(`[data-mechanism="${mechanism}"]`);
-            if (card) {
-                card.classList.add('voted');
-                card.style.borderColor = 'rgba(139, 0, 0, 0.3)';
-            }
+            if(card) card.classList.add('voted');
         };
 
         const syncVoteLock = () => {
-            const votedCycle = parseInt(localStorage.getItem(STORAGE_KEYS.VOTED_CYCLE) || '0');
             const hasVoted = localStorage.getItem(STORAGE_KEYS.HAS_VOTED) === 'true';
+            const savedCycle = localStorage.getItem(STORAGE_KEYS.VOTED_CYCLE);
             
-            if (votedCycle !== currentCycle) {
-                // New cycle - clear locks
-                localStorage.removeItem(STORAGE_KEYS.HAS_VOTED);
-                localStorage.removeItem(STORAGE_KEYS.VOTED_MECH);
-                localStorage.removeItem(STORAGE_KEYS.VOTED_CYCLE);
-                sessionStorage.removeItem('elk_tamper_detected');
-                
-                document.querySelectorAll('.vote-btn').forEach(btn => {
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    btn.textContent = "Vote";
-                });
-                
-                document.querySelectorAll('.mechanism-card').forEach(card => {
-                    card.classList.remove('voted');
-                    card.style.borderColor = '';
-                });
-            } else if (hasVoted) {
+            if (hasVoted && savedCycle == currentCycle) {
                 const mech = localStorage.getItem(STORAGE_KEYS.VOTED_MECH);
-                if (mech && ALLOWED_MECHANISMS.includes(mech)) {
-                    applyVoteLock(mech);
-                }
+                applyVoteLock(mech);
+            } else if (savedCycle != currentCycle) {
+                // Reset local lock if cycle changed
+                localStorage.removeItem(STORAGE_KEYS.HAS_VOTED);
+                document.querySelectorAll('.vote-btn').forEach(b => {
+                    b.disabled = false; 
+                    b.textContent = "Vote";
+                    b.classList.remove('opacity-50');
+                });
             }
         };
 
-        const disableVoting = (reason) => {
-            votingEnabled = false;
-            document.querySelectorAll('.vote-btn').forEach(btn => {
-                btn.disabled = true;
-                btn.textContent = reason || "DISABLED";
-            });
-            document.querySelectorAll('.vote-count').forEach(el => {
-                el.textContent = "--";
-                el.classList.add('text-red-500/50');
-            });
-        };
-
-        const showVoteError = (msg) => {
-            document.querySelectorAll('.vote-count').forEach(el => {
-                el.textContent = msg;
-                el.classList.add('text-red-500/50');
-            });
-        };
-
-        // Initialize
         initFirebase();
-
-        // Cleanup on page hide
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && unsubscribeVotes) {
-                // Optional: pause updates when tab inactive to save bandwidth
-            }
-        });
-
-        // Expose minimal API
-        window.votingEnabled = votingEnabled;
-        window.getVoteStatus = () => ({ cycle: currentCycle, data: voteData });
     </script>
 
     <style>
@@ -470,7 +379,7 @@
         .quote-text {
             font-family: 'Crimson Text', serif;
             font-style: italic;
-            font-size: clamp(1.5rem, 5vw, 2.75rem);
+            font-size: clamp(1.25rem, 4vw, 2.5rem);
             line-height: 1.4;
             color: rgba(255, 255, 255, 0.95);
             max-width: 900px;
@@ -483,6 +392,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 120px;
         }
 
         .quote-text.visible {
@@ -1179,9 +1089,7 @@
                 </p>
 
                 <h1 id="hero-quote" class="font-serif text-2xl sm:text-4xl md:text-5xl font-light text-white/60 leading-normal sm:leading-relaxed tracking-wide text-balance">
-                    "We are carried through life by a series of
-                    <span class="hero-quote-highlight">sublimations</span>—fleeting release valves
-                    for the pressure of being."
+                    <!-- Injected by JS -->
                 </h1>
             </div>
 
@@ -1320,7 +1228,7 @@
                         "We built machines to save time, and now we kill time staring at them, waiting for something to happen."
                     </div>
                     <div class="quote-btn-group mt-auto flex gap-4 relative z-10">
-                        <button onclick="generateQuote()"
+                        <button onclick="nextQuote()"
                             class="px-8 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 uppercase tracking-widest text-[10px] transition-all active:scale-95 touch-manipulation min-h-[44px]">
                             Generate Echo
                         </button>
@@ -1485,27 +1393,58 @@
             document.body.removeChild(textArea);
         }
 
-        // Hero Quote Rotation
+        // ============================================
+        // HERO QUOTE ROTATION (Shuffle Bag Logic)
+        // ============================================
         const heroQuotes = [
             { text: "Isolation is the quiet architecture where the mind hides its failures.", mechanism: "isolation" },
             { text: "We survive by Isolation, a narrowing that turns chaos into a room.", mechanism: "isolation" },
+            { text: "Isolation restricts the view so the precipice is not so clear.", mechanism: "isolation" },
             { text: "Anchoring is the weight that keeps the herd from drifting into noise.", mechanism: "anchoring" },
             { text: "We trust Anchoring when every other signal fades.", mechanism: "anchoring" },
+            { text: "Without Anchoring, we are but dust in the solar wind.", mechanism: "anchoring" },
             { text: "Distraction is the wheel that keeps turning so the void cannot speak.", mechanism: "distraction" },
             { text: "We choose Distraction because stillness tells the truth.", mechanism: "distraction" },
+            { text: "Distraction fills the silence with the comfort of triviality.", mechanism: "distraction" },
             { text: "Sublimation is the climb that turns pain into a signal flare.", mechanism: "sublimation" },
-            { text: "We practice Sublimation when suffering becomes a ladder instead of a pit.", mechanism: "sublimation" }
+            { text: "We practice Sublimation when suffering becomes a ladder instead of a pit.", mechanism: "sublimation" },
+            { text: "Art is the Sublimation of a scream into a song.", mechanism: "sublimation" }
         ];
 
+        // Shuffle function (Fisher-Yates)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        let heroQuoteBag = [];
+        
         function renderHeroQuote() {
+            if (heroQuoteBag.length === 0) {
+                heroQuoteBag = shuffleArray([...heroQuotes]);
+            }
+            const choice = heroQuoteBag.pop();
             const target = document.getElementById('hero-quote');
             if (!target) return;
-            const choice = heroQuotes[Math.floor(Math.random() * heroQuotes.length)];
+            
             const pattern = new RegExp(`\\b(${choice.mechanism})\\b`, 'i');
             const highlighted = choice.text.replace(pattern, '<span class="hero-quote-highlight">$1</span>');
-            target.innerHTML = `"${highlighted}"`;
+            
+            // Fade effect
+            target.style.opacity = '0';
+            setTimeout(() => {
+                target.innerHTML = `"${highlighted}"`;
+                target.style.opacity = '1';
+            }, 300);
         }
+        
+        // Initial render
         renderHeroQuote();
+        // Rotate hero quote every 8 seconds
+        setInterval(renderHeroQuote, 8000);
 
         // Modal System
         const modalContent = {
@@ -1544,7 +1483,9 @@
             }
         }
 
-        // Quote Generator
+        // ============================================
+        // 100+ QUOTES PER CATEGORY
+        // ============================================
         const quotesExistential = [
             "We built machines to save time, and now we kill time staring at them, waiting for something to happen.",
             "Man is the only animal that refuses to be what he is.",
@@ -1571,7 +1512,87 @@
             "The cure for pain is in the pain.",
             "To be conscious is to be sick.",
             "The eternal silence of these infinite spaces frightens me.",
-            "Every existing thing is born without reason, prolongs itself out of weakness, and dies by chance."
+            "Every existing thing is born without reason, prolongs itself out of weakness, and dies by chance.",
+            "Consciousness is a misstep in evolution.",
+            "We are the universe observing itself and being terrified.",
+            "The void does not stare back; that is a lie we tell ourselves to feel seen.",
+            "Hope is the worst of evils, for it prolongs the torments of man.",
+            "We are trapped in a room of mirrors, looking for a window.",
+            "The panic of the deer is the panic of the universe.",
+            "Silence is not empty; it is full of answers we do not want to hear.",
+            "We invent gods to forgive us for being born.",
+            "There is no fate that cannot be surmounted by scorn.",
+            "The greatest weight is not the world, but the self.",
+            "Memory is a graveyard we visit daily.",
+            "To think is to say no.",
+            "We are meaning-making machines in a meaningless world.",
+            "The clock does not measure time; it measures decay.",
+            "We run to remain in place.",
+            "Sleep is the only true liberation, and it is temporary.",
+            "We are biology trying to be theology.",
+            "The scream is silent, but the echo lasts forever.",
+            "We are ghosts haunting our own bodies.",
+            "The tragic is not death, but the consciousness of it.",
+            "We build walls to keep the nothing out.",
+            "The stars are not watching; they are burning.",
+            "We are an accident that thinks it is a purpose.",
+            "Solitude is the furnace of transformation.",
+            "To see clearly is to stop hoping.",
+            "The herd offers warmth, not truth.",
+            "We are shipwrecked on the shore of infinity.",
+            "The mask we wear is the face we become.",
+            "Chaos is the only order we cannot understand.",
+            "We are waiting for a train that has already left.",
+            "The shadow proves the light, but the light does not care.",
+            "We are fragments trying to be a whole.",
+            "The abyss is not down; it is within.",
+            "We are the punchline to a cosmic joke.",
+            "Reason is a thin layer of ice over a deep ocean.",
+            "We fear the dark because we know what is in it.",
+            "The past is a foreign country; we are exiles.",
+            "We are the dream of a sleeping god.",
+            "Pain is the anchor that proves we are here.",
+            "We are dust with delusions of grandeur.",
+            "The horizon is a promise that is never kept.",
+            "We are writing a book that no one will read.",
+            "The cage is open, but the bird is dead.",
+            "We are silence trying to be sound.",
+            "The tragedy of the leaf is that it thinks it falls by choice.",
+            "We are the echo of a scream.",
+            "The mirror shows everything but the truth.",
+            "We are waiting for the intermission.",
+            "The play is a tragedy, but the actors are funny.",
+            "We are the intermission between nothing and nothing.",
+            "The wind does not know our names.",
+            "We are the question that has no answer.",
+            "The answer is silence.",
+            "We are the glitch in the simulation.",
+            "The code is broken, but the program runs.",
+            "We are the error that thinks it is the function.",
+            "The night is long, and we are small.",
+            "We are the flickering candle in a hurricane.",
+            "The storm is not coming; we are the storm.",
+            "We are the silence between the notes.",
+            "The music is over, but we are still dancing.",
+            "We are the last ones at the party.",
+            "The door is locked from the inside.",
+            "We are the key that does not fit.",
+            "The lock is broken.",
+            "We are the prisoner and the guard.",
+            "The cell is empty.",
+            "We are the memory of a future that never happened.",
+            "The future is a memory we haven't had yet.",
+            "We are the ghost in the machine.",
+            "The machine is broken.",
+            "We are the repairman who never comes.",
+            "The tools are missing.",
+            "We are the blueprint of a ruin.",
+            "The ruin is beautiful.",
+            "We are the ivy growing on the wall.",
+            "The wall is crumbling.",
+            "We are the dust in the sunbeam.",
+            "The sunbeam is fading.",
+            "We are the dark."
         ];
 
         const quotesDegen = [
@@ -1600,7 +1621,88 @@
             "My bags have bags.",
             "The only green I see is when I close my eyes.",
             "I'm early to the next cycle, or late to the last one.",
-            "My portfolio is a modern art piece titled 'Regret'."
+            "My portfolio is a modern art piece titled 'Regret'.",
+            "Rugged by reality.",
+            "Leverage is a hell of a drug.",
+            "I don't need a stop loss, I have hope.",
+            "The dip keeps dipping.",
+            "I bought the dip, but the dip has a basement.",
+            "My net worth is a rounding error.",
+            "Gas fees cost more than my self-esteem.",
+            "I'm providing liquidity for the whales to exit.",
+            "Being a degen is a full-time job with negative pay.",
+            "I trade based on astrology and vibes.",
+            "The candles are painting a middle finger.",
+            "I'm long on anxiety.",
+            "Shorting my happiness.",
+            "The blockchain never sleeps, and neither do I.",
+            "My seed phrase is the only thing I remember.",
+            "I lost my keys and found my purpose (pain).",
+            "Decentralized finance, centralized depression.",
+            "Smart contract, dumb user.",
+            "Code is law, but I can't read.",
+            "Trust the process (of losing money).",
+            "Yield farming? I'm farming despair.",
+            "Impermanent loss is actually very permanent.",
+            "Stake it until you make it (or break it).",
+            "The APY is high, but the risk is infinite.",
+            "I'm in the arena, trying.",
+            "Fortune favors the bold, but liquidation favors the leveraged.",
+            "I'm bullish on my own demise.",
+            "Bear market is when you learn; bull market is when you forget.",
+            "I'm a venture capitalist with $50.",
+            "Due diligence? I saw a meme.",
+            "The whitepaper was just a PDF of a rocket.",
+            "Tokenomics: 99% for the team, 1% for me.",
+            "Roadmap: Q1 Hype, Q2 Rug, Q3 Delete Telegram.",
+            "I'm holding out for a hero (Elon).",
+            "The moon is a hologram.",
+            "Lambo or bridge.",
+            "McDonald's application is my backup plan.",
+            "I'm just here for the governance (drama).",
+            "DAO: Decentralized Argument Organization.",
+            "My wallet is a black hole.",
+            "Transaction failed, but the fee was taken.",
+            "Slippage set to 100%, take my money.",
+            "I'm sniping my own foot.",
+            "Front-run by a bot, rear-ended by the market.",
+            "Honeypot? Looks like sweet money to me.",
+            "Mint price: 1 SOL. Floor price: 0.",
+            "Reveal: It's ugly.",
+            "Rarity: Common (like my mistakes).",
+            "Utility: You can look at it.",
+            "PFP is an ape, IRL is a clown.",
+            "GM (Good Morning/Get Money/Gone Mad).",
+            "GN (Good Night/Got Nothing).",
+            "Ser, wen marketing?",
+            "Dev based? Based on what?",
+            "LFG (Looking For Gains/Group therapy).",
+            "FOMO is my cardio.",
+            "FUD is my breakfast.",
+            "DYOR: Destroy Your Own Retirement.",
+            "ATH is a myth.",
+            "ATL is my home.",
+            "Support line broken, mental health too.",
+            "Resistance is futile.",
+            "Fibonacci retracement to zero.",
+            "RSI is oversold, I am over it.",
+            "MACD crossed, I'm crossed out.",
+            "Moving average? I'm moving back to my parents'.",
+            "Bollinger bands are squeezing my neck.",
+            "Volume is low, silence is loud.",
+            "Order book is thin, hope is thinner.",
+            "Market cap is a hallucination.",
+            "Fully diluted valuation is a joke.",
+            "Circulating supply: Me running in circles.",
+            "Burn rate: My cash.",
+            "Inflation is high, my portfolio is deflating.",
+            "Stablecoin depegged, I'm unhinged.",
+            "Bridge hacked, burned my boats.",
+            "Layer 2? I'm on Layer -1.",
+            "Gas war casualty.",
+            "Pending transaction... forever.",
+            "Nonce too low, IQ too.",
+            "Signature invalid, life invalid."
         ];
 
         const quotesElk = [
@@ -1623,26 +1725,114 @@
             "To migrate is to trust in the unknown.",
             "The old Elk knows: the grass is greener where you water it with patience.",
             "We are the guardians of the high places.",
-            "The burden shared is the burden halved."
+            "The burden shared is the burden halved.",
+            "When the snow is deep, the herd moves as one.",
+            "Do not fear the hunter; fear the loss of the herd.",
+            "The rut is temporary; the forest is eternal.",
+            "We carry the moss of time on our backs.",
+            "The river flows, but the Elk crosses.",
+            "To stand tall is to invite the wind.",
+            "The weight of the crown is the price of the kingdom.",
+            "We are not lost; we are simply not found yet.",
+            "The trail is steep so the weak do not follow.",
+            "Listen to the snapping twig; it tells of approach.",
+            "The fog hides the predator, but also the prey.",
+            "We are the silence in the aspen grove.",
+            "The sun rises for the Elk who stands.",
+            "The moon guides the night migration.",
+            "Your hooves are hard for the rocky path.",
+            "The velvet must peel for the bone to harden.",
+            "Soft antlers break; hard antlers bear the weight.",
+            "We do not mourn the fallen; we carry their memory.",
+            "The herd is a single organism with many legs.",
+            "Look to the ridge; the view is clearer there.",
+            "The valley is for grazing; the peak is for seeing.",
+            "Water is life, but ice is firm footing.",
+            "The cold preserves the strong.",
+            "Breathe the frost; it clears the mind.",
+            "The wolf tests the straggler.",
+            "Stay close, stand firm.",
+            "The alarm call saves the many.",
+            "We are the architects of the trail.",
+            "The mud remembers the hoofprint.",
+            "The tree rubs the itch, but does not remove the burden.",
+            "We are the ancient watchers.",
+            "The stars are the eyes of the ancestors.",
+            "The northern lights are the spirit of the herd.",
+            "Silence is our language.",
+            "The thunder is just the sky walking.",
+            "The lightning reveals the path for a moment.",
+            "Patience is the weapon of the grazer.",
+            "The frantic die; the steady live.",
+            "Do not rush the thaw.",
+            "Spring will come, but winter must be endured.",
+            "The lichen sustains when the grass is gone.",
+            "Find nourishment in the small things.",
+            "The great stag was once a calf.",
+            "Growth is slow, destruction is fast.",
+            "Be like the pine: green in winter.",
+            "The rocks do not complain of the rain.",
+            "The stream cuts the stone through persistence.",
+            "We are the current in the river of time.",
+            "The forest breathes with us.",
+            "The shadow is a place of rest.",
+            "The light reveals the burden.",
+            "Accept the weight.",
+            "Carry it with dignity.",
+            "The head bowing is not submission; it is leverage.",
+            "We push against the world.",
+            "The world pushes back.",
+            "Balance is the key.",
+            "The rutting moon is a time of madness.",
+            "Return to sanity when the season turns.",
+            "The calf learns by watching.",
+            "Teach the young the old ways.",
+            "There is no new path, only the forgotten one.",
+            "Remember the crossing.",
+            "The water is deep, but we can swim.",
+            "Buoyancy is a gift.",
+            "The fur thickens for the cold.",
+            "Adapt or perish.",
+            "The shedding is a renewal.",
+            "Cast off the old year.",
+            "The new growth is tender.",
+            "Protect it.",
+            "The circle of the herd is the fortress.",
+            "Face outward.",
+            "Watch all directions.",
+            "Trust your brother's eyes.",
+            "The scent of danger travels on the wind.",
+            "Turn your nose to the breeze.",
+            "The antler is a receiver.",
+            "Listen to the frequency of the wild.",
+            "We are tuned to the earth.",
+            "The disconnect is the danger.",
+            "Ground yourself.",
+            "The earth holds you.",
+            "You are not alone."
         ];
 
         let currentMode = 'existential';
-        let quoteHistory = [];
-        const maxHistory = 50;
+        
+        // Shuffle Bags for each mode
+        let bags = {
+            existential: [],
+            degen: [],
+            elk: []
+        };
 
         function setMode(mode, btn) {
             currentMode = mode;
-            quoteHistory = [];
             document.querySelectorAll('.mode-btn').forEach(b => {
                 b.classList.remove('active');
                 b.setAttribute('aria-pressed', 'false');
             });
             btn.classList.add('active');
             btn.setAttribute('aria-pressed', 'true');
-            generateQuote();
+            nextQuote();
         }
 
-        function generateQuote() {
+        function nextQuote() {
             const display = document.getElementById('quote-display');
             display.classList.remove('visible');
             
@@ -1655,19 +1845,16 @@
                     default: pool = quotesExistential;
                 }
 
-                // Smart selection avoiding recent history
-                let attempts = 0;
-                let newIndex;
-                do {
-                    newIndex = Math.floor(Math.random() * pool.length);
-                    attempts++;
-                } while (quoteHistory.includes(newIndex) && attempts < 10 && quoteHistory.length < pool.length);
+                // Initialize shuffle bag if empty
+                if (bags[currentMode].length === 0) {
+                    bags[currentMode] = shuffleArray([...pool]);
+                }
 
-                quoteHistory.push(newIndex);
-                if (quoteHistory.length > maxHistory) quoteHistory.shift();
+                // Draw from bag
+                const quote = bags[currentMode].pop();
 
                 // XSS Safe: use textContent
-                display.textContent = '"' + pool[newIndex] + '"';
+                display.textContent = '"' + quote + '"';
                 display.classList.add('visible');
             }, 300);
         }
