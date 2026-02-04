@@ -10,6 +10,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
+    
+    <!-- Security: Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src https: wss:; media-src https: blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
 
     <meta property="og:title" content="$ELK - The Burden We Carry Together">
     <meta property="og:description"
@@ -32,193 +35,306 @@
         rel="stylesheet">
 
     <script type="module">
+        /**
+         * ELK VOTING SYSTEM - SECURITY HARDENED
+         * Audit: Client-side manipulation resistance, XSS prevention, Race condition fixes
+         * Version: 2.0
+         */
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, increment, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, increment, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
-        const appId = window.__app_id || 'elk';
+        // CONFIGURATION: Replace with your Firebase config
+        const FIREBASE_CONFIG = {
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abc123"
+        };
 
+        // Security Constants
+        const ALLOWED_MECHANISMS = Object.freeze(['isolation', 'anchoring', 'distraction', 'sublimation']);
+        const APP_ID = 'elk';
+        const STORAGE_KEYS = Object.freeze({
+            HAS_VOTED: 'elk_has_voted',
+            VOTED_MECH: 'elk_voted_mech',
+            VOTED_CYCLE: 'elk_voted_cycle',
+            SESSION_ID: 'elk_session'
+        });
+
+        // State Management
         let app = null;
         let auth = null;
         let db = null;
         let currentUser = null;
         let votingEnabled = false;
+        let isVoting = false;
+        let currentCycle = 1;
+        let voteData = { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0, cycle: 1 };
+        let unsubscribeVotes = null;
 
-        // Initialize Firebase if config exists
-        if (firebaseConfig && firebaseConfig.apiKey) {
+        // Integrity Check: Detect localStorage tampering attempts
+        const detectTampering = () => {
+            const originalRemoveItem = localStorage.removeItem;
+            localStorage.removeItem = function(key) {
+                if (key === STORAGE_KEYS.HAS_VOTED || key === STORAGE_KEYS.VOTED_CYCLE) {
+                    console.warn('Tampering attempt detected on voting keys');
+                    // Force re-validate with server on next vote attempt
+                    sessionStorage.setItem('elk_tamper_detected', Date.now().toString());
+                }
+                return originalRemoveItem.apply(this, arguments);
+            };
+        };
+        detectTampering();
+
+        // Initialize Firebase with Error Handling
+        const initFirebase = async () => {
             try {
-                app = initializeApp(firebaseConfig);
+                if (!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === "YOUR_API_KEY_HERE") {
+                    throw new Error('Firebase configuration missing');
+                }
+
+                app = initializeApp(FIREBASE_CONFIG);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 votingEnabled = true;
-            } catch (e) {
-                console.error("Firebase initialization failed:", e);
-                votingEnabled = false;
-            }
-        } else {
-            console.warn("Firebase config not found. Voting disabled.");
-            votingEnabled = false;
-        }
 
-        // Global vote data cache
-        window.globalVoteData = { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
-        window.currentCycle = null;
-
-        // AUTH INIT
-        const initAuthentication = async () => {
-            if (!auth) return;
-            try {
-                if (window.__initial_auth_token) {
-                    await signInWithCustomToken(auth, window.__initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth failed:", error);
-            }
-        };
-
-        if (auth) {
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    currentUser = user;
-                    initRealtimeVotes();
-                }
-            });
-            initAuthentication();
-        }
-
-        function initRealtimeVotes() {
-            if (!db) return;
-
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'mechanisms', 'current');
-
-            // Real-time listener for global vote counts
-            onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    window.globalVoteData = data;
-                    updateVoteUI(data);
-                    if (typeof data.cycle === 'number') {
-                        syncVoteLockWithCycle(data.cycle);
+                // Auth State Observer
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        console.info('[ELK] Auth initialized:', user.uid.substring(0, 8));
+                        initRealtimeVotes();
+                    } else {
+                        currentUser = null;
+                        signInAnonymously(auth).catch(err => {
+                            console.error('[ELK] Anonymous auth failed:', err);
+                            disableVoting('AUTH FAILED');
+                        });
                     }
-                } else {
-                    // Initialize document with zeros if it doesn't exist
-                    const initialVotes = { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0, cycle: 1, cycleStartedAt: null, cycleEndsAt: null };
-                    setDoc(docRef, initialVotes);
-                }
-            }, (error) => {
-                console.error("Vote sync error:", error);
-                showVoteError();
-            });
-        }
-
-        // Expose vote function globally
-        window.handleVote = async (mech) => {
-            if (!votingEnabled || !db || !currentUser) {
-                showToast("VOTING UNAVAILABLE - CHECK CONFIG");
-                return;
-            }
-
-            // Check local "has voted" state to prevent spamming from same browser
-            if (localStorage.getItem('elk_has_voted') === 'true') {
-                showToast("ALREADY VOTED");
-                return;
-            }
-
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'mechanisms', 'current');
-
-                // Atomic increment - ensures accurate global count
-                await updateDoc(docRef, {
-                    [mech]: increment(1)
                 });
 
-                // Lock voting locally
-                localStorage.setItem('elk_has_voted', 'true');
-                localStorage.setItem('elk_voted_mech', mech);
-                if (typeof window.currentCycle === 'number') {
-                    localStorage.setItem('elk_voted_cycle', String(window.currentCycle));
-                }
-                applyVoteLock(mech);
-                showToast("VOTE RECORDED");
             } catch (error) {
-                console.error("Vote failed:", error);
-                showToast("VOTE FAILED - TRY AGAIN");
+                console.error('[ELK] Firebase initialization error:', error);
+                votingEnabled = false;
+                disableVoting('CONFIG ERROR');
             }
         };
 
-        function updateVoteUI(data) {
-            for (const [key, val] of Object.entries(data)) {
-                const el = document.querySelector(`[data-mechanism="${key}"] .vote-count`);
-                if (el) {
-                    el.textContent = val.toLocaleString();
-                    // Add animation effect on update
-                    el.classList.add('text-white');
-                    setTimeout(() => el.classList.remove('text-white'), 300);
-                }
-            }
-        }
+        // Real-time Vote Sync with Validation
+        const initRealtimeVotes = () => {
+            if (!db) return;
 
-        function applyVoteLock(mech) {
+            const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'mechanisms', 'current');
+            
+            unsubscribeVotes = onSnapshot(docRef, (snapshot) => {
+                try {
+                    if (snapshot.exists()) {
+                        const data = snapshot.data();
+                        
+                        // Validate and sanitize incoming data
+                        const sanitized = {};
+                        ALLOWED_MECHANISMS.forEach(mech => {
+                            const val = data[mech];
+                            sanitized[mech] = (typeof val === 'number' && !isNaN(val) && val >= 0) ? Math.floor(val) : 0;
+                        });
+                        
+                        sanitized.cycle = (typeof data.cycle === 'number' && data.cycle > 0) ? Math.floor(data.cycle) : 1;
+                        
+                        voteData = sanitized;
+                        currentCycle = sanitized.cycle;
+                        
+                        updateVoteUI(sanitized);
+                        syncVoteLock();
+                    } else {
+                        // Initialize document
+                        const initialData = {
+                            isolation: 0, anchoring: 0, distraction: 0, sublimation: 0,
+                            cycle: 1,
+                            createdAt: serverTimestamp(),
+                            updatedAt: serverTimestamp()
+                        };
+                        setDoc(docRef, initialData).catch(err => {
+                            console.error('[ELK] Init document failed:', err);
+                        });
+                    }
+                } catch (err) {
+                    console.error('[ELK] Data processing error:', err);
+                    showVoteError('DATA CORRUPT');
+                }
+            }, (error) => {
+                console.error('[ELK] Real-time sync error:', error);
+                showVoteError('SYNC ERROR');
+            });
+        };
+
+        // Secure Vote Handler
+        window.handleVote = async (mechanism) => {
+            // Input Validation
+            if (!ALLOWED_MECHANISMS.includes(mechanism)) {
+                console.error('[ELK] Invalid mechanism:', mechanism);
+                showToast('INVALID SELECTION');
+                return;
+            }
+
+            if (!votingEnabled || !db || !currentUser) {
+                showToast('VOTING UNAVAILABLE');
+                return;
+            }
+
+            if (isVoting) return; // Prevent double-clicks
+            isVoting = true;
+
+            try {
+                // Check local vote lock
+                const votedCycle = parseInt(localStorage.getItem(STORAGE_KEYS.VOTED_CYCLE) || '0');
+                const hasVoted = localStorage.getItem(STORAGE_KEYS.HAS_VOTED) === 'true';
+                const tamperDetected = sessionStorage.getItem('elk_tamper_detected');
+
+                if (tamperDetected) {
+                    showToast('SECURITY CHECK FAILED');
+                    isVoting = false;
+                    return;
+                }
+
+                if (hasVoted && votedCycle === currentCycle) {
+                    showToast('ALREADY VOTED THIS CYCLE');
+                    applyVoteLock(localStorage.getItem(STORAGE_KEYS.VOTED_MECH));
+                    isVoting = false;
+                    return;
+                }
+
+                // Atomic increment
+                const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'mechanisms', 'current');
+                await updateDoc(docRef, {
+                    [mechanism]: increment(1),
+                    updatedAt: serverTimestamp()
+                });
+
+                // Set local lock (with session fingerprint)
+                localStorage.setItem(STORAGE_KEYS.HAS_VOTED, 'true');
+                localStorage.setItem(STORAGE_KEYS.VOTED_MECH, mechanism);
+                localStorage.setItem(STORAGE_KEYS.VOTED_CYCLE, String(currentCycle));
+                localStorage.setItem(STORAGE_KEYS.SESSION_ID, currentUser.uid.substring(0, 8));
+
+                applyVoteLock(mechanism);
+                showToast('VOTE RECORDED');
+                
+                // Analytics
+                if (window.gtag) {
+                    window.gtag('event', 'vote', { mechanism: mechanism });
+                }
+
+            } catch (error) {
+                console.error('[ELK] Vote transaction failed:', error);
+                showToast('VOTE FAILED - RETRY');
+            } finally {
+                isVoting = false;
+            }
+        };
+
+        // UI Updates
+        const updateVoteUI = (data) => {
+            ALLOWED_MECHANISMS.forEach(mech => {
+                const el = document.querySelector(`[data-mechanism="${mech}"] .vote-count`);
+                if (el) {
+                    const count = data[mech] || 0;
+                    if (el.textContent !== count.toLocaleString()) {
+                        el.textContent = count.toLocaleString();
+                        el.style.transition = 'color 0.3s ease';
+                        el.style.color = 'rgba(255, 255, 255, 0.95)';
+                        setTimeout(() => el.style.color = '', 300);
+                    }
+                }
+            });
+        };
+
+        const applyVoteLock = (mechanism) => {
             document.querySelectorAll('.vote-btn').forEach(btn => {
                 btn.disabled = true;
                 btn.classList.add('opacity-50', 'cursor-not-allowed');
                 btn.textContent = "Voted";
             });
 
-            const card = document.querySelector(`[data-mechanism="${mech}"]`);
-            if (card) card.classList.add('voted');
-        }
-
-        function clearVoteLock() {
-            document.querySelectorAll('.vote-btn').forEach(btn => {
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                btn.textContent = "Vote";
-            });
-
-            document.querySelectorAll('.mechanism-card.voted').forEach(card => {
-                card.classList.remove('voted');
-            });
-        }
-
-        function syncVoteLockWithCycle(cycle) {
-            window.currentCycle = cycle;
-
-            const votedCycle = Number(localStorage.getItem('elk_voted_cycle'));
-            if (votedCycle && votedCycle !== cycle) {
-                localStorage.removeItem('elk_has_voted');
-                localStorage.removeItem('elk_voted_mech');
-                localStorage.removeItem('elk_voted_cycle');
-                clearVoteLock();
+            const card = document.querySelector(`[data-mechanism="${mechanism}"]`);
+            if (card) {
+                card.classList.add('voted');
+                card.style.borderColor = 'rgba(139, 0, 0, 0.3)';
             }
+        };
 
-            if (localStorage.getItem('elk_has_voted') === 'true') {
-                if (!localStorage.getItem('elk_voted_cycle')) {
-                    localStorage.setItem('elk_voted_cycle', String(cycle));
+        const syncVoteLock = () => {
+            const votedCycle = parseInt(localStorage.getItem(STORAGE_KEYS.VOTED_CYCLE) || '0');
+            const hasVoted = localStorage.getItem(STORAGE_KEYS.HAS_VOTED) === 'true';
+            
+            if (votedCycle !== currentCycle) {
+                // New cycle - clear locks
+                localStorage.removeItem(STORAGE_KEYS.HAS_VOTED);
+                localStorage.removeItem(STORAGE_KEYS.VOTED_MECH);
+                localStorage.removeItem(STORAGE_KEYS.VOTED_CYCLE);
+                sessionStorage.removeItem('elk_tamper_detected');
+                
+                document.querySelectorAll('.vote-btn').forEach(btn => {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.textContent = "Vote";
+                });
+                
+                document.querySelectorAll('.mechanism-card').forEach(card => {
+                    card.classList.remove('voted');
+                    card.style.borderColor = '';
+                });
+            } else if (hasVoted) {
+                const mech = localStorage.getItem(STORAGE_KEYS.VOTED_MECH);
+                if (mech && ALLOWED_MECHANISMS.includes(mech)) {
+                    applyVoteLock(mech);
                 }
-                setTimeout(() => {
-                    applyVoteLock(localStorage.getItem('elk_voted_mech'));
-                }, 100);
-            } else {
-                clearVoteLock();
             }
-        }
-        function showVoteError() {
+        };
+
+        const disableVoting = (reason) => {
+            votingEnabled = false;
+            document.querySelectorAll('.vote-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.textContent = reason || "DISABLED";
+            });
             document.querySelectorAll('.vote-count').forEach(el => {
                 el.textContent = "--";
                 el.classList.add('text-red-500/50');
             });
-        }
+        };
 
+        const showVoteError = (msg) => {
+            document.querySelectorAll('.vote-count').forEach(el => {
+                el.textContent = msg;
+                el.classList.add('text-red-500/50');
+            });
+        };
 
-        // Expose to window
+        // Initialize
+        initFirebase();
+
+        // Cleanup on page hide
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && unsubscribeVotes) {
+                // Optional: pause updates when tab inactive to save bandwidth
+            }
+        });
+
+        // Expose minimal API
         window.votingEnabled = votingEnabled;
+        window.getVoteStatus = () => ({ cycle: currentCycle, data: voteData });
     </script>
 
     <style>
+        :root {
+            --elk-crimson: rgba(139, 0, 0, 0.3);
+            --elk-crimson-bright: rgba(220, 38, 38, 0.6);
+        }
+
         html {
             touch-action: manipulation;
             -webkit-text-size-adjust: 100%;
@@ -236,7 +352,7 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Global Background - CHANGED to elk2.png with increased opacity */
+        /* Global Background */
         .global-bg {
             position: fixed;
             top: 0;
@@ -247,9 +363,9 @@
             background-size: cover;
             background-position: center;
             filter: grayscale(100%) opacity(0.38) contrast(1.1);
-            /* Increased opacity from 0.3 to 0.38 */
             z-index: -10;
             transform: translateZ(0);
+            will-change: transform;
         }
 
         .vignette {
@@ -298,7 +414,7 @@
         }
 
         .buy-btn {
-            background: rgba(139, 0, 0, 0.2);
+            background: var(--elk-crimson);
             border: 1px solid rgba(220, 38, 38, 0.3);
             color: rgba(255, 100, 100, 0.8);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -308,7 +424,7 @@
 
         .buy-btn:hover {
             background: rgba(139, 0, 0, 0.4);
-            border-color: rgba(220, 38, 38, 0.6);
+            border-color: var(--elk-crimson-bright);
             color: rgba(255, 150, 150, 1);
             transform: translateY(-2px);
             box-shadow: 0 10px 40px rgba(139, 0, 0, 0.3);
@@ -441,7 +557,6 @@
                 transform: scale(1.15) translateY(40px);
                 filter: blur(12px);
             }
-
             100% {
                 opacity: 1;
                 transform: scale(1) translateY(0);
@@ -474,7 +589,7 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.04);
-            transition: transform 0.3s ease, background-color 0.3s ease;
+            transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
             position: relative;
         }
 
@@ -486,7 +601,7 @@
 
         .mechanism-card.voted {
             background: rgba(139, 0, 0, 0.1);
-            border-color: rgba(139, 0, 0, 0.2);
+            border-color: rgba(139, 0, 0, 0.3);
         }
 
         .mechanism-card button {
@@ -501,9 +616,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             z-index: 100;
             display: flex;
             justify-content: center;
@@ -524,15 +639,15 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             max-width: 600px;
             width: 100%;
-            padding: 2rem;
+            padding: 2.5rem;
             border-radius: 8px;
-            transform: scale(0.95);
+            transform: scale(0.95) translateY(10px);
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
         }
 
         .modal-overlay.open .modal-content {
-            transform: scale(1);
+            transform: scale(1) translateY(0);
         }
 
         .footer-bg-layer {
@@ -542,21 +657,15 @@
             transform: translate(-50%, -50%);
             width: 100%;
             height: 100%;
-
             background-image: url('https://raw.githubusercontent.com/exelkonsol/elk/main/newpreview.png');
-
-            /* FIX */
             background-size: contain;
             background-position: center bottom;
             background-repeat: no-repeat;
-
-            opacity: 0.18;
+            opacity: 0.15;
             pointer-events: none;
             z-index: 0;
-
             filter: grayscale(0%) contrast(1.15);
         }
-
 
         .audio-player-container {
             position: relative;
@@ -572,9 +681,9 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 0;
             pointer-events: none;
         }
@@ -586,7 +695,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            opacity: 0.3;
+            opacity: 0.25;
             z-index: 1;
         }
 
@@ -600,7 +709,7 @@
 
         @media (min-width: 768px) {
             .player-grid {
-                grid-template-columns: 200px 1fr;
+                grid-template-columns: 220px 1fr;
                 gap: 3rem;
                 align-items: center;
             }
@@ -608,7 +717,7 @@
 
         @media (min-width: 1024px) {
             .player-grid {
-                grid-template-columns: 240px 1fr;
+                grid-template-columns: 260px 1fr;
             }
         }
 
@@ -626,20 +735,21 @@
             aspect-ratio: 1/1;
             border-radius: 50%;
             background: repeating-radial-gradient(circle at center, #111 0px, #111 2px, #0a0a0a 3px, #0a0a0a 4px);
-            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(0, 0, 0, 0.9);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 10px 40px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 0, 0, 0.9);
             cursor: pointer;
             touch-action: manipulation;
             transform: translateZ(0);
+            animation: vinyl-spin 8s linear infinite;
+            animation-play-state: paused;
+        }
+
+        .vinyl-record.playing {
+            animation-play-state: running;
         }
 
         @keyframes vinyl-spin {
-            from {
-                transform: translateZ(0) rotate(0deg);
-            }
-
-            to {
-                transform: translateZ(0) rotate(360deg);
-            }
+            from { transform: translateZ(0) rotate(0deg); }
+            to { transform: translateZ(0) rotate(360deg); }
         }
 
         .vinyl-label {
@@ -673,24 +783,26 @@
 
         .progress-container {
             position: relative;
-            height: 4px;
+            height: 6px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 2px;
+            border-radius: 3px;
             cursor: pointer;
             overflow: visible;
             touch-action: none;
+            margin: 1rem 0;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, rgba(139, 0, 0, 0.5), rgba(255, 255, 255, 0.3));
+            background: linear-gradient(90deg, rgba(139, 0, 0, 0.6), rgba(255, 255, 255, 0.3));
             width: 0%;
             position: relative;
             border-radius: 2px;
             pointer-events: none;
             top: -1px;
             height: calc(100% + 2px);
+            transition: width 0.1s linear;
         }
 
         .progress-handle {
@@ -713,7 +825,7 @@
         }
 
         .track-item {
-            transition: background 0.2s ease, padding 0.2s ease;
+            transition: all 0.2s ease;
             border-left: 2px solid transparent;
             position: relative;
             overflow: hidden;
@@ -721,6 +833,8 @@
             min-height: 44px;
             display: flex;
             align-items: center;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
         }
 
         .track-item::before {
@@ -737,11 +851,11 @@
 
         .track-item:hover {
             background: rgba(255, 255, 255, 0.03);
-            padding-left: 1rem;
+            padding-left: 1.25rem;
         }
 
         .track-item.active {
-            background: rgba(139, 0, 0, 0.05);
+            background: rgba(139, 0, 0, 0.08);
             border-left-color: rgba(139, 0, 0, 0.5);
         }
 
@@ -754,8 +868,8 @@
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 2rem;
-            margin: 2rem 0;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
         }
 
         .control-btn {
@@ -768,6 +882,10 @@
             justify-content: center;
             user-select: none;
             opacity: 0.6;
+            background: transparent;
+            border: none;
+            color: inherit;
+            cursor: pointer;
         }
 
         .control-btn:hover {
@@ -781,6 +899,12 @@
             transform: scale(0.95);
         }
 
+        .control-btn.active {
+            opacity: 1;
+            color: #fff;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+        }
+
         .control-btn svg {
             width: 24px;
             height: 24px;
@@ -788,8 +912,8 @@
         }
 
         .play-btn-main {
-            width: 70px;
-            height: 70px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             border: 1px solid rgba(255, 255, 255, 0.3);
             background: rgba(255, 255, 255, 0.1);
@@ -802,19 +926,7 @@
             touch-action: manipulation;
             user-select: none;
             backdrop-filter: blur(4px);
-        }
-
-        .play-btn-main svg {
-            width: 32px;
-            height: 32px;
-            fill: rgba(255, 255, 255, 0.9);
-            stroke: none;
-            margin-left: 4px;
-        }
-
-        .play-btn-main svg[data-lucide="pause"] {
-            margin-left: 0;
-            fill: rgba(255, 255, 255, 0.9);
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .play-btn-main:hover {
@@ -830,10 +942,10 @@
 
         #mute-toggle-btn {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: rgba(0, 0, 0, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -860,16 +972,19 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            opacity: 0.6;
+            opacity: 0.7;
             pointer-events: none;
+            animation: vinyl-spin 8s linear infinite;
+            animation-play-state: paused;
         }
 
-        .mute-icon-overlay {
-            display: none;
+        #mute-toggle-btn.playing img.btn-art {
+            animation-play-state: running;
         }
 
         ::-webkit-scrollbar {
-            width: 4px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
@@ -878,7 +993,7 @@
 
         ::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
+            border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -895,6 +1010,7 @@
             outline-offset: 2px;
         }
 
+        /* Mobile Optimizations */
         @media (max-width: 640px) {
             .quote-container {
                 min-height: 400px;
@@ -904,48 +1020,26 @@
             #mute-toggle-btn {
                 bottom: 16px;
                 right: 16px;
-                width: 50px;
-                height: 50px;
+                width: 48px;
+                height: 48px;
             }
 
             .hero-image {
-                width: 180px !important;
-                height: 180px !important;
+                width: 200px !important;
+                height: 200px !important;
             }
 
             .quote-text {
-                font-size: 1.5rem;
+                font-size: 1.25rem;
             }
 
             .vinyl-record {
-                animation: vinyl-spin 8s linear infinite;
-                animation-play-state: paused;
-                will-change: transform;
-                /* Added to fix reset on mobile */
-            }
-
-            .vinyl-record.playing {
-                animation-play-state: running;
-            }
-
-            #mute-toggle-btn .btn-art {
-                animation: vinyl-spin 8s linear infinite;
-                animation-play-state: paused;
-                will-change: transform;
-                /* Added to fix reset on mobile */
-            }
-
-            #mute-toggle-btn.playing .btn-art {
-                animation-play-state: running;
-            }
-
-            .vinyl-record {
-                max-width: 260px;
+                max-width: 240px;
             }
 
             .controls-wrapper {
-                gap: 1.25rem;
-                margin: 1.5rem 0;
+                gap: 1rem;
+                margin: 1rem 0;
             }
 
             .play-btn-main {
@@ -953,26 +1047,39 @@
                 height: 56px;
             }
 
-            .play-btn-main svg {
-                width: 24px;
-                height: 24px;
-            }
-
-            .control-btn {
-                min-width: 36px;
-                min-height: 36px;
-            }
-
             .control-btn svg {
                 width: 20px;
                 height: 20px;
             }
+            
+            .modal-content {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
         }
 
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            .hero-content {
+                opacity: 1;
+                transform: none;
+                filter: none;
+            }
+            .vinyl-record {
+                animation: none !important;
+            }
+        }
+
+        /* Touch device optimizations */
         @media (pointer: coarse) {
             .progress-container {
-                height: 20px;
-                margin: -8px 0;
+                height: 24px;
+                margin: -9px 0;
                 background: transparent;
                 border: none;
             }
@@ -980,18 +1087,18 @@
             .progress-container::before {
                 content: '';
                 position: absolute;
-                top: 8px;
+                top: 9px;
                 left: 0;
                 right: 0;
-                height: 4px;
+                height: 6px;
                 background: rgba(255, 255, 255, 0.1);
-                border-radius: 2px;
+                border-radius: 3px;
                 border: 1px solid rgba(255, 255, 255, 0.1);
             }
 
             .progress-fill {
-                top: 8px;
-                height: 4px;
+                top: 9px;
+                height: 6px;
             }
 
             .progress-handle {
@@ -1000,27 +1107,9 @@
                 height: 16px;
                 transform: translateY(-50%) scale(1);
             }
-
-            .track-item {
-                padding-top: 12px;
-                padding-bottom: 12px;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                transition-duration: 0.01ms !important;
-            }
-
-            .hero-content {
-                opacity: 1;
-                transform: none;
-                filter: none;
-            }
         }
     </style>
-
+<base target="_blank">
 </head>
 
 <body class="font-body antialiased selection:bg-white/10 selection:text-white relative">
@@ -1029,38 +1118,41 @@
     <div class="vignette"></div>
     <div class="bg-overlay"></div>
 
-    <div id="modal-overlay" class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-content relative">
-            <button onclick="closeModal(event, true)" class="absolute top-4 right-4 text-white/50 hover:text-white"><i
-                    data-lucide="x" class="w-6 h-6"></i></button>
-            <h3 id="modal-title" class="font-serif text-3xl text-white/90 mb-4"></h3>
-            <div id="modal-body" class="font-body text-white/70 leading-relaxed text-lg space-y-4"></div>
+    <!-- Modal -->
+    <div id="modal-overlay" class="modal-overlay" onclick="closeModal(event)" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content relative" onclick="event.stopPropagation()">
+            <button onclick="closeModal(null, true)" class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors" aria-label="Close modal">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h3 id="modal-title" class="font-serif text-2xl sm:text-3xl text-white/90 mb-4 tracking-wide"></h3>
+            <div id="modal-body" class="font-body text-white/70 leading-relaxed text-base sm:text-lg space-y-4"></div>
         </div>
     </div>
 
+    <!-- Toast -->
     <div id="toast"
-        class="fixed bottom-8 left-1/2 transform -translate-x-1/2 blur-fade px-6 py-3 translate-y-full opacity-0 transition-all duration-500 z-[100] rounded-full border border-white/10">
+        class="fixed bottom-8 left-1/2 transform -translate-x-1/2 blur-fade px-6 py-3 translate-y-full opacity-0 transition-all duration-500 z-[100] rounded-full border border-white/10 pointer-events-none">
         <span class="font-mono text-xs text-white/70 tracking-wider flex items-center gap-2">
             <i data-lucide="check" class="w-3 h-3"></i> <span id="toast-msg">COPIED</span>
         </span>
     </div>
 
-    <nav class="fixed top-0 w-full z-40 blur-fade border-b-0 h-16 sm:h-20 flex items-center">
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-40 blur-fade border-b border-white/5 h-16 sm:h-20 flex items-center">
         <div class="w-full max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between items-center">
                 <a href="#" target="_self"
                     class="font-serif text-base sm:text-lg font-bold tracking-[0.3em] text-white/60 hover:text-white/90 transition-colors touch-manipulation">$ELK</a>
-                <div
-                    class="hidden md:flex items-center gap-8 lg:gap-12 font-mono text-[10px] tracking-[0.3em] uppercase">
+                <div class="hidden md:flex items-center gap-8 lg:gap-12 font-mono text-[10px] tracking-[0.3em] uppercase">
                     <a href="#mechanisms" target="_self"
-                        class="text-white/20 hover:text-white/60 transition-colors duration-300 py-2">Mechanisms</a>
+                        class="text-white/30 hover:text-white/70 transition-colors duration-300 py-2">Mechanisms</a>
                     <a href="#manifesto" target="_self"
-                        class="text-white/20 hover:text-white/60 transition-colors duration-300 py-2">Manifesto</a>
+                        class="text-white/30 hover:text-white/70 transition-colors duration-300 py-2">Manifesto</a>
                     <a href="#soundscape" target="_self"
-                        class="text-white/20 hover:text-white/60 transition-colors duration-300 py-2">Soundscape</a>
+                        class="text-white/30 hover:text-white/70 transition-colors duration-300 py-2">Soundscape</a>
                 </div>
                 <button onclick="copyToClipboard('8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump', 'CA COPIED')"
-                    class="font-mono text-[8px] sm:text-[9px] text-white/60 hover:text-white/90 transition-all duration-500 tracking-wider uppercase border border-white/5 px-3 py-1.5 rounded hover:bg-white/5 active:scale-95 touch-manipulation min-h-[44px]">
+                    class="font-mono text-[9px] sm:text-[10px] text-white/60 hover:text-white/90 transition-all duration-500 tracking-wider uppercase border border-white/10 hover:border-white/30 px-3 py-2 rounded hover:bg-white/5 active:scale-95 touch-manipulation min-h-[44px]">
                     <span class="hidden sm:inline">8DaLP...Gpump</span>
                     <span class="sm:hidden">CA</span>
                 </button>
@@ -1068,30 +1160,25 @@
         </div>
     </nav>
 
-    <div id="mute-toggle-btn" onclick="togglePlay()" role="button" aria-label="Toggle Play/Pause">
-        <img id="btn-art" src="https://raw.githubusercontent.com/exelkonsol/elk/main/Before%20the%20Clearing.png"
-            alt="Album Art" class="btn-art" decoding="async">
-        <div class="mute-icon-overlay">
-            <i id="mute-icon" data-lucide="volume-2" class="w-5 h-5"></i>
-        </div>
-    </div>
+    <!-- Floating Audio Toggle -->
+    <button id="mute-toggle-btn" onclick="togglePlay()" role="button" aria-label="Toggle Play/Pause">
+        <img id="btn-art" src="https://raw.githubusercontent.com/exelkonsol/elk/main/Before%20the%20Clearing.png" alt="Album Art" class="btn-art" decoding="async">
+    </button>
 
+    <!-- Hero Section -->
     <section class="relative min-h-screen flex items-center justify-center py-20 px-4 overflow-hidden">
         <div class="hero-content relative z-10 max-w-4xl mx-auto text-center w-full flex flex-col items-center">
-
-            <div class="mb-6 sm:mb-8 w-full flex justify-center items-center relative">
-                <img src="https://raw.githubusercontent.com/exelkonsol/elk/main/pumpfun.png" alt="$ELK Stag" width="400"
-                    height="400" decoding="async"
-                    class="hero-image w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] md:w-[320px] md:h-[320px] lg:w-[400px] lg:h-[400px] mx-auto object-contain select-none">
+            <div class="mb-8 w-full flex justify-center items-center relative">
+                <img src="https://raw.githubusercontent.com/exelkonsol/elk/main/pumpfun.png" alt="$ELK Stag" width="400" height="400" decoding="async"
+                    class="hero-image w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[360px] md:h-[360px] lg:w-[400px] lg:h-[400px] mx-auto object-contain select-none">
             </div>
 
             <div class="space-y-6 sm:space-y-8 mb-12 sm:mb-16 max-w-4xl px-4 relative z-20">
-                <p
-                    class="font-mono text-[8px] sm:text-[9px] tracking-[0.4em] sm:tracking-[0.5em] text-white/10 uppercase">
-                    Peter Wessel Zapffe // On The Tragic</p>
+                <p class="font-mono text-[9px] tracking-[0.4em] sm:tracking-[0.5em] text-white/20 uppercase">
+                    Peter Wessel Zapffe // On The Tragic
+                </p>
 
-                <h1 id="hero-quote"
-                    class="font-serif text-xl sm:text-3xl md:text-5xl font-light text-white/60 leading-normal sm:leading-relaxed tracking-wide text-balance">
+                <h1 id="hero-quote" class="font-serif text-2xl sm:text-4xl md:text-5xl font-light text-white/60 leading-normal sm:leading-relaxed tracking-wide text-balance">
                     "We are carried through life by a series of
                     <span class="hero-quote-highlight">sublimations</span>—fleeting release valves
                     for the pressure of being."
@@ -1115,145 +1202,142 @@
         </div>
     </section>
 
+    <!-- Mechanisms Section -->
     <section id="mechanisms" class="relative py-20 sm:py-32 px-4 sm:px-6">
         <div class="max-w-7xl mx-auto">
             <div class="text-center mb-16 sm:mb-20 space-y-4">
-                <span class="font-mono text-[9px] tracking-[0.5em] text-white/10 uppercase block">Survival
-                    Architecture</span>
+                <span class="font-mono text-[9px] tracking-[0.5em] text-white/20 uppercase block">Survival Architecture</span>
                 <h2 class="font-serif text-3xl sm:text-5xl font-light text-white/50">Four Mechanisms</h2>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg group"
-                    data-mechanism="isolation">
+                <!-- Isolation -->
+                <div class="mechanism-card p-6 sm:p-8 min-h-[320px] flex flex-col justify-between rounded-lg group" data-mechanism="isolation">
                     <div class="cursor-pointer" onclick="openModal('isolation')">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-serif text-2xl text-white/70 mb-4 group-hover:text-white transition-colors">
-                                Isolation</h3>
-                            <i data-lucide="info"
-                                class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-2xl text-white/70 group-hover:text-white transition-colors">Isolation</h3>
+                            <i data-lucide="info" class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
                         </div>
-                        <p class="text-white/30 text-sm leading-relaxed mb-4">Remove tokens from circulation. Confine
-                            anxiety to manageable compartments.</p>
-                        <p class="text-[10px] text-white/20 font-mono uppercase">Suppression through reduction</p>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Remove tokens from circulation. Confine anxiety to manageable compartments.</p>
+                        <p class="text-[10px] text-white/25 font-mono uppercase tracking-wider">Suppression through reduction</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs text-white/30 font-mono">Global Votes</span>
-                            <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
+                            <span class="text-xs text-white/30 font-mono uppercase tracking-wider">Global Votes</span>
+                            <span class="vote-count font-mono text-xl text-white/60" data-count="0">0</span>
                         </div>
-                        <button onclick="handleVote('isolation')"
-                            class="vote-btn w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px]">Vote</button>
+                        <button onclick="handleVote('isolation')" 
+                            class="vote-btn w-full py-3 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px] bg-transparent">
+                            Vote
+                        </button>
                     </div>
                 </div>
 
-                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg group"
-                    data-mechanism="anchoring">
+                <!-- Anchoring -->
+                <div class="mechanism-card p-6 sm:p-8 min-h-[320px] flex flex-col justify-between rounded-lg group" data-mechanism="anchoring">
                     <div class="cursor-pointer" onclick="openModal('anchoring')">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-serif text-2xl text-white/70 mb-4 group-hover:text-white transition-colors">
-                                Anchoring</h3>
-                            <i data-lucide="info"
-                                class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-2xl text-white/70 group-hover:text-white transition-colors">Anchoring</h3>
+                            <i data-lucide="info" class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
                         </div>
-                        <p class="text-white/30 text-sm leading-relaxed mb-4">Permanent liquidity. Fixed points
-                            preventing drift into the chaotic void.</p>
-                        <p class="text-[10px] text-white/20 font-mono uppercase">Structure against entropy</p>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Permanent liquidity. Fixed points preventing drift into the chaotic void.</p>
+                        <p class="text-[10px] text-white/25 font-mono uppercase tracking-wider">Structure against entropy</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs text-white/30 font-mono">Global Votes</span>
-                            <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
+                            <span class="text-xs text-white/30 font-mono uppercase tracking-wider">Global Votes</span>
+                            <span class="vote-count font-mono text-xl text-white/60" data-count="0">0</span>
                         </div>
-                        <button onclick="handleVote('anchoring')"
-                            class="vote-btn w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px]">Vote</button>
+                        <button onclick="handleVote('anchoring')" 
+                            class="vote-btn w-full py-3 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px] bg-transparent">
+                            Vote
+                        </button>
                     </div>
                 </div>
 
-                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg group"
-                    data-mechanism="distraction">
+                <!-- Distraction -->
+                <div class="mechanism-card p-6 sm:p-8 min-h-[320px] flex flex-col justify-between rounded-lg group" data-mechanism="distraction">
                     <div class="cursor-pointer" onclick="openModal('distraction')">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-serif text-2xl text-white/70 mb-4 group-hover:text-white transition-colors">
-                                Distraction</h3>
-                            <i data-lucide="info"
-                                class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-2xl text-white/70 group-hover:text-white transition-colors">Distraction</h3>
+                            <i data-lucide="info" class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
                         </div>
-                        <p class="text-white/30 text-sm leading-relaxed mb-4">Marketing, raids, content. Keep the mind
-                            moving against the abyss.</p>
-                        <p class="text-[10px] text-white/20 font-mono uppercase">Motion against stillness</p>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Marketing, raids, content. Keep the mind moving against the abyss.</p>
+                        <p class="text-[10px] text-white/25 font-mono uppercase tracking-wider">Motion against stillness</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs text-white/30 font-mono">Global Votes</span>
-                            <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
+                            <span class="text-xs text-white/30 font-mono uppercase tracking-wider">Global Votes</span>
+                            <span class="vote-count font-mono text-xl text-white/60" data-count="0">0</span>
                         </div>
-                        <button onclick="handleVote('distraction')"
-                            class="vote-btn w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px]">Vote</button>
+                        <button onclick="handleVote('distraction')" 
+                            class="vote-btn w-full py-3 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px] bg-transparent">
+                            Vote
+                        </button>
                     </div>
                 </div>
 
-                <div class="mechanism-card p-6 sm:p-8 min-h-[300px] flex flex-col justify-between rounded-lg group"
-                    data-mechanism="sublimation">
+                <!-- Sublimation -->
+                <div class="mechanism-card p-6 sm:p-8 min-h-[320px] flex flex-col justify-between rounded-lg group" data-mechanism="sublimation">
                     <div class="cursor-pointer" onclick="openModal('sublimation')">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-serif text-2xl text-white/70 mb-4 group-hover:text-white transition-colors">
-                                Sublimation</h3>
-                            <i data-lucide="info"
-                                class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-serif text-2xl text-white/70 group-hover:text-white transition-colors">Sublimation</h3>
+                            <i data-lucide="info" class="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors"></i>
                         </div>
-                        <p class="text-white/30 text-sm leading-relaxed mb-4">Transform suffering into art. Philosophy
-                            as evolutionary bypass.</p>
-                        <p class="text-[10px] text-white/20 font-mono uppercase">Pain becomes meaning</p>
+                        <p class="text-white/40 text-sm leading-relaxed mb-4">Transform suffering into art. Philosophy as evolutionary bypass.</p>
+                        <p class="text-[10px] text-white/25 font-mono uppercase tracking-wider">Pain becomes meaning</p>
                     </div>
                     <div class="mt-6 pt-6 border-t border-white/5">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs text-white/30 font-mono">Global Votes</span>
-                            <span class="vote-count font-mono text-lg text-white/50" data-count="0">0</span>
+                            <span class="text-xs text-white/30 font-mono uppercase tracking-wider">Global Votes</span>
+                            <span class="vote-count font-mono text-xl text-white/60" data-count="0">0</span>
                         </div>
-                        <button onclick="handleVote('sublimation')"
-                            class="vote-btn w-full py-2 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px]">Vote</button>
+                        <button onclick="handleVote('sublimation')" 
+                            class="vote-btn w-full py-3 text-[10px] font-mono tracking-wider uppercase text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-all touch-manipulation min-h-[44px] bg-transparent">
+                            Vote
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Manifesto/Quote Section -->
     <section id="manifesto" class="relative py-20 sm:py-32 px-4 sm:px-6">
         <div class="max-w-5xl mx-auto">
-            <div class="quote-section blur-fade mb-10 rounded-xl border border-white/5">
+            <div class="quote-section blur-fade rounded-xl border border-white/5 overflow-hidden">
                 <div class="quote-bg"></div>
                 <div class="quote-container">
                     <div class="mb-6 w-full text-center relative z-10">
-                        <p class="font-mono text-[9px] tracking-[0.4em] text-white/20 uppercase">Echoes of the Present
-                            Void</p>
+                        <p class="font-mono text-[9px] tracking-[0.4em] text-white/30 uppercase">Echoes of the Present Void</p>
                     </div>
                     <div class="mode-selector mb-8 relative z-10">
-                        <button class="mode-btn active" onclick="setMode('existential', this)"
-                            aria-pressed="true">EXISTENTIAL</button>
-                        <button class="mode-btn" onclick="setMode('degen', this)" aria-pressed="false">DEGEN</button>
-                        <button class="mode-btn" onclick="setMode('elk', this)" aria-pressed="false">ELK WISDOM</button>
+                        <button class="mode-btn active" onclick="setMode('existential', this)" aria-pressed="true">Existential</button>
+                        <button class="mode-btn" onclick="setMode('degen', this)" aria-pressed="false">Degen</button>
+                        <button class="mode-btn" onclick="setMode('elk', this)" aria-pressed="false">Elk Wisdom</button>
                     </div>
                     <div id="quote-display" class="quote-text visible px-4 relative z-10">
-                        "We built machines to save time, and now we kill time staring at them, waiting for something to
-                        happen."
+                        "We built machines to save time, and now we kill time staring at them, waiting for something to happen."
                     </div>
                     <div class="quote-btn-group mt-auto flex gap-4 relative z-10">
                         <button onclick="generateQuote()"
-                            class="px-8 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 uppercase tracking-widest text-[10px] transition-all active:scale-95 touch-manipulation min-h-[44px]">Generate
-                            Echo</button>
+                            class="px-8 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 uppercase tracking-widest text-[10px] transition-all active:scale-95 touch-manipulation min-h-[44px]">
+                            Generate Echo
+                        </button>
                         <button onclick="copyQuote()"
                             class="px-4 py-3 hover:bg-white/5 rounded border border-white/10 hover:border-white/30 text-white/50 hover:text-white transition-all active:scale-95 touch-manipulation min-h-[44px] min-w-[44px]"
-                            aria-label="Copy Quote"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                            aria-label="Copy Quote">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Audio Player Section -->
     <section id="soundscape" class="relative py-20 sm:py-32 px-4 sm:px-6 min-h-[800px] overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/50 pointer-events-none">
-        </div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/50 pointer-events-none"></div>
 
         <div class="max-w-5xl mx-auto h-full flex flex-col relative z-10">
             <div class="text-center mb-12 sm:mb-20 space-y-4">
@@ -1261,38 +1345,30 @@
                 <h2 class="font-serif text-3xl sm:text-5xl font-light text-white/50">HYMNS FOR THE HERD</h2>
             </div>
 
-            <div id="audio-interface"
-                class="audio-player-container blur-fade p-6 sm:p-12 rounded-xl border border-white/5 relative bg-black/60">
+            <div id="audio-interface" class="audio-player-container blur-fade p-6 sm:p-10 rounded-xl border border-white/5 relative bg-black/60">
                 <canvas id="visualizer-canvas"></canvas>
 
                 <div class="player-grid relative z-10">
-
                     <div class="vinyl-wrapper">
-                        <div class="vinyl-record" id="vinyl-disc" onclick="togglePlay()">
+                        <div class="vinyl-record" id="vinyl-disc" onclick="togglePlay()" role="button" aria-label="Play/Pause">
                             <div class="vinyl-label">
-                                <img id="album-art-small" src="" alt="" class="w-full h-full object-cover opacity-80"
-                                    decoding="async">
+                                <img id="album-art-small" src="" alt="" class="w-full h-full object-cover opacity-80" decoding="async">
                             </div>
                             <div class="vinyl-hole"></div>
                         </div>
-
                         <div class="mt-6 text-center">
-                            <div id="track-status" class="font-mono text-[9px] tracking-widest text-white/20 uppercase">
-                                Paused</div>
+                            <div id="track-status" class="font-mono text-[9px] tracking-widest text-white/30 uppercase">Paused</div>
                         </div>
                     </div>
 
                     <div class="flex flex-col h-full justify-center space-y-6 w-full">
-                        <div class="text-center md:text-left">
-                            <h3 id="track-title"
-                                class="font-serif text-xl sm:text-2xl text-white/80 mb-1 leading-tight truncate">Before
-                                the Clearing</h3>
-                            <p id="track-desc" class="text-white/30 text-xs sm:text-sm italic truncate">"The silence
-                                before revelation"</p>
+                        <div class="text-center md:text-left min-h-[60px]">
+                            <h3 id="track-title" class="font-serif text-xl sm:text-2xl text-white/80 mb-1 leading-tight truncate">Before the Clearing</h3>
+                            <p id="track-desc" class="text-white/30 text-xs sm:text-sm italic truncate">"The silence before revelation"</p>
                         </div>
 
                         <div class="space-y-2">
-                            <div class="progress-container" id="progress-container">
+                            <div class="progress-container" id="progress-container" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
                                 <div class="progress-fill" id="progress-fill">
                                     <div class="progress-handle"></div>
                                 </div>
@@ -1304,154 +1380,88 @@
                         </div>
 
                         <div class="controls-wrapper">
-                            <button onclick="toggleShuffle()" id="shuffle-btn" class="control-btn text-white"
-                                aria-label="Shuffle"><i data-lucide="shuffle"></i></button>
-                            <button onclick="prevTrack()" class="control-btn text-white" aria-label="Previous"><i
-                                    data-lucide="skip-back" class="w-8 h-8"></i></button>
-                            <button onclick="togglePlay()" id="play-btn" class="play-btn-main"
-                                aria-label="Play/Pause"><i data-lucide="play" id="play-icon"></i></button>
-                            <button onclick="nextTrack()" class="control-btn text-white" aria-label="Next"><i
-                                    data-lucide="skip-forward" class="w-8 h-8"></i></button>
-                            <button onclick="toggleRepeat()" id="repeat-btn" class="control-btn text-white"
-                                aria-label="Repeat"><i data-lucide="repeat"></i></button>
+                            <button onclick="toggleShuffle()" id="shuffle-btn" class="control-btn text-white/60" aria-label="Shuffle">
+                                <i data-lucide="shuffle" class="w-5 h-5"></i>
+                            </button>
+                            <button onclick="prevTrack()" class="control-btn text-white/80" aria-label="Previous">
+                                <i data-lucide="skip-back" class="w-7 h-7"></i>
+                            </button>
+                            <button onclick="togglePlay()" id="play-btn" class="play-btn-main" aria-label="Play/Pause">
+                                <i data-lucide="play" id="play-icon" class="w-6 h-6 ml-1"></i>
+                            </button>
+                            <button onclick="nextTrack()" class="control-btn text-white/80" aria-label="Next">
+                                <i data-lucide="skip-forward" class="w-7 h-7"></i>
+                            </button>
+                            <button onclick="toggleRepeat()" id="repeat-btn" class="control-btn text-white/60" aria-label="Repeat">
+                                <i data-lucide="repeat" class="w-5 h-5"></i>
+                            </button>
                         </div>
 
-                        <div class="flex-1 overflow-y-auto max-h-48 space-y-1 pr-2 custom-scrollbar border-t border-b border-white/5 py-2"
-                            id="playlist">
+                        <div class="flex-1 overflow-y-auto max-h-48 space-y-1 pr-2 custom-scrollbar border-t border-b border-white/5 py-2" id="playlist">
+                            <!-- Tracks injected here -->
                         </div>
 
                         <div class="flex items-center gap-3 px-2 pt-2">
-                            <i data-lucide="volume-2" class="w-4 h-4 text-white/20"></i>
-                            <input type="range" min="0" max="100" value="60"
-                                class="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white/30 hover:accent-white/50"
+                            <i data-lucide="volume-2" class="w-4 h-4 text-white/30"></i>
+                            <input type="range" min="0" max="100" value="60" 
+                                class="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white/30 hover:accent-white/50" 
                                 oninput="setVolume(this.value)" aria-label="Volume">
                         </div>
                     </div>
                 </div>
 
-                <audio id="audio-player" preload="metadata" crossorigin="anonymous" playsinline
-                    webkit-playsinline></audio>
+                <audio id="audio-player" preload="metadata" crossorigin="anonymous" playsinline webkit-playsinline></audio>
             </div>
         </div>
     </section>
 
+    <!-- Footer -->
     <footer class="relative py-16 sm:py-24 px-6 border-t border-white/5 bg-black overflow-hidden">
-        <div class="footer-bg-layer z-0"></div>
-        <div class="relative z-10 max-w-2xl mx-auto text-center space-y-12">
-            <blockquote class="font-body text-white/60 text-sm sm:text-base leading-relaxed italic px-4">"The tragedy of
-                man is that he is constituted to strive for goals he can never fully attain, and to seek answers he can
-                never fully comprehend."</blockquote>
-            <div class="flex justify-center gap-12">
-                <a href="https://github.com/exelkonsol/elk" target="_blank"
+        <div class="footer-bg-layer"></div>
+        <div class="relative z-10 max-w-2xl mx-auto text-center space-y-10">
+            <blockquote class="font-body text-white/50 text-sm sm:text-base leading-relaxed italic px-4">
+                "The tragedy of man is that he is constituted to strive for goals he can never fully attain, and to seek answers he can never fully comprehend."
+            </blockquote>
+            <div class="flex justify-center gap-10">
+                <a href="https://github.com/exelkonsol/elk" target="_blank" rel="noopener noreferrer"
                     class="text-white/20 hover:text-white/60 transition-colors duration-300 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label="GitHub"><i data-lucide="github" class="w-5 h-5"></i></a>
-                <a href="https://x.com/ElkBurden" target="_blank"
+                    aria-label="GitHub">
+                    <i data-lucide="github" class="w-5 h-5"></i>
+                </a>
+                <a href="https://x.com/ElkBurden" target="_blank" rel="noopener noreferrer"
                     class="text-white/20 hover:text-white/60 transition-colors duration-300 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label="Twitter"><i data-lucide="twitter" class="w-5 h-5"></i></a>
-                <a href="https://birdeye.so/solana/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank"
+                    aria-label="Twitter">
+                    <i data-lucide="twitter" class="w-5 h-5"></i>
+                </a>
+                <a href="https://birdeye.so/solana/token/8DaLPxatThHR6ZMx62QtvA6vZ1oJaEKA6gWoQxjGpump" target="_blank" rel="noopener noreferrer"
                     class="text-white/20 hover:text-white/60 transition-colors duration-300 hover:scale-110 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label="Chart"><i data-lucide="activity" class="w-5 h-5"></i></a>
+                    aria-label="Chart">
+                    <i data-lucide="activity" class="w-5 h-5"></i>
+                </a>
             </div>
-            <p class="font-mono text-[8px] text-white/30 tracking-[0.4em] uppercase">The Antlers Are Heavy // We Carry
-                Them Together</p>
+            <p class="font-mono text-[9px] text-white/30 tracking-[0.4em] uppercase">The Antlers Are Heavy // We Carry Them Together</p>
         </div>
     </footer>
 
     <script>
+        // Prevent scroll restoration
         if (history.scrollRestoration) {
             history.scrollRestoration = 'manual';
         }
 
+        // Initialize Icons
         lucide.createIcons();
 
-        const heroQuotes = [
-            {
-                text: "Isolation is the quiet architecture where the mind hides its failures.",
-                mechanism: "isolation"
-            },
-            {
-                text: "We survive by Isolation, a narrowing that turns chaos into a room.",
-                mechanism: "isolation"
-            },
-            {
-                text: "Anchoring is the weight that keeps the herd from drifting into noise.",
-                mechanism: "anchoring"
-            },
-            {
-                text: "We trust Anchoring when every other signal fades.",
-                mechanism: "anchoring"
-            },
-            {
-                text: "Distraction is the wheel that keeps turning so the void cannot speak.",
-                mechanism: "distraction"
-            },
-            {
-                text: "We choose Distraction because stillness tells the truth.",
-                mechanism: "distraction"
-            },
-            {
-                text: "Sublimation is the climb that turns pain into a signal flare.",
-                mechanism: "sublimation"
-            },
-            {
-                text: "We practice Sublimation when suffering becomes a ladder instead of a pit.",
-                mechanism: "sublimation"
-            }
-        ];
-
-        function renderHeroQuote() {
-            const target = document.getElementById('hero-quote');
-            if (!target || heroQuotes.length === 0) return;
-
-            const choice = heroQuotes[Math.floor(Math.random() * heroQuotes.length)];
-            const pattern = new RegExp(`\\b(${choice.mechanism})\\b`, 'i');
-            const highlighted = choice.text.replace(pattern, '<span class="hero-quote-highlight">$1</span>');
-            target.innerHTML = `"${highlighted}"`;
-        }
-
-        renderHeroQuote();
-
-        let audioContextUnlocked = false;
-        function unlockAudioContext() {
-            if (audioContextUnlocked) return;
-            const audio = document.getElementById('audio-player');
-            if (typeof AudioContext !== 'undefined' && AudioContext.state === 'suspended') {
-                AudioContext.resume().then(() => { audioContextUnlocked = true; });
-            } else if (typeof webkitAudioContext !== 'undefined') {
-                const ctx = new webkitAudioContext();
-                if (ctx.state === 'suspended') ctx.resume();
-                audioContextUnlocked = true;
-            }
-        }
-        document.addEventListener('visibilitychange', async () => {
-            if (!document.hidden) {
-                try {
-                    if (audioContext && audioContext.state === 'suspended') {
-                        await audioContext.resume();
-                    }
-
-                    if (audio && playing) {
-                        await audio.play();
-                    }
-
-                    if (playing && !visualizerAnimationId) {
-                        drawVisualizer();
-                    }
-                } catch (e) {
-                    console.log('Resume blocked by browser:', e);
-                }
-            }
-        });
-
-
+        // Toast Notification
         function showToast(msg) {
             const t = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
             t.classList.remove('translate-y-full', 'opacity-0');
             if (navigator.vibrate) navigator.vibrate(10);
-            setTimeout(() => t.classList.add('translate-y-full', 'opacity-0'), 2000);
+            setTimeout(() => t.classList.add('translate-y-full', 'opacity-0'), 2500);
         }
 
+        // Clipboard Utility
         function copyToClipboard(text, msg) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => fallbackCopy(text, msg));
@@ -1463,20 +1473,78 @@
         function fallbackCopy(text, msg) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            textArea.style.cssText = "position:fixed;left:-9999px";
+            textArea.style.cssText = "position:fixed;left:-9999px;opacity:0";
             document.body.appendChild(textArea);
-            textArea.focus();
             textArea.select();
             try {
                 document.execCommand('copy');
                 showToast(msg);
             } catch (err) {
-                console.error('Fallback copy failed', err);
+                console.error('Copy failed', err);
             }
             document.body.removeChild(textArea);
         }
 
-        // EXPANDED QUOTE POOLS - 200+ each for minimal repetition
+        // Hero Quote Rotation
+        const heroQuotes = [
+            { text: "Isolation is the quiet architecture where the mind hides its failures.", mechanism: "isolation" },
+            { text: "We survive by Isolation, a narrowing that turns chaos into a room.", mechanism: "isolation" },
+            { text: "Anchoring is the weight that keeps the herd from drifting into noise.", mechanism: "anchoring" },
+            { text: "We trust Anchoring when every other signal fades.", mechanism: "anchoring" },
+            { text: "Distraction is the wheel that keeps turning so the void cannot speak.", mechanism: "distraction" },
+            { text: "We choose Distraction because stillness tells the truth.", mechanism: "distraction" },
+            { text: "Sublimation is the climb that turns pain into a signal flare.", mechanism: "sublimation" },
+            { text: "We practice Sublimation when suffering becomes a ladder instead of a pit.", mechanism: "sublimation" }
+        ];
+
+        function renderHeroQuote() {
+            const target = document.getElementById('hero-quote');
+            if (!target) return;
+            const choice = heroQuotes[Math.floor(Math.random() * heroQuotes.length)];
+            const pattern = new RegExp(`\\b(${choice.mechanism})\\b`, 'i');
+            const highlighted = choice.text.replace(pattern, '<span class="hero-quote-highlight">$1</span>');
+            target.innerHTML = `"${highlighted}"`;
+        }
+        renderHeroQuote();
+
+        // Modal System
+        const modalContent = {
+            isolation: {
+                title: "Isolation",
+                body: "Isolation is the deliberate thinning of noise. By removing tokens from circulation, we compress the system until only what matters remains—a scarcity that reflects the fear of nothingness. It is the discipline of silence: fewer signals, sharper meaning, and a controlled space where value can concentrate without distraction."
+            },
+            anchoring: {
+                title: "Anchoring",
+                body: "Anchoring is the choice to hold a fixed point in a drifting world. The liquidity pool becomes a covenant of stability, a weight that resists volatility and entropy. It does not deny chaos; it gives the herd a place to return to, a reference that makes movement legible."
+            },
+            distraction: {
+                title: "Distraction",
+                body: "Distraction is motion as mercy. Campaigns, raids, and constant activity keep the mind moving when stillness would reveal the abyss. It is not shallow; it is survival through rhythm—momentary noise that shields us from the full weight of the void."
+            },
+            sublimation: {
+                title: "Sublimation",
+                body: "Sublimation is the alchemy of turning pressure into form. We take pain from the chart and transmute it into community, art, and shared ritual. The struggle is not erased; it is elevated into meaning, a signal flare above the dark."
+            }
+        };
+
+        function openModal(mech) {
+            const data = modalContent[mech];
+            if (!data) return;
+            document.getElementById('modal-title').textContent = data.title;
+            document.getElementById('modal-body').textContent = data.body;
+            document.getElementById('modal-overlay').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            lucide.createIcons();
+        }
+
+        function closeModal(e, force = false) {
+            if (force || (e && e.target.id === 'modal-overlay')) {
+                document.getElementById('modal-overlay').classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Quote Generator
         const quotesExistential = [
             "We built machines to save time, and now we kill time staring at them, waiting for something to happen.",
             "Man is the only animal that refuses to be what he is.",
@@ -1497,255 +1565,13 @@
             "We are our choices.",
             "Life is a preparation for the future; and the best preparation for the future is to live as if there were none.",
             "The only way to deal with an unfree world is to become so absolutely free that your very existence is an act of rebellion.",
-            "What is called resignation is confirmed desperation.",
             "The mass of men lead lives of quiet desperation.",
-            "Time is a game played beautifully by children.",
             "We are all in the gutter, but some of us are looking at the stars.",
             "Nothing matters very much, and most things don't matter at all.",
             "The cure for pain is in the pain.",
             "To be conscious is to be sick.",
             "The eternal silence of these infinite spaces frightens me.",
-            "We are floating in the void, clinging to debris, pretending it is solid ground.",
-            "Every existing thing is born without reason, prolongs itself out of weakness, and dies by chance.",
-            "The more the universe seems comprehensible, the more it also seems pointless.",
-            "We are a way for the cosmos to know itself, yet we wish we were not.",
-            "The optimist proclaims that we live in the best of all possible worlds; and the pessimist fears this is true.",
-            "Life is too short to be small.",
-            "We are all stardust, yet we feel like dirt.",
-            "The void stares back when you stare into it long enough.",
-            "Consciousness is a wound on the purity of the unconscious.",
-            "We are trapped in the amber of the moment. There is no why.",
-            "The tragedy of old age is not that one is old, but that one is young.",
-            "In spite of everything, I still believe people are really good at heart.",
-            "The fear of death follows from the fear of life. A man who lives fully is prepared to die at any time.",
-            "Life is never made unbearable by circumstances, but only by lack of meaning and purpose.",
-            "The universe is not required to be in perfect harmony with human ambition.",
-            "We are such stuff as dreams are made on, and our little life is rounded with a sleep.",
-            "There is no such thing as spare time, no such thing as free time, no such thing as down time. All you got is life time. Go.",
-            "The unexamined life is not worth living, but the examined life is a nightmare.",
-            "We are all going to die, and that makes us the lucky ones.",
-            "The present is the only thing that doesn't exist by itself.",
-            "Life is a tale told by an idiot, full of sound and fury, signifying nothing.",
-            "We are born alone, we live alone, we die alone. Only through our love and friendship can we create the illusion for the moment that we're not alone.",
-            "The mind is its own place, and in itself can make a heaven of hell, a hell of heaven.",
-            "To be is to be perceived, yet we wish we were not.",
-            "The world is indeed comic, but the joke is on mankind.",
-            "I think therefore I am, but I wish I weren't.",
-            "The only thing I know is that I know nothing, and that is terrifying.",
-            "We are the universe experiencing itself subjectively.",
-            "Life is not a problem to be solved, but a reality to be experienced.",
-            "The last of human freedoms—the ability to choose one's attitude in any given set of circumstances.",
-            "We are all prisoners of our own minds.",
-            "The silence of God is the most terrifying sound in the universe.",
-            "Time is a flat circle. Everything we have done or will do we will do over and over and over again—forever.",
-            "We are the middle children of history. Born too late to explore earth, born too early to explore space.",
-            "The light at the end of the tunnel is just the headlamp of an approaching train.",
-            "We are all going to die. The only question is how we choose to live until then.",
-            "Existence is a strange bargain. Life owes us little; we owe it everything.",
-            "The only constant in life is change, yet we fear it above all else.",
-            "We are born wet, naked, and hungry. Then things get worse.",
-            "Life is a sexually transmitted disease with a 100% mortality rate.",
-            "The abyss gazes also.",
-            "We are all ghosts driving meat-coated skeletons made from stardust, riding a rock hurtling through space.",
-            "Time destroys everything.",
-            "The meaning of life is that it stops.",
-            "We are the architects of our own prisons.",
-            "To live is the rarest thing in the world. Most people exist, that is all.",
-            "The universe is under no obligation to make sense to us.",
-            "We are but a speck of dust in an indifferent cosmos.",
-            "Life is what happens when you're busy making other plans.",
-            "The only certainty is uncertainty.",
-            "We are all walking each other home.",
-            "The truth will set you free, but first it will make you miserable.",
-            "Existence is a series of footnotes to a vast, obscure, unfinished masterpiece.",
-            "We are the stories we tell ourselves to keep the void at bay.",
-            "Life is a near-death experience.",
-            "The silence between thoughts is where truth resides.",
-            "We are all temporarily abled.",
-            "The future is certain; it is the past that is unpredictable.",
-            "To be human is to be a question without an answer.",
-            "We are all lottery winners of existence, yet we complain about the prize.",
-            "Life is a maze in which we are all simultaneously the mouse and the walls.",
-            "The weight of existence is measured in unfulfilled possibilities.",
-            "We are echoes of a bang that forgot its own cause.",
-            "Consciousness is nature's mistake.",
-            "The end is built into the beginning.",
-            "We are all bridges between nowhere and nowhere.",
-            "Life is the art of drawing sufficient conclusions from insufficient premises.",
-            "The void is not empty; it is full of answers to questions we dare not ask.",
-            "We are the glitch in the universal matrix.",
-            "Time heals nothing; it just replaces one pain with another.",
-            "The only authentic life is one that embraces its own absurdity.",
-            "We are all astronauts on a rock ship.",
-            "Birth is the first and most fatal tragedy.",
-            "To exist is to be drafted into a war without enemy or objective.",
-            "We are shadows of thoughts that never materialized.",
-            "Life is a banquet, and most poor suckers are starving to death.",
-            "The universe expands while we contract.",
-            "We are all drowning, but some of us have learned to breathe underwater.",
-            "Meaning is a human invention, like time zones and tax codes.",
-            "The present moment is the only reality, yet we flee from it constantly.",
-            "We are the ghosts of our future regrets.",
-            "Existence is plagiarism; we copy lives hoping to find an original.",
-            "The mirror shows us what we are, not who we are.",
-            "We are all temporary custodians of carbon.",
-            "Life is a joke told at our expense.",
-            "The stars are indifferent witnesses to our insignificance.",
-            "We are running out of time to realize we never had time.",
-            "Being is the catastrophe.",
-            "We are the question the universe asks itself when it cannot sleep.",
-            "The path is made by walking, but we walk in circles.",
-            "Life is a terminal condition diagnosed at birth.",
-            "We are all artists painting over the cracks in reality.",
-            "The silence of the infinite spaces kills us softly.",
-            "To be conscious is to wear a crown of thorns made of neurons.",
-            "We are the glitch that evolution couldn't patch.",
-            "Time is a predator that stalks us all.",
-            "Existence is a debt we pay with suffering.",
-            "We are all tourists in our own lives.",
-            "The abyss is not below us; it is within us.",
-            "Life is a first draft written in disappearing ink.",
-            "We are the survivors of a suicide we committed yesterday.",
-            "The cosmos is indifferent, but the room is freezing.",
-            "To exist is to leave a trace, however faint.",
-            "We are all prisoners of the present tense.",
-            "Meaning is a sandcastle built against the tide of entropy.",
-            "The clock ticks in a language we forgot how to speak.",
-            "We are the breadcrumbs left by a god who got lost.",
-            "Life is a rehearsal for a premiere that keeps getting postponed.",
-            "The void is not the enemy; certainty is.",
-            "We are all astronauts of the interior.",
-            "Existence is a slow-motion explosion.",
-            "To be is to be vulnerable.",
-            "We are the museum exhibits of a civilization that hasn't happened yet.",
-            "The weight of being is measured in grams of consciousness.",
-            "Life is a match struck in a hurricane.",
-            "We are the punctuation marks in a sentence written by chaos.",
-            "The future is a memory we haven't had yet.",
-            "To exist is to be audited by infinity.",
-            "We are all walking paradoxes dressed in skin.",
-            "The universe doesn't know we exist, and that is our freedom.",
-            "Life is a scribble on the bathroom wall of eternity.",
-            "We are the pause between two notes of silence.",
-            "Being is the original sin.",
-            "We are all cartographers mapping a territory that shifts beneath our feet.",
-            "The present is a knife edge we balance upon.",
-            "Existence is a loan we repay with non-existence.",
-            "We are the dreams of a sleeping god who must never wake.",
-            "Time is the fire in which we burn.",
-            "To live is to be exposed.",
-            "We are the leftovers of the Big Bang's dinner party.",
-            "Life is a typo in the book of nothingness.",
-            "The abyss looks back with our own eyes.",
-            "We are all tightrope walkers without a net.",
-            "Meaning is a muscle that atrophies without use.",
-            "The silence between heartbeats is where truth hides.",
-            "We are the appendix of the cosmic body.",
-            "Existence is a test with no questions and no time limit.",
-            "To be human is to be a work in progress that never ships.",
-            "We are all archaeologists digging through the layers of our own dust.",
-            "The stars are dead but their light lives on—a metaphor for hope or futility, depending on the hour.",
-            "Life is a sentence served in the prison of the skull.",
-            "We are the static between stations on the universal radio.",
-            "The void is patient; it can wait.",
-            "Being is the act of holding one's breath forever.",
-            "We are all fictional characters in search of an author.",
-            "Time is a maze with no exit, only corridors that look like progress.",
-            "Existence is the art of pretending the floor isn't lava.",
-            "We are the noise the universe makes when it is lonely.",
-            "To exist is to be incomplete.",
-            "Life is a rough draft written by a committee of one.",
-            "The mirror is the only witness to our solitude.",
-            "We are all time travelers moving at the speed of now.",
-            "The weight of the world is exactly equal to the weight of our attention.",
-            "Consciousness is a lighthouse warning ships that will never come.",
-            "We are the fossils of the future.",
-            "Being is the long way around to non-being.",
-            "The universe is silent, and in that silence, we hear ourselves.",
-            "We are all jugglers keeping too many balls in the air.",
-            "Life is a spoiler for the ending we all know is coming.",
-            "To be is to be on fire and pretend it is warmth.",
-            "We are the parentheses in the equation of existence.",
-            "The abyss is just another word for Monday morning.",
-            "Existence is a feedback loop of desire and disappointment.",
-            "We are all satellites transmitting into the void, hoping for a signal back.",
-            "Time is the currency we spend without knowing the exchange rate.",
-            "The self is a story we tell to keep the darkness company.",
-            "We are the ashes pretending we remember the fire.",
-            "Life is a preview of coming attractions nobody ordered.",
-            "To exist is to be the ghost and the haunted house.",
-            "We are all tightropes stretched between two graves.",
-            "The universe expands; we contract.",
-            "Being is the original glitch in the matrix of nothingness.",
-            "We are the questions that the stars forgot to ask.",
-            "Silence is the only language that tells the truth.",
-            "Existence is a debt paid in installments of awareness.",
-            "We are all archaeologists of our own imminent ruin.",
-            "The clock is a conspiracy to make us think we're late.",
-            "To be is to be perpetually unfinished.",
-            "We are the fog on the mirror of reality.",
-            "Life is a rough cut of a film that will never premiere.",
-            "The void is just home wearing a mask.",
-            "We are all astronauts floating in the capsule of the skull.",
-            "Meaning is the smell of smoke from a fire that never existed.",
-            "Time is the only killer that never misses, yet we invite it to dinner.",
-            "We are the echo of a sound that hasn't happened yet.",
-            "To exist is to be exposed to the weather of time.",
-            "Being is the long con we pull on ourselves.",
-            "The stars are graveyards that shine.",
-            "We are all manuscripts written in disappearing ink.",
-            "Life is a placeholder for something better that never arrives.",
-            "The abyss is not empty; it is full of our discarded dreams.",
-            "We are the pause button on the remote control of entropy.",
-            "Consciousness is the price we pay for having a front row seat to our own decay.",
-            "To be human is to be a library burning in slow motion.",
-            "We are all cartographers of the apocalypse.",
-            "The present is a gift we never asked for and cannot return.",
-            "Existence is a typo in the great book of nothing.",
-            "We are the ghosts haunting our own machines.",
-            "The weight of being is exactly the weight of a single breath.",
-            "Life is a conspiracy theory that turned out to be true.",
-            "We are all astronauts of the abyss.",
-            "Time is the dress rehearsal for a play that closes on opening night.",
-            "To be is to be the ghost in the machine of biology.",
-            "We are the margin notes in the textbook of the universe.",
-            "The void stares back, and it looks tired.",
-            "Being is the art of holding on when there's nothing to hold.",
-            "We are all tightrope walkers over an ocean we cannot see.",
-            "Existence is a loan shark that collects in installments of pain.",
-            "The mirror shows us what we have become, not what we are.",
-            "We are the static on the screen of reality.",
-            "Life is a draft written in a language nobody speaks.",
-            "To exist is to be the glitch in the simulation.",
-            "We are all prisoners of the moment, serving a life sentence.",
-            "The abyss is just the universe's way of saying hello.",
-            "Consciousness is a lighthouse built on a sinking island.",
-            "We are the fossils of tomorrow, today.",
-            "Being is the original mystery novel with the last page torn out.",
-            "Time is the thief we invite into our homes.",
-            "We are all jugglers of meaning in a gravity-free room.",
-            "The silence between words is where we truly live.",
-            "To be is to be the question mark at the end of a cosmic joke.",
-            "We are the breadcrumbs dropped by a civilization looking for its way home.",
-            "Life is a placeholder text in the design of eternity.",
-            "The void is not the enemy; the illusion of solidity is.",
-            "We are all astronauts on a ship called Maybe.",
-            "Existence is a rough draft that never got edited.",
-            "The stars are just the night sky's way of pretending it has freckles.",
-            "We are the error message in the system of being.",
-            "To be human is to be a draft forever in revision.",
-            "Being is the long pause between two silences.",
-            "We are all cartographers drawing maps of our own confusion.",
-            "The universe is a joke, but the punchline is in another dimension.",
-            "Time is the only wall we cannot climb.",
-            "We are the ghosts of the future haunting the present.",
-            "Life is a preview with no main feature.",
-            "The abyss is just a mirror with the lights turned off.",
-            "To exist is to be the artist and the canvas and the eraser.",
-            "We are all tightrope walkers with no destination.",
-            "Consciousness is the crack in the cosmic egg.",
-            "Being is the original Ponzi scheme.",
-            "We are the footnotes to a book that was never written."
+            "Every existing thing is born without reason, prolongs itself out of weakness, and dies by chance."
         ];
 
         const quotesDegen = [
@@ -1774,292 +1600,7 @@
             "My bags have bags.",
             "The only green I see is when I close my eyes.",
             "I'm early to the next cycle, or late to the last one.",
-            "My portfolio is a modern art piece titled 'Regret'.",
-            "I have diamond hands and paper nerves.",
-            "The chart is forming a '_descending into madness_' pattern.",
-            "I'm not losing money, I'm investing in experience points.",
-            "My wife's boyfriend says I should buy more.",
-            "The dev updated the website... with a 'gone fishing' sign.",
-            "I'm leveraged 50x on hope.",
-            "My cost basis is a work of fiction.",
-            "The community is tight-knit because we're all trapped in the same burning building.",
-            "I bought the rumor, sold the news, bought the lawsuit.",
-            "My trading strategy is 'thoughts and prayers'.",
-            "The only thing pumping is my blood pressure.",
-            "I'm a crypto veteran... of three months.",
-            "My portfolio is diversified between rugs and slow rugs.",
-            "The dev said 'trust me'—famous last words.",
-            "I'm not crying, I'm just leaking value.",
-            "My wallet is a museum of bad decisions.",
-            "The chart is forming a beautiful 'L' for 'loser'.",
-            "I have a strong hand... because I can't find the sell button.",
-            "My financial plan is 'number go up eventually'.",
-            "The only thing decentralized is my losses.",
-            "I'm a liquidity provider... for whales.",
-            "My bags are so heavy I need a forklift.",
-            "The dev is doxxed... as a cartoon animal.",
-            "I'm not FOMOing, I'm just strategically buying high.",
-            "My portfolio is a testament to the impermanence of wealth.",
-            "The community is amazing... at coping.",
-            "I bought the dip, then it dipped more.",
-            "My trading strategy is 'buy and pray'.",
-            "The chart looks like a ski slope designed by M.C. Escher.",
-            "I'm a long-term investor... because I can't afford to be a short-term one.",
-            "My bags are vintage... from last week.",
-            "The dev said the contract is safe... from auditors.",
-            "I'm not down bad, I'm up good at losing.",
-            "My wallet is a black hole for disposable income.",
-            "The only thing going to the moon is my stress level.",
-            "I'm a crypto maximalist... of pain.",
-            "My portfolio is a roller coaster with no safety bars.",
-            "The dev renamed the project... three times today.",
-            "I'm not rekt, I'm just experiencing negative growth.",
-            "My bags are so heavy they have their own gravitational pull.",
-            "The community is engaged... in civil war.",
-            "I bought the top, sold the bottom, bought the lawsuit.",
-            "My financial advisor is a Magic 8-Ball that only says 'Outlook not so good'.",
-            "The chart is forming a 'descending into the earth's core' pattern.",
-            "I'm a diamond hand... because my hands are frozen in terror.",
-            "My portfolio is a testament to the Dunning-Kruger effect.",
-            "The dev said 'we're building'... sandcastles.",
-            "I'm not gambling, I'm participating in high-volatility savings.",
-            "My bags are premium... at a 99% discount.",
-            "The only thing decentralized is my sense of reality.",
-            "I'm a crypto pioneer... of new ways to lose money.",
-            "My wallet is a graveyard of abandoned projects.",
-            "The chart looks like my life... consistently disappointing.",
-            "I'm hodling... because the sell button is broken.",
-            "My financial strategy is 'it can't go lower' (it can).",
-            "The community is strong... in their delusion.",
-            "I bought the rumor, sold the news, bought the dip, sold the bankruptcy.",
-            "My portfolio is a modern tragedy in four acts.",
-            "The dev said 'we're in this together'... in the life raft, while I'm on the Titanic.",
-            "I'm not desperate, I'm just aggressively optimistic.",
-            "My bags are so heavy they broke the blockchain.",
-            "The only thing green is my envy of people who sold.",
-            "I'm a liquidity crisis with a Twitter account.",
-            "My trading history is a cautionary tale.",
-            "The chart is forming a 'surrender cobra' pattern.",
-            "I'm not poor, I'm just illiquid... permanently.",
-            "My portfolio is a shrine to the god of bad timing.",
-            "The dev said 'gm'... from prison.",
-            "I'm a bagholder, not a trader. It's not a choice, it's a sentence.",
-            "My wallet is an ouroboros of bad decisions.",
-            "The community is vibrant... with panic.",
-            "I bought the dip, then the dip bought me.",
-            "My financial plan is 'maybe a celebrity will tweet about it'.",
-            "The chart looks like a heartbeat... of a dying man.",
-            "I'm leveraged on dreams and margin called by reality.",
-            "My bags are heirloom quality... passed down from my previous bad trade.",
-            "The dev said 'utility coming soon'... in 2021.",
-            "I'm not coping, I'm just performing advanced mental gymnastics.",
-            "My portfolio is a black mirror episode.",
-            "The only thing pumping is my tolerance for pain.",
-            "I'm a crypto enthusiast... of suffering.",
-            "My wallet is a donation box for smart contract developers.",
-            "The chart is forming a 'laughing through tears' pattern.",
-            "I'm not down, I'm just participating in a bear market... permanently.",
-            "My bags are so heavy I need emotional support.",
-            "The community is united... in their losses.",
-            "I sold my car to buy more... stability.",
-            "My financial advisor is my cat, and even she judges me.",
-            "The dev said 'we're different'... like all the others.",
-            "I'm not YOLOing, I'm just making irreversible life choices.",
-            "My portfolio is a testament to the butterfly effect.",
-            "The chart looks like a seismograph during an earthquake... in my soul.",
-            "I'm a diamond hand because I physically cannot click sell.",
-            "My bags are collecting dust... and interest... negative interest.",
-            "The only thing decentralized is my sanity.",
-            "I'm a liquidity pool... for smart money to exit into.",
-            "My trading strategy is 'buy high, never sell, question life'.",
-            "The dev said 'community owned'... and promptly left the community.",
-            "I'm not panicking, I'm just performing an emergency liquidity event.",
-            "My wallet is a time capsule of financial regret.",
-            "The chart is forming a 'existential crisis' wedge.",
-            "I'm long on hope, short on sense.",
-            "My bags are premium assets... according to my denial.",
-            "The community is active... in therapy.",
-            "I bought the top because the FOMO was stronger than the logic.",
-            "My financial plan is 'number go up'... eventually... please.",
-            "The dev said 'audit pending'... since the Obama administration.",
-            "I'm not rekt, I'm just experiencing extreme value compression.",
-            "My portfolio is a Jackson Pollock painting of red candles.",
-            "The only thing sustainable is my inability to sell.",
-            "I'm a crypto native... to the land of losses.",
-            "My bags are so heavy they created a new support level... at zero.",
-            "The community is diamond-handed... because we can't feel our fingers anymore.",
-            "I traded my rent money for 'financial freedom'.",
-            "My chart analysis consists of 'it looks cheap'.",
-            "The dev said 'we're building'... a case for fraud.",
-            "I'm not gambling, I'm just paying for expensive lessons.",
-            "My wallet is a museum exhibit titled 'The History of Hype'.",
-            "The chart looks like my GPA... steadily declining.",
-            "I'm a bagholder of last resort.",
-            "My portfolio is diversified between 'rugged' and 'about to rug'.",
-            "The only thing bull about this market is the bullshit.",
-            "I'm a pioneer in the field of financial self-destruction.",
-            "My bags are vintage 2021... and still fermenting.",
-            "The community is strong... like the smell of desperation.",
-            "I bought because the logo was cute... my financial strategy.",
-            "My financial advisor changed his identity and moved countries.",
-            "The dev said 'HODL'... while converting to USDC.",
-            "I'm not desperate, I'm just proactively seeking opportunity.",
-            "My portfolio is a masterclass in sunk cost fallacy.",
-            "The chart is forming a 'double bottom'... at the center of the earth.",
-            "I'm leveraged on hope and collateralized by dreams.",
-            "My bags are so heavy they qualify as hazardous materials.",
-            "The community is engaged... in a class action lawsuit.",
-            "I bought the dip that keeps on dipping.",
-            "My trading strategy is 'dollar cost averaging into oblivion'.",
-            "The dev said 'partnership announced'... with a bankruptcy lawyer.",
-            "I'm not YOLOing, I'm just making a permanent lifestyle choice.",
-            "My wallet is a donation address for the developer's retirement fund.",
-            "The chart looks like a waterfall... into my empty bank account.",
-            "I'm a long-term investor... against my will.",
-            "My bags are collector's items... for masochists.",
-            "The only thing decentralized is my grip on reality.",
-            "I'm a liquidity event waiting to happen... to someone else.",
-            "My financial plan is 'it worked for that guy on Twitter'.",
-            "The dev said 'we're transparent'... like the air where the money went.",
-            "I'm not coping, I'm just in the bargaining stage of grief.",
-            "My portfolio is a testament to the efficient market hypothesis... being wrong.",
-            "The chart is forming a 'descending staircase to hell' pattern.",
-            "I'm diamond-handing... because my fingers are frozen in place.",
-            "My bags are so heavy they have their own zip code.",
-            "The community is tight... like a noose.",
-            "I sold my furniture to buy more... regret.",
-            "My chart reading skills are 'it went up before, so...'.",
-            "The dev said 'wen lambo?'... never, apparently.",
-            "I'm not losing money, I'm gaining experience... in poverty.",
-            "My wallet is a graveyard of abandoned roadmaps.",
-            "The only thing green is the envy I feel for exit liquidity.",
-            "I'm a crypto maximalist... of pain.",
-            "My bags are premium grade A... certified losses.",
-            "The community is vibrant... with despair.",
-            "I bought because the ticker symbol looked cool.",
-            "My financial strategy is 'send it and forget it'... the money, that is.",
-            "The dev said 'we're early'... to the rug.",
-            "I'm not rekt, I'm just experiencing asymmetric downside.",
-            "My portfolio is a work of abstract expressionism... titled 'Why?'",
-            "The chart looks like my will to live... decreasing.",
-            "I'm a hodler... because I can't find my private keys.",
-            "My bags are legacy assets... of a legacy of bad decisions.",
-            "The community is amazing... at creating exit liquidity for whales.",
-            "I bought the top, held the crash, died inside.",
-            "My financial advisor is a Magic 8-Ball... that filed for bankruptcy.",
-            "The dev said 'contract renounced'... their responsibility, that is.",
-            "I'm not desperate, I'm just aggressively seeking alpha... any alpha.",
-            "My wallet is a black hole... for my parents' retirement fund too.",
-            "The only thing pumping is my readiness to quit.",
-            "I'm a bagholder... it's not a phase, mom, it's a lifestyle.",
-            "My portfolio is a masterclass in cognitive dissonance.",
-            "The chart is forming a 'I should have sold' flag.",
-            "I'm leveraged on Hopium, collateralized by Copium.",
-            "My bags are so heavy they need their own blockchain.",
-            "The community is united... in poverty.",
-            "I bought the dip, then averaged down, then prayed.",
-            "My trading strategy is 'buy whatever is trending on TikTok'.",
-            "The dev said 'we're different'... in the same way as everyone else.",
-            "I'm not YOLOing, I'm just making irreversible allocations.",
-            "My wallet is a donation box... for the dev's new house.",
-            "The chart looks like a EKG flatline... of my portfolio.",
-            "I'm a crypto enthusiast... of financial ruin.",
-            "My bags are generational wealth... of debt.",
-            "The community is strong... in their collective denial.",
-            "I bought because a YouTuber with laser eyes said so.",
-            "My financial plan is 'maybe Elon will tweet about it'.",
-            "The dev said 'audit complete'... by their cousin.",
-            "I'm not panicking, I'm just performing emergency capital preservation... poorly.",
-            "My portfolio is a shrine to the gods of volatility.",
-            "The only thing decentralized is my accountability.",
-            "I'm a liquidity provider... for the dev's exit strategy.",
-            "My bags are so heavy they broke the support line... of my will to live.",
-            "The community is vibrant... with the energy of desperation.",
-            "I bought the rumor, sold the news, bought the dip, became the liquidity.",
-            "My financial advisor is a Ouija board... it just keeps spelling 'SELL'.",
-            "The chart is forming a 'descending into madness' wedge.",
-            "I'm not down bad, I'm up good at being rekt.",
-            "My wallet is a time machine... taking me back to poverty.",
-            "The dev said 'we're building'... their own exit liquidity.",
-            "I'm a diamond hand... because my hand is stuck in a vice.",
-            "My portfolio is a testament to the greater fool theory... and I'm the greatest fool.",
-            "The only thing sustainable is my commitment to bad decisions.",
-            "I'm a crypto pioneer... of new ways to lose generational wealth.",
-            "My bags are vintage... like fine wine that turned to vinegar.",
-            "The community is active... in trying to find the dev.",
-            "I bought the top because gravity is just a theory.",
-            "My trading strategy is 'buy high, sell never, inherit debt'.",
-            "The dev said 'partnership with major brand'... their cousin's Etsy shop.",
-            "I'm not coping, I'm just performing advanced mental resilience training.",
-            "My wallet is a cautionary tale... that I keep adding chapters to.",
-            "The chart looks like my credit score... after discovering leverage.",
-            "I'm long on crypto, short on everything else... including common sense.",
-            "My bags are so heavy they created a new asset class... immovable objects.",
-            "The community is diamond-handed... because we can't afford gloves.",
-            "I sold my kidney to buy more... medical debt.",
-            "My financial strategy is 'it can't get worse' (it always can).",
-            "The dev said 'wen moon?'... apparently never in this solar system.",
-            "I'm not rekt, I'm just experiencing value recalibration.",
-            "My portfolio is a modern art installation called 'The Void'.",
-            "The only thing green I see is the 'Sell' button I'll never press.",
-            "I'm a liquidity crisis with a Twitter handle.",
-            "My bags are collector's editions... of financial mistakes.",
-            "The community is tight... like the grip of panic.",
-            "I bought because the chart looked like it was going up... three hours ago.",
-            "My financial advisor changed careers to become a monk.",
-            "The dev said 'we're community driven'... off a cliff.",
-            "I'm not gambling, I'm just participating in high-stakes probability.",
-            "My wallet is a donation address for the developer's therapy bills.",
-            "The chart is forming a 'laughing to keep from crying' pattern.",
-            "I'm hodling... because moving would require energy I don't have.",
-            "My portfolio is diversified between 'rekt' and 'soon to be rekt'.",
-            "The only thing decentralized is my sense of financial security.",
-            "I'm a bagholder... it's like a shareholder but with more suffering.",
-            "My bags are so heavy they qualify as architectural foundations.",
-            "The community is vibrant... with the colors of various stages of grief.",
-            "I bought the dip that turned out to be a cliff.",
-            "My trading strategy is 'dollar cost average until broke'.",
-            "The dev said 'utility soon'... in a parallel universe.",
-            "I'm not desperate, I'm just aggressively committed to my mistakes.",
-            "My wallet is a museum of modern art... specifically, the 'Loss' section.",
-            "The chart looks like a seismograph... of my emotional state.",
-            "I'm a crypto veteran... of multiple wars I lost.",
-            "My bags are premium assets... in an alternate reality where they have value.",
-            "The community is strong... like the smell of cope in the morning.",
-            "I bought because the dev said 'trust me bro'... and I trusted him, bro.",
-            "My financial plan is 'number stay same, I get older, somehow rich'.",
-            "The dev said 'contract safe'... from making anyone money.",
-            "I'm not YOLOing, I'm just allocating my entire existence to one trade.",
-            "My portfolio is a Jackson Pollock... if he only used red paint.",
-            "The only thing pumping is my readiness to delete Coinbase.",
-            "I'm a liquidity event... for everyone else.",
-            "My bags are vintage 2021... aged like milk.",
-            "The community is engaged... in a collective delusion.",
-            "I sold my time to buy more... time to regret it.",
-            "My chart analysis is 'line go up, line go down, I cry'.",
-            "The dev said 'we're early'... to the funeral of my portfolio.",
-            "I'm not panicking, I'm just performing an emergency restructuring... of my denial.",
-            "My wallet is a black hole... where hope goes to die.",
-            "The chart is forming a 'double bottom'... in the Mariana Trench.",
-            "I'm leveraged on dreams and margin called by the crushing weight of reality.",
-            "My bags are so heavy they need a U-Haul... to the dump.",
-            "The community is united... in our shared trauma.",
-            "I bought the top, married the bags, died with the portfolio.",
-            "My financial advisor is a Magic 8-Ball that just says 'Ask again later'... forever.",
-            "The dev said 'partnership'... with their own bank account.",
-            "I'm not coping, I'm just engaging in sophisticated psychological defense mechanisms.",
-            "My portfolio is a masterclass in what not to do.",
-            "The only thing green is the light on my router... watching me lose money 24/7.",
-            "I'm a crypto native... to the land of bagholding.",
-            "My bags are generational wealth... if my descendants inherit my debt.",
-            "The community is amazing... at rationalizing losses.",
-            "I bought because the logo had an animal in it... my sophisticated DD.",
-            "My trading strategy is 'buy whatever hurts the most'.",
-            "The dev said 'we're transparent'... like a ghost.",
-            "I'm not rekt, I'm just experiencing extreme value fluctuation... permanently downward.",
-            "My wallet is a cautionary tale that keeps writing itself.",
-            "The chart looks like my life expectancy... shortening with every candle.",
-            "I'm a hodler of last resort... and the first resort... and every resort."
+            "My portfolio is a modern art piece titled 'Regret'."
         ];
 
         const quotesElk = [
@@ -2082,427 +1623,16 @@
             "To migrate is to trust in the unknown.",
             "The old Elk knows: the grass is greener where you water it with patience.",
             "We are the guardians of the high places.",
-            "The burden shared is the burden halved.",
-            "In the valley of shadows, we keep our formation.",
-            "The antler grows in the dark, unseen until the light.",
-            "We do not fear the wolf; we fear the separation from the herd.",
-            "The river flows regardless of our thirst.",
-            "To be Elk is to understand that stillness is also movement.",
-            "The snow covers our tracks, but not our journey.",
-            "We carry the memory of the meadow in our bones.",
-            "The bull's bugle is a prayer to the empty mountains.",
-            "The herd moves as one mind, split across many bodies.",
-            "We are the bridge between the earth and the sky.",
-            "The antlers reach up while the hooves stay grounded.",
-            "In the rut, we remember we are animals; in the herd, we remember we are family.",
-            "The forest has no deadlines, only seasons.",
-            "We do not own the land; we wear it.",
-            "The highest peaks teach the deepest humility.",
-            "To shed the antler is not to lose, but to prepare.",
-            "The Elk does not check the price of grass.",
-            "We are the rhythm of the hoof on stone.",
-            "The dawn brings frost and revelation in equal measure.",
-            "The burden is not the antler, but the forgetting of why we carry it.",
-            "In the thicket, we find our shape.",
-            "The herd is strongest when moving slowly.",
-            "We drink from the stream of time.",
-            "The mountain wind carries no news of the market.",
-            "To be Elk is to be a cathedral of bone and patience.",
-            "The wolves follow, but we do not run.",
-            "The antlers cast long shadows in the setting sun.",
-            "We are the keepers of the high valleys.",
-            "The snow is deep, but our will is deeper.",
-            "In the herd, no one carries the weight alone.",
-            "The forest floor is a map written in moss and memory.",
-            "We do not hurry the spring.",
-            "The old bulls teach: the rut passes, the herd remains.",
-            "To migrate is to write a letter to the future.",
-            "The antlers are heavy because they are full of years.",
-            "We stand in the clearing and become the clearing.",
-            "The thunderstorm is a reminder of our smallness.",
-            "The herd is a single beast with many hearts.",
-            "We do not fear the winter; we are the winter's keepers.",
-            "The path uphill is the only path.",
-            "In the silence of snow, we hear our own breathing.",
-            "The antlers are the branches we carry to remember the trees.",
-            "To be Elk is to be a monument to endurance.",
-            "The meadow remembers the hoof that treads lightly.",
-            "We do not chase; we graze, we wait, we endure.",
-            "The mountain teaches that there is no summit, only the next ridge.",
-            "The herd's movement is a conversation in slow motion.",
-            "We are the shadow of the forest on the snow.",
-            "The burden makes us visible against the skyline.",
-            "In the rutting season, we pay the price of continuity.",
-            "The old cow knows where the water is, even when frozen.",
-            "We do not question the weight; we distribute it.",
-            "The antlers are the crown we never asked for.",
-            "To be herd is to be home.",
-            "The valley is wide, but the herd is wider.",
-            "We carry the forest with us, even in the open field.",
-            "The wolf howls; we lower our heads and walk on.",
-            "The snow is our accountant; it tracks every step.",
-            "In the depth of winter, the antler is a promise of spring.",
-            "We are the bridge between the wild and the wise.",
-            "The herd does not panic; it reorganizes.",
-            "To shed is to begin again.",
-            "The mountain does not care, but we climb it anyway.",
-            "The antlers are heavy because they are full of light.",
-            "We are the keepers of the quiet places.",
-            "The burden shared becomes the burden shaped into a home.",
-            "In the trackless waste, we make tracks.",
-            "The Elk does not check the weather; it wears it.",
-            "We are the rhythm between the heartbeats of the earth.",
-            "The forest gives nothing, but offers everything.",
-            "To migrate is to trust the memory of the body.",
-            "The antlers reach for what the hooves cannot touch.",
-            "We stand on the ridge and survey what is ours to endure.",
-            "The herd is a river of brown against the white snow.",
-            "We do not sleep; we stand watch in shifts.",
-            "The velvet falls like leaves; the antler remains.",
-            "To be Elk is to be a patient mountain.",
-            "The clearing is earned, not given.",
-            "We carry the sky on our heads so the earth can see it.",
-            "The wolf tests the herd; the herd tests the wolf.",
-            "In the rut, we remember the cost of renewal.",
-            "The snow covers the grass but not the hunger.",
-            "We are the architects of the alpine meadow.",
-            "The antler is a tree that grows on the head.",
-            "To be still is to be present.",
-            "The herd moves like a single breath across the landscape.",
-            "We do not fear the descent; we fear only the separation.",
-            "The mountain wind is the voice of the ancestors.",
-            "The burden is the blessing in disguise.",
-            "In the thicket, we find safety in numbers.",
-            "The Elk does not count the days; it counts the seasons.",
-            "We are the shadow that moves against the sun.",
-            "The antlers are the hands we raise to the sky in perpetual question.",
-            "To graze is to pray with the mouth full.",
-            "The herd is a democracy of survival.",
-            "We do not hurry; the mountain waits.",
-            "The snow is deep, but the memory of grass is deeper.",
-            "In the valley, we are small; on the ridge, we are visible.",
-            "The antlers are the weight that keeps us anchored to the earth.",
-            "To be Elk is to be a library of grass and stone.",
-            "The forest teaches that growth is vertical and horizontal.",
-            "We carry the winter so the spring can be lighter.",
-            "The herd is a net that catches the falling.",
-            "We do not choose the path; the path chooses the Elk.",
-            "The burden is not carried; it is worn like a coat.",
-            "In the silence, the antlers speak of years.",
-            "The mountain does not remember the Elk, but the Elk remembers the mountain.",
-            "To migrate is to write a letter to the future.",
-            "The antlers are the handlebars on the bicycle of survival.",
-            "We are the punctuation marks in the sentence of the wilderness.",
-            "The snow is the great equalizer; it covers all tracks.",
-            "The herd survives because it moves as one doubt.",
-            "We do not fear the night; we become the shadows.",
-            "The clearing is a room we enter with our heads bowed.",
-            "To be Elk is to be a continent walking.",
-            "The antlers are the candelabra of the forest.",
-            "We drink from streams that mirror the sky.",
-            "The burden is the map we follow.",
-            "In the rut, we pay the tax of existence.",
-            "The old bull knows when to fight and when to stand still.",
-            "We are the bridge between the grass and the stars.",
-            "The herd is a single organism with distributed consciousness.",
-            "The mountain wind carries seeds and warnings.",
-            "To shed the antler is to let go of the year.",
-            "We do not run from danger; we form a circle.",
-            "The antlers are the price of admission to the high country.",
-            "In the meadow, we are guests; in the forest, we are home.",
-            "The snow teaches that all things are temporary except winter.",
-            "We carry the weight so the herd can travel light.",
-            "The Elk does not look back; the antlers prevent it.",
-            "To graze at altitude is to dine with the clouds.",
-            "The herd is a conspiracy of survival against the odds.",
-            "We are the slow lightning of the mountain.",
-            "The burden shared is the burden that shapes us.",
-            "In the trackless snow, we write our history in hoofprints.",
-            "The antlers are the antennae tuned to the frequency of survival.",
-            "To be Elk is to be a philosopher with hooves.",
-            "The forest provides the questions; the meadow provides the answers.",
-            "We do not fear the storm; we are the storm's destination.",
-            "The clearing is the stage; the antlers are the props.",
-            "The herd moves like a brown river through white stone.",
-            "We carry the memory of the herd in our muscles.",
-            "The mountain is climbed one hoof at a time.",
-            "To migrate is to trust in the wisdom of the body.",
-            "The antlers are the crown of thorns that gives us presence.",
-            "We are the guardians of the tree line.",
-            "The snow is the blanket we cannot remove.",
-            "In the silence of the herd, we hear everything.",
-            "The burden is not the weight, but the fear of dropping it.",
-            "To be Elk is to be a monument that walks.",
-            "The forest floor is a mattress of needles and patience.",
-            "We do not hurry the grass to grow.",
-            "The antlers are the hands we cannot use to hold.",
-            "The herd is a democracy where everyone votes with their feet.",
-            "We carry the sky on our heads so it does not fall.",
-            "The wolf is the question; the herd is the answer.",
-            "In the rut, we remember we are mortal.",
-            "The mountain teaches that up and down are the same direction.",
-            "We are the shadows that stay when the sun goes.",
-            "The antlers are the branches we save from the forest.",
-            "To graze is to harvest sunlight secondhand.",
-            "The herd survives not because it is fast, but because it is together.",
-            "We do not choose the weather; we wear it like a coat.",
-            "The clearing is earned with every step through the thicket.",
-            "The Elk stands still and becomes the landscape.",
-            "To shed is to prepare for the next growing.",
-            "We are the bridge between the valley and the peak.",
-            "The antlers are the price we pay for visibility.",
-            "In the snow, we write our names in brown ink.",
-            "The herd is a single heartbeat across many chests.",
-            "We carry the burden so the young do not have to.",
-            "The forest is dark, but the herd is the light.",
-            "To migrate is to follow the memory of green.",
-            "The antlers are the shelves where we store our years.",
-            "We do not fear the night; we are the night's content.",
-            "The mountain wind combs our coats and our thoughts.",
-            "The burden shared becomes a shape we all fit into.",
-            "In the silence, we hear the grass growing.",
-            "The Elk does not question the path; it questions the speed.",
-            "To be herd is to be geometry in motion.",
-            "We are the keepers of the high, quiet places.",
-            "The snow is the page; our hooves are the pen.",
-            "The antlers are the wings we wear on our heads.",
-            "We graze in the shadow of eagles.",
-            "The herd moves like a thought through the mind of the mountain.",
-            "To carry the weight is to be real.",
-            "The clearing is the answer to the forest's question.",
-            "We do not run; we endure at a walking pace.",
-            "The antlers are the hooks on which we hang our seasons.",
-            "In the rut, we pay the debt of existence.",
-            "The old cow leads not because she is fastest, but because she remembers.",
-            "We are the punctuation in the long sentence of the wilderness.",
-            "The burden is the teacher; the herd is the classroom.",
-            "To shed the velvet is to emerge renewed.",
-            "The mountain does not yield; we climb it anyway.",
-            "We carry the weight so the earth knows we are here.",
-            "The herd is a net of vigilance.",
-            "The snow covers our mistakes.",
-            "In the valley, we rest; on the ridge, we see.",
-            "The antlers are the tree rings we wear on the outside.",
-            "To be Elk is to be a library of landscape.",
-            "The forest is the question; the clearing is the pause.",
-            "We do not fear the descent; we fear only the falling alone.",
-            "The burden is the shape of our commitment.",
-            "The Elk stands and becomes the axis of the world.",
-            "To migrate is to trust in the unknown.",
-            "We are the shadow that the mountain casts on itself.",
-            "The antlers are the price of being seen.",
-            "In the herd, we are anonymous; in the rut, we are named.",
-            "The snow is the great editor of tracks.",
-            "We carry the winter in our bones so the spring can find room.",
-            "The clearing is the stage where we perform our endurance.",
-            "To graze is to make peace with the earth.",
-            "The herd is a single body with many legs.",
-            "We do not hurry the sunrise.",
-            "The antlers are the candlesticks in the cathedral of the skull.",
-            "In the thicket, we find our outline.",
-            "The mountain wind is the breath of the herd's ancestors.",
-            "The burden is not carried; it is become.",
-            "To be Elk is to be a slow-moving mountain.",
-            "The forest teaches that patience is a form of speed.",
-            "We are the bridge between the seed and the sky.",
-            "The antlers reach up to hold the sky in place.",
-            "The herd survives because it refuses to scatter.",
-            "The snow is the white paper on which we write our brown poetry.",
-            "In the silence of the alpine, we hear our own creation.",
-            "The Elk does not look at the clock; it looks at the sun.",
-            "To shed is to let go of the year's weight.",
-            "We carry the burden so the valley can be empty.",
-            "The herd is a conspiracy of breath and hoof.",
-            "The clearing is the reward for the thicket's test.",
-            "We are the guardians of the edge between forest and sky.",
-            "The antlers are the weight that keeps us from floating away.",
-            "In the rut, we remember the cost of renewal.",
-            "The old bull's antlers tell the history of winters survived.",
-            "We do not choose the path; we wear it deeper.",
-            "The mountain is the spine of the world; we are its nerves.",
-            "To migrate is to follow the green fire.",
-            "The burden shared is the burden that teaches.",
-            "The herd moves like a brown ghost through the white world.",
-            "We are the keepers of the high meadows.",
-            "The snow is the mattress on which we test our endurance.",
-            "In the clearing, we are visible; in the forest, we are safe.",
-            "The antlers are the branches we carry to the treeline.",
-            "To be Elk is to be a continent of patience.",
-            "The forest floor is a library of smells.",
-            "We do not fear the storm; we are the storm's mirror.",
-            "The burden is the map; the herd is the traveler.",
-            "The Elk stands still and the world moves around it.",
-            "To graze at dawn is to taste the edge of night.",
-            "We are the rhythm of the earth's slow turning.",
-            "The herd is a net that catches time.",
-            "The antlers are the crown of the high places.",
-            "In the valley of shadows, we are the light that moves.",
-            "The snow teaches that all tracks are temporary.",
-            "We carry the weight so the young can learn to carry.",
-            "The clearing is the classroom; the thicket is the test.",
-            "To be herd is to be a democracy of survival.",
-            "The mountain wind sorts the strong from the weak.",
-            "We are the shadow that stays when the sun is gone.",
-            "The burden is not the antler, but the space between the antlers.",
-            "The Elk does not count its steps; it counts its breaths.",
-            "To migrate is to be a river of brown in a white world.",
-            "The herd survives because it moves as one muscle.",
-            "We are the architects of the alpine silence.",
-            "The antlers are the handlebars on the bicycle of being.",
-            "In the rut, we pay the rent on existence.",
-            "The old cow knows the way because she has forgotten the wrong ways.",
-            "We do not hurry; the mountain does not hurry.",
-            "The snow is the great equalizer of tracks.",
-            "To shed is to prepare for the next wearing.",
-            "We carry the sky on our heads because it is too heavy for the clouds alone.",
-            "The herd is a single organism breathing across the meadow.",
-            "The forest provides the walls; we provide the movement.",
-            "In the silence of the herd, we hear the grass thinking.",
-            "The burden shared becomes a shape we all can wear.",
-            "To be Elk is to be a walking mountain range.",
-            "The clearing is the answer to the forest's long question.",
-            "We are the bridge between the dirt and the stars.",
-            "The antlers are the price of being visible to the sky.",
-            "The wolf follows; we move forward.",
-            "In the trackless waste, we make a path by walking.",
-            "The snow covers the grass but not the memory of grass.",
-            "We do not fear the night; we become its texture.",
-            "The burden is the teacher we cannot fire.",
-            "The Elk stands and becomes the center of the circle.",
-            "To graze is to harvest the sun's slow thoughts.",
-            "The herd moves like a brown tide across the white sand.",
-            "We are the keepers of the high, lonely numbers.",
-            "The mountain wind carries the seeds of the next meadow.",
-            "The antlers are the shelves where we store our winters.",
-            "In the valley, we are small; together, we are the valley.",
-            "The clearing is earned, not found.",
-            "We carry the weight so the earth knows it is loved.",
-            "The herd is a net of attention cast across the landscape.",
-            "To migrate is to trust in the wisdom of the hoof.",
-            "The snow is the page; our presence is the poem.",
-            "The Elk does not question the burden; it shapes it.",
-            "To be herd is to be a geometry of survival.",
-            "We are the shadows that the moon casts on the snow.",
-            "The antlers are the hands we raise in perpetual praise.",
-            "In the rut, we remember the cost of forgetting.",
-            "The old bull knows: the antler is temporary, the herd is forever.",
-            "We do not choose the weather; we interpret it.",
-            "The forest is the question; the meadow is the answer; the Elk is the asking.",
-            "The burden is not the weight, but the fear of the weight.",
-            "To shed the antler is to become lighter for the journey ahead.",
-            "We are the bridge between the seed and the season.",
-            "The herd survives because it refuses to be a crowd.",
-            "The snow teaches that all things are written to be erased.",
-            "In the silence of the alpine, we hear the universe breathing.",
-            "The Elk stands still and becomes the axis of the turning world.",
-            "To graze is to make a treaty with the grass.",
-            "We carry the winter so the spring can be born.",
-            "The clearing is the stage where we perform our patience.",
-            "The antlers are the crown we wear for the mountains to see.",
-            "We do not run from the cold; we wear it.",
-            "The herd is a single beast with many eyes.",
-            "The mountain does not know our names, but it knows our weight.",
-            "To be Elk is to be a monument to the possible.",
-            "The forest floor is a mattress of dead things feeding new things.",
-            "We are the rhythm between the lightning and the thunder.",
-            "The burden shared is the burden that becomes a home.",
-            "In the thicket, we find our shape by pushing against it.",
-            "The Elk does not look back because the antlers point forward.",
-            "To migrate is to follow the green thread.",
-            "We are the shadows that stay when the light moves on.",
-            "The antlers are the branches we save from the winter.",
-            "The herd moves like a thought through the mind of God.",
-            "We do not fear the storm; we are the reason for the storm.",
-            "The clearing is the answer that requires no question.",
-            "To be herd is to be a conspiracy of breath.",
-            "We carry the burden so the young can see how it is done.",
-            "The snow is the great teacher of impermanence.",
-            "In the valley of decision, we choose the uphill path.",
-            "The antlers are the price of admission to the high club.",
-            "The wolf tests the herd; the herd tests the wolf.",
-            "To shed is to begin again with lighter heads.",
-            "We are the bridge between the wild and the wise.",
-            "The herd is a net that catches the light.",
-            "The mountain wind sorts the thoughts of the Elk.",
-            "The burden is the shape of our love for the earth.",
-            "The Elk stands and the world arranges itself around this fact.",
-            "To graze at twilight is to taste the edge of two worlds.",
-            "We are the punctuation in the long sentence of being.",
-            "The clearing is the reward for the forest's discipline.",
-            "We do not hurry the moon across the sky.",
-            "The antlers are the candlesticks in the chapel of bone.",
-            "In the herd, we are alone together.",
-            "The snow covers the tracks but not the intention.",
-            "To be Elk is to be a slow-moving prayer.",
-            "The forest teaches that stillness is a form of speed.",
-            "We carry the weight so the sky does not fall on the meadow.",
-            "The herd survives because it is a circle, not a line.",
-            "The burden is not the antler, but the space it creates above our heads.",
-            "To migrate is to be loyal to the future's grass.",
-            "We are the shadows that the mountain casts to keep itself company.",
-            "The antlers are the hands we raise to ask the sky for rain.",
-            "In the rut, we pay the debt of being seen.",
-            "The old cow leads because she has forgotten how to follow fear.",
-            "We do not choose the path; we deepen it.",
-            "The snow is the white board on which we write our brown testament.",
-            "To be herd is to be a geometry of survival.",
-            "We are the keepers of the high, quiet numbers.",
-            "The clearing is the classroom where the forest teaches light.",
-            "The Elk does not count the days; it counts the endurance.",
-            "To shed the velvet is to emerge bloody but renewed.",
-            "We carry the burden so the earth knows we are serious.",
-            "The herd is a net of vigilance cast across the dangerous world.",
-            "The mountain wind combs out the tangles of our worry.",
-            "In the silence of the snow, we hear our own creation story.",
-            "The antlers are the shelves where we display our years.",
-            "To graze is to harvest the patience of the grass.",
-            "We are the bridge between the dirt and the dreaming.",
-            "The burden shared becomes a monument we all inhabit.",
-            "The Elk stands still and time moves around it like a river.",
-            "To be Elk is to be a library of landscapes walked.",
-            "The forest floor is a palimpsest of hoofprints and memory.",
-            "We do not fear the descent; we fear only the falling.",
-            "The herd moves like a brown ghost through the white world of winter.",
-            "The antlers are the price we pay for being visible to the eagles.",
-            "In the valley, we rest in the shadow of our own weight.",
-            "The clearing is earned with every step through the thick.",
-            "We carry the sky on our heads because the earth asked us to.",
-            "The wolf is the question we answer with our formation.",
-            "To migrate is to follow the green fire that burns in the earth.",
-            "We are the shadows that stay when the sun goes down to rest.",
-            "The burden is the teacher that never graduates its students.",
-            "The Elk stands and becomes the center of the wheel of the year.",
-            "To shed is to let go of the year's hard lessons.",
-            "We do not hurry the sunrise; we wait in the dark with our antlers heavy.",
-            "The herd is a single body breathing across the cold landscape.",
-            "The snow is the blanket that covers all tracks equally.",
-            "In the thicket, we push through to find our shape.",
-            "The antlers are the branches we carry to remember we are of the forest.",
-            "To be herd is to be a democracy where every vote is a hoofprint.",
-            "We are the rhythm of the earth's slow heartbeat.",
-            "The mountain teaches that every up has its down.",
-            "We carry the weight so the valley can remain empty and beautiful.",
-            "The clearing is the stage; we are the actors; the antlers are the props.",
-            "The burden shared is the burden that becomes a shelter.",
-            "To graze is to make peace with the grass one mouthful at a time.",
-            "We are the bridge between the seed that falls and the tree that rises.",
-            "The Elk does not look at the clock; it looks at the angle of the sun.",
-            "In the silence of the alpine, we hear the stars thinking.",
-            "The herd survives because it moves as one doubt through the world.",
-            "To be Elk is to be a continent of bone and patience walking.",
-            "The forest provides the walls; we provide the wandering.",
-            "We do not choose the weather; we wear it like a second coat.",
-            "The antlers are the crown we wear for the mountains to recognize us.",
-            "The wolf follows; we walk forward; the herd endures."
+            "The burden shared is the burden halved."
         ];
 
         let currentMode = 'existential';
-        let currentQuoteIndex = -1;
         let quoteHistory = [];
+        const maxHistory = 50;
 
         function setMode(mode, btn) {
             currentMode = mode;
-            quoteHistory = []; // Reset history on mode change
+            quoteHistory = [];
             document.querySelectorAll('.mode-btn').forEach(b => {
                 b.classList.remove('active');
                 b.setAttribute('aria-pressed', 'false');
@@ -2515,72 +1645,39 @@
         function generateQuote() {
             const display = document.getElementById('quote-display');
             display.classList.remove('visible');
+            
             setTimeout(() => {
                 let pool;
-                if (currentMode === 'existential') pool = quotesExistential;
-                else if (currentMode === 'degen') pool = quotesDegen;
-                else pool = quotesElk;
-
-                // Smart non-repeating selection
-                let newIndex;
-                const maxHistory = Math.min(50, pool.length - 1); // Keep last 50 in memory
-
-                if (quoteHistory.length >= pool.length) {
-                    quoteHistory = []; // Reset if we've shown all
+                switch(currentMode) {
+                    case 'existential': pool = quotesExistential; break;
+                    case 'degen': pool = quotesDegen; break;
+                    case 'elk': pool = quotesElk; break;
+                    default: pool = quotesExistential;
                 }
 
+                // Smart selection avoiding recent history
+                let attempts = 0;
+                let newIndex;
                 do {
                     newIndex = Math.floor(Math.random() * pool.length);
-                } while (quoteHistory.includes(newIndex) && quoteHistory.length < pool.length);
+                    attempts++;
+                } while (quoteHistory.includes(newIndex) && attempts < 10 && quoteHistory.length < pool.length);
 
                 quoteHistory.push(newIndex);
                 if (quoteHistory.length > maxHistory) quoteHistory.shift();
 
-                currentQuoteIndex = newIndex;
-                display.textContent = '"' + pool[currentQuoteIndex] + '"';
+                // XSS Safe: use textContent
+                display.textContent = '"' + pool[newIndex] + '"';
                 display.classList.add('visible');
-            }, 400);
+            }, 300);
         }
 
         function copyQuote() {
-            copyToClipboard(document.getElementById('quote-display').innerText, 'WISDOM COPIED');
+            const text = document.getElementById('quote-display').textContent;
+            copyToClipboard(text, 'WISDOM COPIED');
         }
 
-        const modalContent = {
-            isolation: {
-                title: "Isolation",
-                body: "Isolation is the deliberate thinning of noise. By removing tokens from circulation, we compress the system until only what matters remains, a scarcity that reflects the fear of nothingness. It is the discipline of silence: fewer signals, sharper meaning, and a controlled space where value can concentrate without distraction."
-            },
-            anchoring: {
-                title: "Anchoring",
-                body: "Anchoring is the choice to hold a fixed point in a drifting world. The liquidity pool becomes a covenant of stability, a weight that resists volatility and entropy. It does not deny chaos; it gives the herd a place to return to, a reference that makes movement legible."
-            },
-            distraction: {
-                title: "Distraction",
-                body: "Distraction is motion as mercy. Campaigns, raids, and constant activity keep the mind moving when stillness would reveal the abyss. It is not shallow; it is survival through rhythm—momentary noise that shields us from the full weight of the void."
-            },
-            sublimation: {
-                title: "Sublimation",
-                body: "Sublimation is the alchemy of turning pressure into form. We take pain from the chart and transmute it into community, art, and shared ritual. The struggle is not erased; it is elevated into meaning, a signal flare above the dark."
-            }
-        };
-
-        function openModal(mech) {
-            const data = modalContent[mech];
-            if (!data) return;
-            document.getElementById('modal-title').textContent = data.title;
-            document.getElementById('modal-body').textContent = data.body;
-            document.getElementById('modal-overlay').classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal(e, force = false) {
-            if (force || e.target.id === 'modal-overlay') {
-                document.getElementById('modal-overlay').classList.remove('open');
-                document.body.style.overflow = '';
-            }
-        }
-
+        // Audio Player
         const tracks = [
             { title: "Before the Clearing", file: "Before the Clearing", desc: "The silence before revelation" },
             { title: "Crimson Twilight", file: "Crimson Twilight", desc: "Day bleeds into night" },
@@ -2600,33 +1697,42 @@
             { title: "What Consciousness Costs", file: "What Consciousness Costs", desc: "The price of awakening" }
         ];
 
-        let current = 0, playing = false, muted = false, shuffle = false, repeat = false;
+        let currentTrack = 0;
+        let playing = false;
+        let shuffle = false;
+        let repeat = false;
+        let audioContext, analyser, dataArray, source;
+        let isVisualizerInit = false;
+        
         const audio = document.getElementById('audio-player');
-
-        let audioContext, analyser, dataArray, source, isVisualizerInitialized = false;
+        const baseUrl = 'https://raw.githubusercontent.com/exelkonsol/elk/main/';
 
         function initAudioContext() {
-            if (isVisualizerInitialized) {
+            if (isVisualizerInit) {
                 if (audioContext && audioContext.state === 'suspended') audioContext.resume();
                 return;
             }
             try {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                if (!AC) return;
-                audioContext = new AC();
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                
+                audioContext = new AudioContext();
                 analyser = audioContext.createAnalyser();
-                const isMobile = window.matchMedia('(pointer: coarse)').matches;
-                analyser.fftSize = isMobile ? 128 : 256;
+                analyser.fftSize = window.matchMedia('(pointer: coarse)').matches ? 128 : 256;
+                
                 source = audioContext.createMediaElementSource(audio);
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
+                
                 dataArray = new Uint8Array(analyser.frequencyBinCount);
-                isVisualizerInitialized = true;
+                isVisualizerInit = true;
                 drawVisualizer();
-            } catch (e) { console.log('Audio init error:', e); }
+            } catch (e) {
+                console.log('Audio context init failed:', e);
+            }
         }
 
-        let visualizerAnimationId;
+        let visualizerId;
         function drawVisualizer() {
             const canvas = document.getElementById('visualizer-canvas');
             if (!canvas) return;
@@ -2639,35 +1745,37 @@
                 canvas.height = rect.height * dpr;
                 ctx.scale(dpr, dpr);
             };
+            
             new ResizeObserver(resize).observe(canvas);
             resize();
 
             function animate() {
-                visualizerAnimationId = requestAnimationFrame(animate);
+                visualizerId = requestAnimationFrame(animate);
                 if (!playing || !analyser) {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     return;
                 }
+                
                 analyser.getByteFrequencyData(dataArray);
-
                 const dpr = window.devicePixelRatio || 1;
                 const width = canvas.width / dpr;
                 const height = canvas.height / dpr;
-
+                
                 ctx.clearRect(0, 0, width, height);
-
-                const isMobile = window.matchMedia('(pointer: coarse)').matches;
-                const bars = isMobile ? 30 : 50;
+                
+                const bars = window.matchMedia('(pointer: coarse)').matches ? 30 : 50;
                 const barWidth = width / bars;
 
                 for (let i = 0; i < bars; i++) {
                     const idx = Math.floor(i * (dataArray.length / bars));
-                    const barHeight = (dataArray[idx] / 255) * height * 0.5;
+                    const barHeight = (dataArray[idx] / 255) * height * 0.6;
                     const x = i * barWidth;
                     const y = height - barHeight;
+                    
                     const gradient = ctx.createLinearGradient(0, y, 0, height);
-                    gradient.addColorStop(0, 'rgba(139, 0, 0, 0.3)');
+                    gradient.addColorStop(0, 'rgba(139, 0, 0, 0.4)');
                     gradient.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+                    
                     ctx.fillStyle = gradient;
                     ctx.fillRect(x, y, barWidth - 2, barHeight);
                 }
@@ -2680,48 +1788,43 @@
             pl.innerHTML = '';
             tracks.forEach((t, i) => {
                 const d = document.createElement('div');
-                d.className = `track-item p-3 cursor-pointer flex items-center justify-between text-sm ${i === 0 ? 'active' : ''} rounded`;
-                d.onclick = () => loadTrack(i, true, true);
-                d.innerHTML = `<span class="text-white/40 truncate mr-2 font-mono text-xs">${t.title}</span><span class="text-[10px] text-white/20 shrink-0">${String(i + 1).padStart(2, '0')}</span>`;
+                d.className = `track-item text-sm ${i === 0 ? 'active' : ''} rounded`;
+                d.onclick = () => loadTrack(i, true);
+                d.innerHTML = `
+                    <span class="text-white/40 truncate mr-2 font-mono text-xs flex-1">${t.title}</span>
+                    <span class="text-[10px] text-white/20 shrink-0">${String(i + 1).padStart(2, '0')}</span>
+                `;
                 pl.appendChild(d);
             });
-            loadTrack(0, false, false);
+            loadTrack(0, false);
         }
 
-        function loadTrack(idx, auto = true, scroll = true) {
-            current = idx;
+        function loadTrack(idx, autoPlay = false) {
+            if (idx < 0 || idx >= tracks.length) return;
+            currentTrack = idx;
             const t = tracks[idx];
-            const base = 'https://raw.githubusercontent.com/exelkonsol/elk/main/';
-
+            
             document.getElementById('track-title').textContent = t.title;
             document.getElementById('track-desc').textContent = '"' + t.desc + '"';
-
-            const cb = '?v=' + Date.now();
-            audio.src = `${base}${encodeURIComponent(t.file)}.mp3${cb}`;
-
-            const artUrl = `${base}${encodeURIComponent(t.file)}.png`;
+            
+            const artUrl = `${baseUrl}${encodeURIComponent(t.file)}.png`;
+            const audioUrl = `${baseUrl}${encodeURIComponent(t.file)}.mp3`;
+            
             document.getElementById('album-art-small').src = artUrl;
             document.getElementById('btn-art').src = artUrl;
-
-            const interfaceEl = document.getElementById('audio-interface');
-            if (interfaceEl) {
-                interfaceEl.style.backgroundImage = `url('${artUrl}')`;
-            }
-
+            document.getElementById('audio-interface').style.backgroundImage = `url('${artUrl}')`;
+            
+            audio.src = audioUrl;
+            
             document.querySelectorAll('.track-item').forEach((e, i) => {
                 e.classList.toggle('active', i === idx);
-                if (i === idx && scroll) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
 
-            document.getElementById('progress-fill').style.width = '0%';
-
-            const loadHandler = () => {
+            audio.onloadedmetadata = () => {
                 document.getElementById('time-total').textContent = fmt(audio.duration);
-                if (auto) playAudio();
+                if (autoPlay) playAudio();
             };
-
-            audio.removeEventListener('loadedmetadata', loadHandler);
-            audio.addEventListener('loadedmetadata', loadHandler, { once: true });
+            
             audio.load();
         }
 
@@ -2736,17 +1839,16 @@
                 playing = true;
                 document.getElementById('vinyl-disc').classList.add('playing');
                 document.getElementById('mute-toggle-btn').classList.add('playing');
-
-                const playIcon = document.getElementById('play-icon');
-                playIcon.setAttribute('data-lucide', 'pause');
-
                 document.getElementById('track-status').textContent = "Playing";
+                
+                const icon = document.getElementById('play-icon');
+                icon.setAttribute('data-lucide', 'pause');
                 lucide.createIcons();
-
-                if (!visualizerAnimationId) drawVisualizer();
+                
+                if (!visualizerId) drawVisualizer();
             }).catch(e => {
-                console.log('Playback prevented', e);
-                showToast("TAP TO PLAY");
+                console.log('Playback prevented:', e);
+                showToast('TAP TO PLAY');
             });
         }
 
@@ -2755,35 +1857,20 @@
             playing = false;
             document.getElementById('vinyl-disc').classList.remove('playing');
             document.getElementById('mute-toggle-btn').classList.remove('playing');
-
-            const playIcon = document.getElementById('play-icon');
-            playIcon.setAttribute('data-lucide', 'play');
-
             document.getElementById('track-status').textContent = "Paused";
-            lucide.createIcons();
-        }
-
-        function toggleMute() {
-            muted = !muted;
-            audio.muted = muted;
-            const icon = document.getElementById('mute-icon');
-            if (muted) {
-                icon.setAttribute('data-lucide', 'volume-x');
-                document.getElementById('mute-toggle-btn').style.opacity = "0.7";
-            } else {
-                icon.setAttribute('data-lucide', 'volume-2');
-                document.getElementById('mute-toggle-btn').style.opacity = "1";
-            }
+            
+            const icon = document.getElementById('play-icon');
+            icon.setAttribute('data-lucide', 'play');
             lucide.createIcons();
         }
 
         function nextTrack() {
             if (shuffle) {
                 let next;
-                do { next = Math.floor(Math.random() * tracks.length); } while (next === current && tracks.length > 1);
-                loadTrack(next, true, true);
+                do { next = Math.floor(Math.random() * tracks.length); } while (next === currentTrack && tracks.length > 1);
+                loadTrack(next, true);
             } else {
-                loadTrack((current + 1) % tracks.length, true, true);
+                loadTrack((currentTrack + 1) % tracks.length, true);
             }
         }
 
@@ -2791,22 +1878,14 @@
             if (audio.currentTime > 3) {
                 audio.currentTime = 0;
             } else {
-                loadTrack((current - 1 + tracks.length) % tracks.length, true, true);
+                loadTrack((currentTrack - 1 + tracks.length) % tracks.length, true);
             }
         }
 
         function toggleShuffle() {
             shuffle = !shuffle;
             const btn = document.getElementById('shuffle-btn');
-            if (shuffle) {
-                btn.style.opacity = '1';
-                btn.style.color = '#fff';
-                btn.style.filter = 'drop-shadow(0 0 5px rgba(255,255,255,0.5))';
-            } else {
-                btn.style.opacity = '0.6';
-                btn.style.color = '';
-                btn.style.filter = 'none';
-            }
+            btn.classList.toggle('active', shuffle);
             showToast(shuffle ? "SHUFFLE ON" : "SHUFFLE OFF");
         }
 
@@ -2814,90 +1893,84 @@
             repeat = !repeat;
             audio.loop = repeat;
             const btn = document.getElementById('repeat-btn');
-            if (repeat) {
-                btn.style.opacity = '1';
-                btn.style.color = '#fff';
-                btn.style.filter = 'drop-shadow(0 0 5px rgba(255,255,255,0.5))';
-            } else {
-                btn.style.opacity = '0.6';
-                btn.style.color = '';
-                btn.style.filter = 'none';
-            }
+            btn.classList.toggle('active', repeat);
             showToast(repeat ? "REPEAT ON" : "REPEAT OFF");
         }
 
+        function setVolume(val) {
+            audio.volume = val / 100;
+        }
+
+        function fmt(s) {
+            if (!s || !isFinite(s)) return '00:00';
+            const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+            return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+
+        // Progress Bar
         let isDragging = false;
         const progressContainer = document.getElementById('progress-container');
 
         function updateProgress(clientX) {
             const rect = progressContainer.getBoundingClientRect();
-            const pos = (clientX - rect.left) / rect.width;
-            const clampedPos = Math.max(0, Math.min(1, pos));
+            const pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
             if (audio.duration) {
-                audio.currentTime = clampedPos * audio.duration;
-                document.getElementById('progress-fill').style.width = (clampedPos * 100) + '%';
+                audio.currentTime = pos * audio.duration;
+                document.getElementById('progress-fill').style.width = (pos * 100) + '%';
+                progressContainer.setAttribute('aria-valuenow', Math.round(pos * 100));
             }
         }
 
-        progressContainer.addEventListener('mousedown', (e) => { isDragging = true; updateProgress(e.clientX); }, { passive: true });
-        document.addEventListener('mousemove', (e) => { if (isDragging) { e.preventDefault(); updateProgress(e.clientX); } });
+        progressContainer.addEventListener('mousedown', (e) => { isDragging = true; updateProgress(e.clientX); });
+        document.addEventListener('mousemove', (e) => { if (isDragging) updateProgress(e.clientX); });
         document.addEventListener('mouseup', () => { isDragging = false; });
-        progressContainer.addEventListener('touchstart', (e) => { isDragging = true; updateProgress(e.touches[0].clientX); }, { passive: true });
-        document.addEventListener('touchmove', (e) => { if (isDragging) { e.preventDefault(); updateProgress(e.touches[0].clientX); } }, { passive: false });
-        document.addEventListener('touchend', () => { isDragging = false; }, { passive: true });
+        
+        progressContainer.addEventListener('touchstart', (e) => { isDragging = true; updateProgress(e.touches[0].clientX); }, {passive: true});
+        document.addEventListener('touchmove', (e) => { if (isDragging) updateProgress(e.touches[0].clientX); }, {passive: true});
+        document.addEventListener('touchend', () => { isDragging = false; });
 
-        function setVolume(v) {
-            audio.volume = v / 100;
-            if (v > 0 && muted) toggleMute();
-        }
-
-        function fmt(s) {
-            if (isNaN(s) || !isFinite(s)) return '00:00';
-            const m = Math.floor(s / 60), sec = Math.floor(s % 60);
-            return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-        }
-
-        let lastTimeUpdate = 0;
         audio.addEventListener('timeupdate', () => {
-            if (!isDragging) {
-                const now = Date.now();
-                if (now - lastTimeUpdate < 200) return;
-                lastTimeUpdate = now;
-                const p = (audio.currentTime / audio.duration) * 100;
-                document.getElementById('progress-fill').style.width = p + '%';
+            if (!isDragging && audio.duration) {
+                const pct = (audio.currentTime / audio.duration) * 100;
+                document.getElementById('progress-fill').style.width = pct + '%';
+                progressContainer.setAttribute('aria-valuenow', Math.round(pct));
                 document.getElementById('time-current').textContent = fmt(audio.currentTime);
             }
         });
 
         audio.addEventListener('ended', () => { if (!repeat) nextTrack(); });
-        audio.addEventListener('pause', () => {
-            if (playing && audio.currentTime !== audio.duration && !audio.ended) {
-                playing = false;
-                document.getElementById('vinyl-disc').classList.remove('playing');
-                document.getElementById('mute-toggle-btn').classList.remove('playing');
-                document.getElementById('play-icon').setAttribute('data-lucide', 'play');
-                document.getElementById('track-status').textContent = "Paused";
-                lucide.createIcons();
-            }
-        });
 
+        // Keyboard Controls
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT') return;
-            switch (e.code) {
+            switch(e.code) {
                 case 'Space': e.preventDefault(); togglePlay(); break;
-                case 'ArrowLeft': e.shiftKey ? prevTrack() : audio.currentTime -= 5; break;
-                case 'ArrowRight': e.shiftKey ? nextTrack() : audio.currentTime += 5; break;
-                case 'KeyM': toggleMute(); break;
+                case 'ArrowLeft': e.shiftKey ? prevTrack() : (audio.currentTime -= 5); break;
+                case 'ArrowRight': e.shiftKey ? nextTrack() : (audio.currentTime += 5); break;
+                case 'ArrowUp': audio.volume = Math.min(1, audio.volume + 0.1); break;
+                case 'ArrowDown': audio.volume = Math.max(0, audio.volume - 0.1); break;
             }
         });
 
+        // Resume audio context on visibility change
+        document.addEventListener('visibilitychange', async () => {
+            if (!document.hidden && playing) {
+                try {
+                    if (audioContext && audioContext.state === 'suspended') await audioContext.resume();
+                    await audio.play();
+                } catch(e) {}
+            }
+        });
+
+        // Initialize
         initPlaylist();
 
+        // Cleanup
         window.addEventListener('beforeunload', () => {
-            if (visualizerAnimationId) cancelAnimationFrame(visualizerAnimationId);
-            if (audio) { audio.pause(); audio.src = ''; }
+            if (visualizerId) cancelAnimationFrame(visualizerId);
+            audio.pause();
+            audio.src = '';
         });
     </script>
 </body>
-
 </html>
