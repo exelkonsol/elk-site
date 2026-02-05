@@ -159,9 +159,14 @@
             }
 
             isVoting = true;
+            showToast("VOTING...");
             try {
                 const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'mechanisms', 'current');
-                await updateDoc(docRef, { [mechanism]: increment(1), updatedAt: serverTimestamp() });
+                // Use setDoc with merge to handle case where document doesn't exist
+                await setDoc(docRef, {
+                    [mechanism]: increment(1),
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
 
                 localStorage.setItem(STORAGE_KEYS.HAS_VOTED, 'true');
                 localStorage.setItem(STORAGE_KEYS.VOTED_MECH, mechanism);
@@ -224,7 +229,7 @@
         .mode-btn.active { border-color: rgba(139, 0, 0, 0.5); color: rgba(255, 255, 255, 0.9); background: rgba(139, 0, 0, 0.1); }
         @keyframes materialize { 0% { opacity: 0; transform: scale(1.15) translateY(40px); filter: blur(12px); } 100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); } }
         .hero-content { animation: materialize 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; will-change: transform, opacity, filter; }
-        .hero-image { filter: blur(0px) brightness(0.9) contrast(1.05); transition: all 1.5s ease; object-fit: contain; mix-blend-mode: normal; }
+        .hero-image { filter: brightness(0.9) contrast(1.05); transition: all 1.5s ease; object-fit: contain; mix-blend-mode: normal; display: block; visibility: visible; background: transparent; }
         .hero-quote-highlight { color: rgba(255, 255, 255, 0.9); font-style: italic; }
         .mechanism-card { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.04); transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease; position: relative; }
         .mechanism-card:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); transform: translateY(-4px); }
@@ -263,7 +268,7 @@
         #mute-toggle-btn:hover { transform: scale(1.1); border-color: rgba(255, 255, 255, 0.5); }
         #mute-toggle-btn img.btn-art { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: 0.7; pointer-events: none; animation: vinyl-spin 8s linear infinite; animation-play-state: paused; }
         #mute-toggle-btn.playing img.btn-art { animation-play-state: running; }
-        @media (max-width: 640px) { .quote-container { min-height: 400px; padding: 3rem 1rem; } #mute-toggle-btn { bottom: 16px; right: 16px; width: 48px; height: 48px; } .hero-image { width: 200px !important; height: 200px !important; } .quote-text { font-size: 1.25rem; } .vinyl-record { max-width: 240px; } .controls-wrapper { gap: 1rem; margin: 1rem 0; } .play-btn-main { width: 56px; height: 56px; } .modal-content { padding: 1.5rem; margin: 1rem; } }
+        @media (max-width: 640px) { .quote-container { min-height: 400px; padding: 3rem 1rem; } #mute-toggle-btn { bottom: 16px; right: 16px; width: 48px; height: 48px; } .hero-image { width: 200px !important; height: 200px !important; min-width: 200px; min-height: 200px; display: block !important; visibility: visible !important; opacity: 1 !important; } .quote-text { font-size: 1.25rem; } .vinyl-record { max-width: 240px; } .controls-wrapper { gap: 1rem; margin: 1rem 0; } .play-btn-main { width: 56px; height: 56px; } .modal-content { padding: 1.5rem; margin: 1rem; } }
         @media (pointer: coarse) { .progress-container { height: 24px; margin: -9px 0; background: transparent; border: none; } .progress-container::before { content: ''; position: absolute; top: 9px; left: 0; right: 0; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.1); } .progress-fill { top: 9px; height: 6px; } .progress-handle { right: -8px; width: 16px; height: 16px; transform: translateY(-50%) scale(1); } }
     </style>
 </head>
@@ -312,7 +317,7 @@
     <section class="relative min-h-screen flex items-center justify-center py-20 px-4 overflow-hidden">
         <div class="hero-content relative z-10 max-w-4xl mx-auto text-center w-full flex flex-col items-center">
             <div class="mb-8 w-full flex justify-center items-center relative">
-                <img src="https://raw.githubusercontent.com/exelkonsol/elk/main/pumpfun.png" alt="$ELK Stag" class="hero-image w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[360px] md:h-[360px] lg:w-[400px] lg:h-[400px] mx-auto object-contain select-none">
+                <img id="hero-logo" src="https://raw.githubusercontent.com/exelkonsol/elk/main/pumpfun.png" alt="$ELK Stag" class="hero-image w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[360px] md:h-[360px] lg:w-[400px] lg:h-[400px] mx-auto object-contain select-none" loading="eager" decoding="async" fetchpriority="high">
             </div>
             <div class="space-y-6 sm:space-y-8 mb-12 sm:mb-16 max-w-4xl px-4 relative z-20">
                 <p class="font-mono text-[9px] tracking-[0.4em] sm:tracking-[0.5em] text-white/20 uppercase">Peter Wessel Zapffe // On The Tragic</p>
@@ -462,6 +467,21 @@
     <script>
         if (history.scrollRestoration) history.scrollRestoration = 'manual';
         lucide.createIcons();
+
+        // Hero logo fallback for mobile
+        (function() {
+            const heroLogo = document.getElementById('hero-logo');
+            if (heroLogo) {
+                heroLogo.onerror = function() {
+                    // Retry with cache-busting
+                    this.src = 'https://raw.githubusercontent.com/exelkonsol/elk/main/pumpfun.png?' + Date.now();
+                };
+                // Force reload on mobile if image appears broken
+                if (heroLogo.complete && heroLogo.naturalHeight === 0) {
+                    heroLogo.src = 'https://raw.githubusercontent.com/exelkonsol/elk/main/pumpfun.png?' + Date.now();
+                }
+            }
+        })();
 
         function showToast(msg) {
             const t = document.getElementById('toast');
