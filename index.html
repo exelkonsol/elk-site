@@ -137,11 +137,22 @@
         };
 
         window.handleVote = async (mechanism) => {
-            if (!votingEnabled || !currentUser || isVoting) return;
-            
+            if (!votingEnabled) {
+                showToast("VOTING UNAVAILABLE");
+                return;
+            }
+            if (!currentUser) {
+                showToast("CONNECTING... TRY AGAIN");
+                return;
+            }
+            if (isVoting) {
+                showToast("PROCESSING...");
+                return;
+            }
+
             const hasVoted = localStorage.getItem(STORAGE_KEYS.HAS_VOTED) === 'true';
             const votedCycle = parseInt(localStorage.getItem(STORAGE_KEYS.VOTED_CYCLE) || '0');
-            
+
             if (hasVoted && votedCycle === currentCycle) {
                 showToast("ALREADY VOTED THIS CYCLE");
                 return;
@@ -155,7 +166,7 @@
                 localStorage.setItem(STORAGE_KEYS.HAS_VOTED, 'true');
                 localStorage.setItem(STORAGE_KEYS.VOTED_MECH, mechanism);
                 localStorage.setItem(STORAGE_KEYS.VOTED_CYCLE, String(currentCycle));
-                
+
                 lockButtons(mechanism);
                 showToast("VOTE RECORDED");
             } catch (error) {
@@ -499,17 +510,44 @@
         renderHeroQuote();
 
         const modalContent = {
-            isolation: { title: "Isolation", body: "Isolation is the deliberate thinning of noise. By removing tokens from circulation, we compress the system until only what matters remains—a scarcity that reflects the fear of nothingness." },
-            anchoring: { title: "Anchoring", body: "Anchoring is the choice to hold a fixed point in a drifting world. The liquidity pool becomes a covenant of stability, a weight that resists volatility and entropy." },
-            distraction: { title: "Distraction", body: "Distraction is motion as mercy. Campaigns, raids, and constant activity keep the mind moving when stillness would reveal the abyss." },
-            sublimation: { title: "Sublimation", body: "Sublimation is the alchemy of turning pressure into form. We take pain from the chart and transmute it into community, art, and shared ritual." }
+            isolation: {
+                title: "Isolation",
+                body: `<p>Isolation is the deliberate thinning of noise—the conscious decision to wall off disturbing thoughts and reduce the overwhelming complexity of existence to manageable fragments. In Zapffe's philosophy, isolation functions as a psychological defense mechanism where we compartmentalize the unbearable truths about our condition.</p>
+                <p class="mt-4">Within the $ELK ecosystem, isolation manifests through token burns and supply reduction. By removing tokens from circulation, we compress the system until only what matters remains. This scarcity reflects the deeper fear of nothingness—the void we desperately try to avoid confronting.</p>
+                <p class="mt-4">Just as the mind isolates traumatic knowledge into inaccessible compartments, the tokenomics of isolation create artificial scarcity that mirrors our psychological need to limit what we must carry. The burn is not destruction—it is selective forgetting, a mercy we grant ourselves.</p>
+                <p class="mt-4 text-white/40 text-sm italic">\"We survive by refusing to see the whole picture.\"</p>`
+            },
+            anchoring: {
+                title: "Anchoring",
+                body: `<p>Anchoring is the mechanism by which we attach ourselves to fixed points in a reality that offers none. Zapffe understood that humans require stable reference points—values, beliefs, routines—to prevent the vertiginous drift into cosmic meaninglessness.</p>
+                <p class="mt-4">In the $ELK framework, anchoring takes the form of permanent liquidity and locked pools. These immutable structures serve as gravitational centers, preventing the community from scattering into the chaotic void of speculation. The locked liquidity is our covenant with stability.</p>
+                <p class="mt-4">When everything is uncertain, when markets crash and narratives collapse, the anchor remains. It is the fixed star by which we navigate, even knowing that all stars eventually burn out. Anchoring does not deny the void—it simply refuses to look down while crossing the abyss.</p>
+                <p class="mt-4">The weight of anchoring keeps us grounded when lighter minds would float away into delusion or despair. Structure against entropy. Order against chaos. A stake driven into shifting sand.</p>
+                <p class="mt-4 text-white/40 text-sm italic">\"We build monuments not because they will last, but because building them gives us something to hold.\"</p>`
+            },
+            distraction: {
+                title: "Distraction",
+                body: `<p>Distraction is motion as mercy—the perpetual activity that prevents the mind from settling into contemplation of its own predicament. Zapffe recognized that humanity fills every silence with noise, every pause with action, because stillness invites the awareness we cannot bear.</p>
+                <p class="mt-4">For $ELK, distraction manifests as marketing campaigns, community raids, meme creation, and the endless production of content. These activities are not merely promotional—they are existential. The raid is a ritual. The meme is a prayer. Each post is a small rebellion against the silence.</p>
+                <p class="mt-4">We do not create content because we believe it will change our fate. We create it because the act of creation keeps the abyss at bay for another moment. The chart may bleed red, but if we are busy enough, we do not have to watch it.</p>
+                <p class="mt-4">Distraction is not denial—it is strategic avoidance. The community that moves together survives together, not because movement solves anything, but because it postpones the reckoning.</p>
+                <p class="mt-4 text-white/40 text-sm italic">\"We fill the void with noise because the void's silence tells us too much.\"</p>`
+            },
+            sublimation: {
+                title: "Sublimation",
+                body: `<p>Sublimation is the highest of Zapffe's mechanisms—the transformation of suffering into something greater. Where isolation hides, anchoring steadies, and distraction averts, sublimation transmutes. It takes the raw material of existential pain and forges it into art, philosophy, community, and meaning.</p>
+                <p class="mt-4">Within $ELK, sublimation is the philosophical foundation itself. The project transforms the brutal realities of memecoin speculation—the losses, the volatility, the absurdity—into a shared mythology. We do not deny the suffering; we make it sacred.</p>
+                <p class="mt-4">Every piece of art created from market pain, every philosophical reflection born from a red portfolio, every moment of genuine community forged in shared hardship—this is sublimation in action. The burden becomes the badge. The weight becomes the wings.</p>
+                <p class="mt-4">Zapffe believed that sublimation was rare because it requires both the courage to face the void and the creative capacity to build bridges across it. The elk carries antlers not despite their weight, but because of it. The burden, properly sublimated, becomes the very thing that elevates us above mere survival.</p>
+                <p class="mt-4 text-white/40 text-sm italic">\"Pain becomes meaning when we refuse to let it be meaningless.\"</p>`
+            }
         };
 
         function openModal(mech) {
             const data = modalContent[mech];
             if (!data) return;
             document.getElementById('modal-title').textContent = data.title;
-            document.getElementById('modal-body').textContent = data.body;
+            document.getElementById('modal-body').innerHTML = data.body;
             document.getElementById('modal-overlay').classList.add('open');
             document.body.style.overflow = 'hidden';
             lucide.createIcons();
