@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="description" content="$ELK - A Solana memecoin rooted in existential philosophy. The antlers are heavy. We carry them together.">
     <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
 
@@ -76,11 +76,15 @@
                     if (user) {
                         currentUser = user;
                         updateConnectionStatus('connected');
+                        // Sync vote lock immediately from localStorage (works even if Firestore blocked)
+                        syncVoteLock();
                         initRealtimeVotes();
                     } else {
                         signInAnonymously(auth).catch(err => {
                             console.error('Auth failed:', err);
                             updateConnectionStatus('error');
+                            // Still sync vote lock from localStorage even if auth fails
+                            syncVoteLock();
                         });
                     }
                 });
@@ -111,7 +115,12 @@
                 } else {
                     setDoc(docRef, { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0, cycle: 1, updatedAt: serverTimestamp() });
                 }
-            }, (error) => console.error("Vote sync error:", error));
+            }, (error) => {
+                console.error("Vote sync error:", error);
+                // Firestore might be blocked by ad blocker - still sync from localStorage
+                updateConnectionStatus('error');
+                syncVoteLock();
+            });
         };
 
         const updateVoteUI = (data) => {
@@ -203,6 +212,11 @@
 
         initFirebase();
         window.votingEnabled = votingEnabled;
+
+        // Fallback: sync vote lock after timeout in case Firestore is blocked
+        setTimeout(() => {
+            syncVoteLock();
+        }, 2000);
     </script>
 
     <style>
