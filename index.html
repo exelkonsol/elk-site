@@ -108,8 +108,21 @@
                     updateVoteUI(data);
                     if (data.cycle) currentCycle = data.cycle;
                     syncVoteLock();
-                } else {
-                    setDoc(docRef, { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0, cycle: 1, updatedAt: serverTimestamp() });
+                } else if (!snapshot.metadata.fromCache) {
+                    // Only initialize document when we have server confirmation it doesn't exist
+                    // This prevents cache-miss from overwriting existing votes
+                    const now = Date.now();
+                    const cycleLength = 14 * 24 * 60 * 60 * 1000; // 14 days
+                    setDoc(docRef, {
+                        isolation: 0,
+                        anchoring: 0,
+                        distraction: 0,
+                        sublimation: 0,
+                        cycle: 1,
+                        cycleStartedAt: serverTimestamp(),
+                        cycleEndsAt: new Date(now + cycleLength),
+                        updatedAt: serverTimestamp()
+                    });
                 }
             }, (error) => console.error("Vote sync error:", error));
         };
