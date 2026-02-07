@@ -65,7 +65,7 @@
             LOCAL_VOTES: 'elk_local_votes'  // Fallback storage
         };
 
-        let supabase = null;
+        let supabaseClient = null;
         let useSupabase = false;
         let votingEnabled = true;
         let isVoting = false;
@@ -144,10 +144,10 @@
             }
 
             try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
                 // Test connection by fetching current votes
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('elk_votes')
                     .select('*')
                     .eq('id', 'current')
@@ -189,7 +189,7 @@
             const now = new Date();
             const cycleEnd = new Date(now.getTime() + CYCLE_LENGTH_MS);
 
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('elk_votes')
                 .insert({
                     id: 'current',
@@ -207,7 +207,7 @@
 
         // Set up real-time subscription for live vote updates
         const setupRealtimeSubscription = () => {
-            realtimeChannel = supabase
+            realtimeChannel = supabaseClient
                 .channel('elk_votes_changes')
                 .on('postgres_changes',
                     { event: '*', schema: 'public', table: 'elk_votes', filter: 'id=eq.current' },
@@ -231,7 +231,7 @@
         // Vote using Supabase (shared across all users)
         const voteSupabase = async (mechanism) => {
             // Use RPC function for atomic increment
-            const { data, error } = await supabase.rpc('increment_vote', {
+            const { data, error } = await supabaseClient.rpc('increment_vote', {
                 mechanism_name: mechanism
             });
 
