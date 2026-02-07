@@ -36,89 +36,42 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
         // ============================================
-        // PURE LOCALSTORAGE VOTING SYSTEM
-        // No external dependencies - works offline
+        // SUPABASE SHARED VOTING SYSTEM
+        // Real-time shared votes across all users
+        // Falls back to localStorage if unavailable
         // ============================================
+
+        // ==========================================
+        // SUPABASE CONFIGURATION - UPDATE THESE!
+        // ==========================================
+        const SUPABASE_URL = 'https://your-project.supabase.co';  // Replace with your Supabase URL
+        const SUPABASE_ANON_KEY = 'your-anon-key';                // Replace with your anon key
+        // ==========================================
 
         const ALLOWED_MECHANISMS = ['isolation', 'anchoring', 'distraction', 'sublimation'];
         const CYCLE_LENGTH_DAYS = 14;
         const CYCLE_LENGTH_MS = CYCLE_LENGTH_DAYS * 24 * 60 * 60 * 1000;
 
-        // Storage keys
+        // Storage keys for local state
         const STORAGE_KEYS = {
-            VOTES: 'elk_votes',           // Vote counts: { isolation: 0, anchoring: 0, ... }
-            HAS_VOTED: 'elk_has_voted',   // User voted this cycle
-            VOTED_MECH: 'elk_voted_mech', // Which mechanism user voted for
-            CYCLE_START: 'elk_cycle_start' // When current cycle started
+            HAS_VOTED: 'elk_has_voted',
+            VOTED_MECH: 'elk_voted_mech',
+            VOTED_CYCLE: 'elk_voted_cycle',
+            LOCAL_VOTES: 'elk_local_votes'  // Fallback storage
         };
 
+        let supabase = null;
+        let useSupabase = false;
         let votingEnabled = true;
         let isVoting = false;
-
-        // Get or initialize cycle start time
-        const getCycleStart = () => {
-            let cycleStart = localStorage.getItem(STORAGE_KEYS.CYCLE_START);
-            if (!cycleStart) {
-                // Initialize first cycle to start now
-                cycleStart = Date.now().toString();
-                localStorage.setItem(STORAGE_KEYS.CYCLE_START, cycleStart);
-            }
-            return parseInt(cycleStart);
-        };
-
-        // Check if we need to start a new cycle
-        const checkCycleReset = () => {
-            const cycleStart = getCycleStart();
-            const now = Date.now();
-            const elapsed = now - cycleStart;
-
-            if (elapsed >= CYCLE_LENGTH_MS) {
-                // Start new cycle - reset everything
-                localStorage.setItem(STORAGE_KEYS.CYCLE_START, now.toString());
-                localStorage.setItem(STORAGE_KEYS.VOTES, JSON.stringify({
-                    isolation: 0,
-                    anchoring: 0,
-                    distraction: 0,
-                    sublimation: 0
-                }));
-                localStorage.removeItem(STORAGE_KEYS.HAS_VOTED);
-                localStorage.removeItem(STORAGE_KEYS.VOTED_MECH);
-                return true; // Cycle was reset
-            }
-            return false;
-        };
-
-        // Get current vote counts
-        const getVotes = () => {
-            const stored = localStorage.getItem(STORAGE_KEYS.VOTES);
-            if (stored) {
-                try {
-                    return JSON.parse(stored);
-                } catch (e) {
-                    console.error('Failed to parse votes:', e);
-                }
-            }
-            // Initialize with zeros
-            const initial = { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
-            localStorage.setItem(STORAGE_KEYS.VOTES, JSON.stringify(initial));
-            return initial;
-        };
-
-        // Save vote counts
-        const saveVotes = (votes) => {
-            localStorage.setItem(STORAGE_KEYS.VOTES, JSON.stringify(votes));
-        };
-
-        // Update the UI with current votes
-        const updateVoteUI = () => {
-            const votes = getVotes();
-            ALLOWED_MECHANISMS.forEach(mech => {
-                const el = document.querySelector(`[data-mechanism="${mech}"] .vote-count`);
-                if (el) el.textContent = (votes[mech] || 0).toLocaleString();
-            });
-        };
+        let currentCycle = 1;
+        let currentVotes = { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
+        let realtimeChannel = null;
 
         // Update connection status indicator
         const updateConnectionStatus = (status) => {
@@ -130,6 +83,15 @@
                 loading: 'bg-yellow-500/50'
             };
             indicator.className = `w-2 h-2 rounded-full ${colors[status] || colors.loading} animate-pulse`;
+        };
+
+        // Update the UI with vote counts
+        const updateVoteUI = (votes) => {
+            if (votes) currentVotes = votes;
+            ALLOWED_MECHANISMS.forEach(mech => {
+                const el = document.querySelector(`[data-mechanism="${mech}"] .vote-count`);
+                if (el) el.textContent = (currentVotes[mech] || 0).toLocaleString();
+            });
         };
 
         // Lock buttons after voting
@@ -153,19 +115,160 @@
             document.querySelectorAll('.mechanism-card').forEach(card => card.classList.remove('voted'));
         };
 
-        // Sync vote lock state with localStorage
+        // Sync vote lock state
         const syncVoteLock = () => {
+            const votedCycle = parseInt(localStorage.getItem(STORAGE_KEYS.VOTED_CYCLE) || '0');
             const hasVoted = localStorage.getItem(STORAGE_KEYS.HAS_VOTED) === 'true';
-            if (hasVoted) {
+
+            if (votedCycle !== currentCycle) {
+                // New cycle - clear local vote state
+                localStorage.removeItem(STORAGE_KEYS.HAS_VOTED);
+                localStorage.removeItem(STORAGE_KEYS.VOTED_MECH);
+                localStorage.removeItem(STORAGE_KEYS.VOTED_CYCLE);
+                resetButtons();
+            } else if (hasVoted) {
                 const mech = localStorage.getItem(STORAGE_KEYS.VOTED_MECH);
                 if (mech) lockButtons(mech);
-            } else {
-                resetButtons();
             }
         };
 
-        // Handle vote action
-        window.handleVote = (mechanism) => {
+        // ============================================
+        // SUPABASE FUNCTIONS
+        // ============================================
+
+        // Initialize Supabase connection
+        const initSupabase = async () => {
+            if (SUPABASE_URL === 'https://your-project.supabase.co') {
+                console.warn('Supabase not configured - using localStorage fallback');
+                return false;
+            }
+
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                // Test connection by fetching current votes
+                const { data, error } = await supabase
+                    .from('elk_votes')
+                    .select('*')
+                    .eq('id', 'current')
+                    .single();
+
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        // No row found - create initial record
+                        await createInitialVoteRecord();
+                    } else {
+                        throw error;
+                    }
+                } else {
+                    currentVotes = {
+                        isolation: data.isolation || 0,
+                        anchoring: data.anchoring || 0,
+                        distraction: data.distraction || 0,
+                        sublimation: data.sublimation || 0
+                    };
+                    currentCycle = data.cycle || 1;
+                }
+
+                // Set up real-time subscription
+                setupRealtimeSubscription();
+
+                useSupabase = true;
+                updateConnectionStatus('connected');
+                console.log('Supabase connected - shared voting enabled');
+                return true;
+            } catch (error) {
+                console.error('Supabase init failed:', error);
+                updateConnectionStatus('error');
+                return false;
+            }
+        };
+
+        // Create initial vote record in Supabase
+        const createInitialVoteRecord = async () => {
+            const now = new Date();
+            const cycleEnd = new Date(now.getTime() + CYCLE_LENGTH_MS);
+
+            const { error } = await supabase
+                .from('elk_votes')
+                .insert({
+                    id: 'current',
+                    isolation: 0,
+                    anchoring: 0,
+                    distraction: 0,
+                    sublimation: 0,
+                    cycle: 1,
+                    cycle_started_at: now.toISOString(),
+                    cycle_ends_at: cycleEnd.toISOString()
+                });
+
+            if (error) throw error;
+        };
+
+        // Set up real-time subscription for live vote updates
+        const setupRealtimeSubscription = () => {
+            realtimeChannel = supabase
+                .channel('elk_votes_changes')
+                .on('postgres_changes',
+                    { event: '*', schema: 'public', table: 'elk_votes', filter: 'id=eq.current' },
+                    (payload) => {
+                        if (payload.new) {
+                            currentVotes = {
+                                isolation: payload.new.isolation || 0,
+                                anchoring: payload.new.anchoring || 0,
+                                distraction: payload.new.distraction || 0,
+                                sublimation: payload.new.sublimation || 0
+                            };
+                            if (payload.new.cycle) currentCycle = payload.new.cycle;
+                            updateVoteUI();
+                            syncVoteLock();
+                        }
+                    }
+                )
+                .subscribe();
+        };
+
+        // Vote using Supabase (shared across all users)
+        const voteSupabase = async (mechanism) => {
+            // Use RPC function for atomic increment
+            const { data, error } = await supabase.rpc('increment_vote', {
+                mechanism_name: mechanism
+            });
+
+            if (error) throw error;
+            return data;
+        };
+
+        // ============================================
+        // LOCALSTORAGE FALLBACK FUNCTIONS
+        // ============================================
+
+        const getLocalVotes = () => {
+            const stored = localStorage.getItem(STORAGE_KEYS.LOCAL_VOTES);
+            if (stored) {
+                try {
+                    return JSON.parse(stored);
+                } catch (e) {}
+            }
+            return { isolation: 0, anchoring: 0, distraction: 0, sublimation: 0 };
+        };
+
+        const saveLocalVotes = (votes) => {
+            localStorage.setItem(STORAGE_KEYS.LOCAL_VOTES, JSON.stringify(votes));
+        };
+
+        const voteLocal = (mechanism) => {
+            const votes = getLocalVotes();
+            votes[mechanism] = (votes[mechanism] || 0) + 1;
+            saveLocalVotes(votes);
+            return votes;
+        };
+
+        // ============================================
+        // MAIN VOTE HANDLER
+        // ============================================
+
+        window.handleVote = async (mechanism) => {
             if (!votingEnabled) {
                 showToast("VOTING UNAVAILABLE");
                 return;
@@ -181,7 +284,9 @@
 
             // Check if already voted this cycle
             const hasVoted = localStorage.getItem(STORAGE_KEYS.HAS_VOTED) === 'true';
-            if (hasVoted) {
+            const votedCycle = parseInt(localStorage.getItem(STORAGE_KEYS.VOTED_CYCLE) || '0');
+
+            if (hasVoted && votedCycle === currentCycle) {
                 showToast("ALREADY VOTED THIS CYCLE");
                 return;
             }
@@ -190,19 +295,20 @@
             showToast("VOTING...");
 
             try {
-                // Get current votes and increment
-                const votes = getVotes();
-                votes[mechanism] = (votes[mechanism] || 0) + 1;
+                if (useSupabase) {
+                    // Use Supabase for shared voting
+                    await voteSupabase(mechanism);
+                } else {
+                    // Fallback to localStorage
+                    const votes = voteLocal(mechanism);
+                    updateVoteUI(votes);
+                }
 
-                // Save updated votes
-                saveVotes(votes);
-
-                // Mark as voted
+                // Mark as voted locally (prevents double voting)
                 localStorage.setItem(STORAGE_KEYS.HAS_VOTED, 'true');
                 localStorage.setItem(STORAGE_KEYS.VOTED_MECH, mechanism);
+                localStorage.setItem(STORAGE_KEYS.VOTED_CYCLE, String(currentCycle));
 
-                // Update UI
-                updateVoteUI();
                 lockButtons(mechanism);
                 showToast("VOTE RECORDED");
             } catch (error) {
@@ -213,23 +319,26 @@
             }
         };
 
-        // Initialize voting system
-        const initVoting = () => {
-            // Check if cycle needs reset
-            const wasReset = checkCycleReset();
+        // ============================================
+        // INITIALIZATION
+        // ============================================
 
-            // Update UI with current votes
-            updateVoteUI();
+        const initVoting = async () => {
+            updateConnectionStatus('loading');
 
-            // Sync button lock state
-            syncVoteLock();
+            // Try Supabase first
+            const supabaseOk = await initSupabase();
 
-            // Update status indicator
-            updateConnectionStatus('connected');
-
-            if (wasReset) {
-                console.log('New voting cycle started');
+            if (!supabaseOk) {
+                // Fall back to localStorage
+                console.log('Using localStorage fallback');
+                currentVotes = getLocalVotes();
+                updateConnectionStatus('connected');
             }
+
+            // Update UI
+            updateVoteUI();
+            syncVoteLock();
         };
 
         // Initialize on page load
