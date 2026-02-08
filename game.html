@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>$ELK Mountain Ascent — Climb the Summit of Consciousness</title>
-<meta name="description" content="A philosophical mountain climbing quiz game. Guide the elk from base camp to the summit by answering questions inspired by Zapffe's existential philosophy.">
+<meta name="description" content="A philosophical mountain climbing quiz game. Guide the elk from base camp to the summit by answering questions inspired by existential philosophy.">
 <meta property="og:title" content="$ELK Mountain Ascent">
 <meta property="og:description" content="Carry the antlers to the summit. A philosophical climbing game.">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
@@ -40,18 +40,22 @@ body{display:flex;flex-direction:column;position:relative}
 /* ── Mountain Scene ── */
 .scene{position:relative;flex:1;overflow:hidden;min-height:0}
 
-/* Sky gradient */
+/* Sky gradient — transitions through elevation */
 .sky{
   position:absolute;inset:0;
   background:linear-gradient(180deg,#05050f 0%,#0a0a1e 30%,#0f1628 60%,#131d2d 100%);
-  transition:background 2s ease;
+  transition:background 2.5s ease;
+}
+.sky.mid{
+  background:linear-gradient(180deg,#030310 0%,#070718 25%,#0a1025 55%,#0e1828 100%);
 }
 .sky.high{
-  background:linear-gradient(180deg,#020208 0%,#050510 20%,#080818 50%,#0a0f20 100%);
+  background:linear-gradient(180deg,#020208 0%,#040410 20%,#060815 50%,#080c1a 100%);
 }
 
 /* Stars */
 .stars{position:absolute;inset:0;opacity:0;transition:opacity 3s ease}
+.stars.dim{opacity:0.4}
 .stars.visible{opacity:1}
 .star{
   position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;
@@ -60,26 +64,111 @@ body{display:flex;flex-direction:column;position:relative}
 }
 @keyframes twinkle{0%{opacity:var(--o,0.4);transform:scale(1)}100%{opacity:1;transform:scale(1.3)}}
 
+/* Shooting stars */
+.shooting-star{
+  position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;
+  opacity:0;z-index:4;
+}
+.shooting-star.active{
+  animation:shoot var(--dur,1.2s) linear forwards;
+}
+@keyframes shoot{
+  0%{opacity:0;transform:translate(0,0);box-shadow:0 0 2px #fff,0 0 6px rgba(180,200,255,0.5)}
+  10%{opacity:1}
+  90%{opacity:0.8}
+  100%{opacity:0;transform:translate(var(--dx,-200px),var(--dy,120px));box-shadow:none}
+}
+
+/* Aurora borealis */
+.aurora{
+  position:absolute;top:0;left:0;right:0;height:40%;
+  opacity:0;transition:opacity 4s ease;
+  pointer-events:none;z-index:1;
+  overflow:hidden;
+}
+.aurora.visible{opacity:1}
+.aurora-band{
+  position:absolute;width:200%;left:-50%;
+  height:60px;
+  border-radius:50%;
+  filter:blur(30px);
+  opacity:0.15;
+  animation:aurora-wave var(--speed,12s) ease-in-out infinite alternate;
+}
+.aurora-band:nth-child(1){
+  top:15%;background:linear-gradient(90deg,transparent,#1a6b4a,#2dd47b,#1a6b4a,transparent);
+  --speed:14s;
+}
+.aurora-band:nth-child(2){
+  top:22%;background:linear-gradient(90deg,transparent,#1a4a6b,#2db4d4,#1a4a6b,transparent);
+  --speed:18s;animation-direction:alternate-reverse;
+}
+.aurora-band:nth-child(3){
+  top:10%;background:linear-gradient(90deg,transparent,#4a1a6b,#8b2dd4,#4a1a6b,transparent);
+  --speed:22s;opacity:0.08;
+}
+@keyframes aurora-wave{
+  0%{transform:translateX(-15%) scaleY(1)}
+  50%{transform:translateX(10%) scaleY(1.5)}
+  100%{transform:translateX(-5%) scaleY(0.8)}
+}
+
+/* Wind particles */
+.wind-particles{
+  position:absolute;inset:0;pointer-events:none;z-index:7;
+  opacity:0;transition:opacity 2s ease;
+}
+.wind-particles.visible{opacity:1}
+.wind-particle{
+  position:absolute;width:var(--w,20px);height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,var(--o,0.08)),transparent);
+  animation:wind var(--speed,6s) linear infinite;
+  animation-delay:var(--delay,0s);
+}
+@keyframes wind{
+  0%{transform:translateX(-100px);opacity:0}
+  20%{opacity:1}
+  80%{opacity:1}
+  100%{transform:translateX(calc(100vw + 100px));opacity:0}
+}
+
+/* Snow particles (high altitude) */
+.snow-particles{
+  position:absolute;top:0;left:0;right:0;height:50%;
+  pointer-events:none;z-index:7;
+  opacity:0;transition:opacity 3s ease;
+}
+.snow-particles.visible{opacity:1}
+.snow-p{
+  position:absolute;width:var(--s,2px);height:var(--s,2px);
+  background:rgba(255,255,255,var(--o,0.3));border-radius:50%;
+  animation:snowfall var(--dur,8s) linear infinite;
+  animation-delay:var(--delay,0s);
+}
+@keyframes snowfall{
+  0%{transform:translate(0,-10px);opacity:0}
+  10%{opacity:1}
+  90%{opacity:0.5}
+  100%{transform:translate(var(--drift,20px),calc(50vh));opacity:0}
+}
+
 /* Background peaks */
 .bg-peaks{
   position:absolute;bottom:0;left:0;right:0;height:70%;
   opacity:0.3;
 }
-.bg-peak{position:absolute;bottom:0}
-.bg-peak svg{display:block}
 
 /* Main mountain */
 .mountain-wrap{position:absolute;bottom:0;left:0;right:0;height:85%}
 .mountain-svg{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:140%;max-width:900px;height:100%}
 
 /* Trail and stations */
-.trail{position:absolute;bottom:0;left:0;right:0;height:85%}
 .station{
   position:absolute;transform:translate(-50%,-50%);
   width:28px;height:28px;border-radius:50%;
   border:2px solid var(--glass-border);
   background:var(--glass);
-  transition:all 0.6s ease;
+  transition:all 0.8s ease;
   cursor:default;
   z-index:5;
 }
@@ -89,34 +178,43 @@ body{display:flex;flex-direction:column;position:relative}
   box-shadow:0 0 20px var(--campfire-glow),0 0 40px rgba(232,113,42,0.15);
 }
 .station.reached::after{
-  content:'';position:absolute;inset:-4px;border-radius:50%;
-  background:radial-gradient(circle,rgba(232,113,42,0.2) 0%,transparent 70%);
+  content:'';position:absolute;inset:-6px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,113,42,0.25) 0%,transparent 70%);
   animation:fire-pulse 2s ease-in-out infinite alternate;
+}
+/* Campfire flame flicker */
+.station.reached::before{
+  content:'🔥';position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-size:12px;
+  animation:flame-flicker 0.4s ease-in-out infinite alternate;
+  opacity:0.8;
 }
 .station.summit.reached{
   border-color:var(--gold);
   background:rgba(212,168,67,0.3);
   box-shadow:0 0 30px rgba(212,168,67,0.4),0 0 60px rgba(212,168,67,0.15);
 }
+.station.summit.reached::before{content:'⭐';font-size:14px;top:-20px}
 .station-num{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
   color:var(--text-dim);transition:color 0.6s;
 }
 .station.reached .station-num{color:var(--text-primary)}
-@keyframes fire-pulse{0%{opacity:0.5;transform:scale(1)}100%{opacity:1;transform:scale(1.3)}}
+@keyframes fire-pulse{0%{opacity:0.5;transform:scale(1)}100%{opacity:1;transform:scale(1.4)}}
+@keyframes flame-flicker{0%{transform:translateX(-50%) scale(1) rotate(-3deg)}100%{transform:translateX(-50%) scale(1.1) rotate(3deg)}}
 
 /* Trail line */
-.trail-line{
-  position:absolute;z-index:2;
-}
+.trail-line{position:absolute;z-index:2}
 .trail-line line{
   stroke:rgba(255,255,255,0.06);stroke-width:2;
   stroke-dasharray:4 6;
 }
 .trail-line line.active{
-  stroke:rgba(232,113,42,0.3);
-  transition:stroke 1s ease;
+  stroke:rgba(232,113,42,0.35);
+  stroke-width:2.5;
+  filter:drop-shadow(0 0 3px rgba(232,113,42,0.3));
+  transition:all 1s ease;
 }
 
 /* Elk character */
@@ -128,38 +226,65 @@ body{display:flex;flex-direction:column;position:relative}
   filter:drop-shadow(0 0 12px rgba(232,113,42,0.4));
   line-height:1;
 }
+/* Breathing idle animation */
+.elk.idle{
+  animation:elk-breathe 3s ease-in-out infinite;
+}
+@keyframes elk-breathe{
+  0%,100%{transform:translate(-50%,-50%) scale(1)}
+  50%{transform:translate(-50%,-50%) scale(1.04) translateY(-1px)}
+}
 .elk.slip{
-  animation:slip 0.6s ease;
+  animation:slip 0.7s ease;
 }
 @keyframes slip{
   0%{transform:translate(-50%,-50%) rotate(0)}
-  25%{transform:translate(-50%,-50%) rotate(-15deg) translateY(8px)}
-  50%{transform:translate(-50%,-50%) rotate(10deg) translateY(4px)}
+  15%{transform:translate(-50%,-50%) rotate(-20deg) translateY(6px)}
+  35%{transform:translate(-50%,-50%) rotate(12deg) translateY(10px)}
+  60%{transform:translate(-50%,-50%) rotate(-5deg) translateY(4px)}
   100%{transform:translate(-50%,-50%) rotate(0)}
+}
+.elk.climb{
+  animation:elk-climb 1.2s ease;
+}
+@keyframes elk-climb{
+  0%{transform:translate(-50%,-50%) scale(1)}
+  30%{transform:translate(-50%,-50%) scale(1.12) translateY(-4px)}
+  60%{transform:translate(-50%,-50%) scale(1.05)}
+  100%{transform:translate(-50%,-50%) scale(1)}
 }
 .elk.celebrate{
   animation:elk-celebrate 1s ease infinite alternate;
 }
 @keyframes elk-celebrate{
   0%{transform:translate(-50%,-50%) scale(1)}
-  100%{transform:translate(-50%,-50%) scale(1.15) translateY(-6px)}
+  100%{transform:translate(-50%,-50%) scale(1.18) translateY(-8px)}
 }
 
-/* Fog layers */
-.fog{position:absolute;bottom:0;left:0;right:0;pointer-events:none;z-index:6}
+/* Fog layers — more atmospheric */
+.fog{position:absolute;bottom:0;left:0;right:0;pointer-events:none;z-index:6;transition:opacity 3s ease}
 .fog-layer{
-  position:absolute;bottom:0;left:-20%;width:140%;
-  height:100px;
-  background:linear-gradient(180deg,transparent 0%,rgba(100,120,140,0.08) 40%,rgba(80,100,120,0.15) 100%);
-  animation:fog-drift var(--speed,40s) linear infinite;
+  position:absolute;bottom:0;left:-30%;width:160%;
+  background:linear-gradient(180deg,transparent 0%,rgba(100,120,140,0.06) 30%,rgba(80,100,120,0.12) 100%);
+  animation:fog-drift var(--speed,40s) ease-in-out infinite;
   opacity:var(--opacity,0.6);
-  transition:opacity 3s ease;
 }
-.fog-layer:nth-child(2){animation-direction:reverse;bottom:5%}
-.fog-layer:nth-child(3){bottom:10%;animation-duration:55s}
+.fog-layer:nth-child(2){animation-direction:reverse}
 @keyframes fog-drift{
-  0%{transform:translateX(-10%)}50%{transform:translateX(10%)}100%{transform:translateX(-10%)}
+  0%{transform:translateX(-12%) scaleY(1)}
+  33%{transform:translateX(8%) scaleY(1.1)}
+  66%{transform:translateX(-5%) scaleY(0.9)}
+  100%{transform:translateX(-12%) scaleY(1)}
 }
+
+/* Mountain glow — ambient light on mountain face */
+.mountain-glow{
+  position:absolute;bottom:20%;left:45%;width:180px;height:300px;
+  background:radial-gradient(ellipse,rgba(232,113,42,0.04) 0%,transparent 70%);
+  pointer-events:none;z-index:3;
+  opacity:0;transition:opacity 3s ease;
+}
+.mountain-glow.visible{opacity:1}
 
 /* ── UI Overlay ── */
 .ui-overlay{
@@ -173,7 +298,7 @@ body{display:flex;flex-direction:column;position:relative}
   position:absolute;top:0;left:0;right:0;
   display:flex;justify-content:space-between;align-items:center;
   padding:12px 16px;pointer-events:auto;
-  background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,transparent 100%);
+  background:linear-gradient(180deg,rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.3) 60%,transparent 100%);
 }
 .game-title{
   font-family:'Cinzel',serif;font-size:14px;font-weight:600;
@@ -190,12 +315,21 @@ body{display:flex;flex-direction:column;position:relative}
 }
 .home-link:hover{color:var(--text-primary)}
 
+/* Altitude indicator */
+.altitude{
+  position:absolute;top:60px;right:16px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--text-dim);letter-spacing:0.08em;
+  writing-mode:vertical-rl;text-orientation:mixed;
+  opacity:0.5;pointer-events:none;z-index:25;
+}
+
 /* Question panel */
 .question-panel{
   pointer-events:auto;
   width:100%;max-width:560px;
-  background:linear-gradient(135deg,rgba(10,15,25,0.92) 0%,rgba(15,20,35,0.95) 100%);
-  backdrop-filter:blur(20px);
+  background:linear-gradient(135deg,rgba(8,12,22,0.94) 0%,rgba(12,18,32,0.96) 100%);
+  backdrop-filter:blur(24px);
   border:1px solid var(--glass-border);
   border-radius:16px;
   padding:24px;
@@ -203,6 +337,7 @@ body{display:flex;flex-direction:column;position:relative}
   transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1),opacity 0.4s ease;
   opacity:1;
   margin-bottom:env(safe-area-inset-bottom,0);
+  box-shadow:0 -10px 40px rgba(0,0,0,0.4);
 }
 .question-panel.hidden{
   transform:translateY(30px);opacity:0;pointer-events:none;
@@ -210,7 +345,12 @@ body{display:flex;flex-direction:column;position:relative}
 .question-level{
   font-family:'JetBrains Mono',monospace;font-size:11px;
   color:var(--campfire);letter-spacing:0.15em;text-transform:uppercase;
-  margin-bottom:8px;
+  margin-bottom:4px;
+}
+.question-philosopher{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--text-dim);letter-spacing:0.1em;
+  margin-bottom:10px;
 }
 .question-text{
   font-family:'Crimson Text',serif;font-size:18px;line-height:1.5;
@@ -231,32 +371,58 @@ body{display:flex;flex-direction:column;position:relative}
   -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
   min-height:44px;
+  position:relative;
+  overflow:hidden;
+}
+.option-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.03),transparent);
+  opacity:0;transition:opacity 0.3s;
 }
 .option-btn:hover{
   background:rgba(255,255,255,0.08);
   border-color:rgba(255,255,255,0.15);
   color:var(--text-primary);
+  transform:translateX(2px);
 }
+.option-btn:hover::before{opacity:1}
 .option-btn:active{transform:scale(0.98)}
 .option-btn .opt-letter{
   font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
   color:var(--text-dim);min-width:20px;padding-top:2px;
+  transition:color 0.3s;
 }
+.option-btn:hover .opt-letter{color:var(--campfire)}
 .option-btn.correct{
   background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);
   color:#6ee7a0;
+  animation:correct-pulse 0.6s ease;
+}
+@keyframes correct-pulse{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,0.3)}
+  50%{box-shadow:0 0 0 8px rgba(34,197,94,0)}
+  100%{box-shadow:none}
 }
 .option-btn.wrong{
   background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.3);
   color:#fca5a5;
+  animation:wrong-shake 0.4s ease;
 }
-.option-btn.disabled{pointer-events:none;opacity:0.6}
+@keyframes wrong-shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.option-btn.disabled{pointer-events:none;opacity:0.5}
 
 /* Feedback toast */
 .feedback{
   position:absolute;left:50%;transform:translateX(-50%);
   bottom:calc(100% + 12px);
-  background:rgba(10,15,25,0.95);
+  background:rgba(8,12,22,0.96);
+  backdrop-filter:blur(12px);
   border:1px solid var(--glass-border);
   border-radius:12px;
   padding:14px 20px;
@@ -266,7 +432,6 @@ body{display:flex;flex-direction:column;position:relative}
   opacity:0;transform:translateX(-50%) translateY(10px);
   transition:all 0.5s ease;
   pointer-events:none;
-  white-space:nowrap;
   max-width:90vw;
   white-space:normal;
 }
@@ -279,19 +444,29 @@ body{display:flex;flex-direction:column;position:relative}
   position:absolute;inset:0;z-index:50;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:24px;
-  background:rgba(5,5,10,0.95);
-  transition:opacity 0.8s ease;
+  background:rgba(5,5,10,0.97);
+  transition:opacity 1s ease;
   text-align:center;
 }
 .screen-overlay.hidden{opacity:0;pointer-events:none}
-.start-elk{font-size:64px;margin-bottom:16px;line-height:1}
+.start-elk{
+  font-size:64px;margin-bottom:16px;line-height:1;
+  animation:elk-breathe 3s ease-in-out infinite;
+}
 .start-title{
   font-family:'Cinzel',serif;font-size:28px;font-weight:700;
   letter-spacing:0.08em;margin-bottom:8px;
+  background:linear-gradient(135deg,var(--text-primary),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
 }
 .start-sub{
   font-family:'Crimson Text',serif;font-size:17px;font-style:italic;
-  color:var(--text-secondary);margin-bottom:32px;max-width:400px;line-height:1.5;
+  color:var(--text-secondary);margin-bottom:12px;max-width:420px;line-height:1.5;
+}
+.start-hint{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--text-dim);margin-bottom:28px;letter-spacing:0.08em;
 }
 .start-btn,.summit-btn{
   font-family:'Cinzel',serif;font-size:14px;font-weight:600;
@@ -305,11 +480,22 @@ body{display:flex;flex-direction:column;position:relative}
   -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
   min-height:44px;
+  position:relative;
+  overflow:hidden;
+}
+.start-btn::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 30%,rgba(212,168,67,0.1) 50%,transparent 70%);
+  animation:btn-shimmer 3s ease-in-out infinite;
+}
+@keyframes btn-shimmer{
+  0%{transform:translateX(-100%)}
+  100%{transform:translateX(100%)}
 }
 .start-btn:hover,.summit-btn:hover{
   background:linear-gradient(135deg,rgba(232,113,42,0.3),rgba(212,168,67,0.3));
   box-shadow:0 0 30px rgba(232,113,42,0.2);
-  transform:translateY(-1px);
+  transform:translateY(-2px);
 }
 .start-btn:active,.summit-btn:active{transform:scale(0.97)}
 
@@ -318,14 +504,12 @@ body{display:flex;flex-direction:column;position:relative}
   position:absolute;inset:0;z-index:60;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:24px;text-align:center;
-  background:radial-gradient(ellipse at 50% 40%,rgba(212,168,67,0.1) 0%,rgba(5,5,10,0.97) 60%);
+  background:radial-gradient(ellipse at 50% 35%,rgba(212,168,67,0.12) 0%,rgba(5,5,10,0.98) 55%);
   opacity:0;pointer-events:none;
-  transition:opacity 1.2s ease;
+  transition:opacity 1.5s ease;
 }
 .summit-screen.visible{opacity:1;pointer-events:auto}
-.summit-stars{
-  position:absolute;inset:0;overflow:hidden;pointer-events:none;
-}
+.summit-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .summit-burst{
   position:absolute;width:4px;height:4px;border-radius:50%;
   background:var(--gold);
@@ -335,18 +519,33 @@ body{display:flex;flex-direction:column;position:relative}
 @keyframes burst{
   0%{opacity:0;transform:translate(0,0) scale(0)}
   20%{opacity:1;transform:translate(var(--tx),var(--ty)) scale(1)}
-  100%{opacity:0;transform:translate(calc(var(--tx)*2),calc(var(--ty)*2)) scale(0)}
+  100%{opacity:0;transform:translate(calc(var(--tx)*2.5),calc(var(--ty)*2.5)) scale(0)}
+}
+/* Summit ring pulse */
+.summit-ring{
+  position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
+  width:120px;height:120px;border-radius:50%;
+  border:1px solid rgba(212,168,67,0.2);
+  animation:ring-expand 3s ease-out infinite;
+  pointer-events:none;
+}
+.summit-ring:nth-child(2){animation-delay:1s}
+.summit-ring:nth-child(3){animation-delay:2s}
+@keyframes ring-expand{
+  0%{width:80px;height:80px;opacity:0.5;border-color:rgba(212,168,67,0.3)}
+  100%{width:300px;height:300px;opacity:0;border-color:rgba(212,168,67,0)}
 }
 .summit-elk{font-size:72px;margin-bottom:16px;line-height:1;position:relative;z-index:1}
 .summit-crown{
-  position:absolute;top:-18px;left:50%;transform:translateX(-50%);
-  font-size:28px;animation:float 2s ease-in-out infinite alternate;
+  position:absolute;top:-20px;left:50%;transform:translateX(-50%);
+  font-size:30px;animation:float 2s ease-in-out infinite alternate;
 }
-@keyframes float{0%{transform:translateX(-50%) translateY(0)}100%{transform:translateX(-50%) translateY(-6px)}}
+@keyframes float{0%{transform:translateX(-50%) translateY(0)}100%{transform:translateX(-50%) translateY(-8px)}}
 .summit-title{
   font-family:'Cinzel',serif;font-size:24px;font-weight:700;
   color:var(--gold);letter-spacing:0.08em;margin-bottom:12px;
   position:relative;z-index:1;
+  text-shadow:0 0 30px rgba(212,168,67,0.3);
 }
 .summit-msg{
   font-family:'Crimson Text',serif;font-size:17px;font-style:italic;
@@ -357,9 +556,7 @@ body{display:flex;flex-direction:column;position:relative}
   display:flex;gap:24px;margin-bottom:28px;position:relative;z-index:1;
   flex-wrap:wrap;justify-content:center;
 }
-.stat{
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-}
+.stat{display:flex;flex-direction:column;align-items:center;gap:4px}
 .stat-val{
   font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;
   color:var(--gold-bright);
@@ -398,18 +595,27 @@ body{display:flex;flex-direction:column;position:relative}
   background:linear-gradient(90deg,var(--campfire),var(--gold));
   border-radius:2px;
   transition:width 1s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 0 8px rgba(232,113,42,0.3);
 }
 
 /* Golden glow at summit */
 .summit-glow{
-  position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:200px;height:200px;
-  background:radial-gradient(circle,rgba(212,168,67,0.15) 0%,transparent 70%);
+  position:absolute;top:5%;left:50%;transform:translateX(-50%);
+  width:250px;height:250px;
+  background:radial-gradient(circle,rgba(212,168,67,0.18) 0%,rgba(212,168,67,0.05) 40%,transparent 70%);
   border-radius:50%;opacity:0;
-  transition:opacity 2s ease;
+  transition:opacity 2.5s ease;
   z-index:3;pointer-events:none;
 }
 .summit-glow.visible{opacity:1}
+
+/* Elevation vignette */
+.vignette{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 50%,transparent 50%,rgba(0,0,0,0.4) 100%);
+  pointer-events:none;z-index:8;
+  transition:background 2s ease;
+}
 
 /* Responsive */
 @media(max-width:480px){
@@ -419,15 +625,20 @@ body{display:flex;flex-direction:column;position:relative}
   .summit-title{font-size:20px}
   .station{width:22px;height:22px}
   .station-num{font-size:8px}
+  .station.reached::before{font-size:10px;top:-15px}
   .elk{font-size:26px}
   .question-panel{padding:18px;border-radius:14px}
   .top-bar{padding:10px 12px}
   .summit-stats{gap:16px}
+  .altitude{display:none}
 }
 @media(max-width:360px){
   .question-panel{padding:14px}
   .question-text{font-size:15px}
   .option-btn{font-size:14px;padding:10px 12px;gap:8px}
+}
+@media(min-height:800px){
+  .question-panel{margin-bottom:20px}
 }
 </style>
 </head>
@@ -438,12 +649,16 @@ body{display:flex;flex-direction:column;position:relative}
   <div class="start-elk">🦌</div>
   <h1 class="start-title">Mountain Ascent</h1>
   <p class="start-sub">"Man is a tragic animal. Not because of his smallness, but because he is too well endowed." — Peter Wessel Zapffe</p>
+  <p class="start-hint">10 camps · Zapffe · Camus · Kierkegaard · Nietzsche · Sartre · and more</p>
   <button class="start-btn" id="startBtn" onclick="startGame()">Begin the Climb</button>
 </div>
 
 <!-- Summit Screen -->
 <div class="summit-screen" id="summitScreen">
   <div class="summit-stars" id="summitStars"></div>
+  <div class="summit-ring"></div>
+  <div class="summit-ring"></div>
+  <div class="summit-ring"></div>
   <div style="position:relative;display:inline-block">
     <div class="summit-crown">👑</div>
     <div class="summit-elk">🦌</div>
@@ -465,14 +680,26 @@ body{display:flex;flex-direction:column;position:relative}
 <div class="scene" id="scene">
   <div class="sky" id="sky"></div>
   <div class="stars" id="starsContainer"></div>
+  <div id="shootingStarsContainer"></div>
+  <div class="aurora" id="aurora">
+    <div class="aurora-band"></div>
+    <div class="aurora-band"></div>
+    <div class="aurora-band"></div>
+  </div>
   <div class="summit-glow" id="summitGlow"></div>
+  <div class="mountain-glow" id="mountainGlow"></div>
 
   <!-- Background peaks SVG -->
-  <svg class="bg-peaks" viewBox="0 0 1000 500" preserveAspectRatio="none" style="position:absolute;bottom:0;left:0;width:100%;height:60%;opacity:0.15">
-    <polygon points="0,500 150,180 300,500" fill="#0f1a28"/>
-    <polygon points="200,500 400,120 600,500" fill="#0c1520"/>
-    <polygon points="500,500 700,150 900,500" fill="#0e1825"/>
-    <polygon points="750,500 950,200 1000,500" fill="#0b1320"/>
+  <svg class="bg-peaks" viewBox="0 0 1200 500" preserveAspectRatio="none" style="position:absolute;bottom:0;left:0;width:100%;height:65%;opacity:0.18">
+    <polygon points="0,500 120,200 240,500" fill="#0c1420"/>
+    <polygon points="150,500 350,140 550,500" fill="#091018"/>
+    <polygon points="400,500 580,180 760,500" fill="#0b1320"/>
+    <polygon points="650,500 850,160 1050,500" fill="#0a1220"/>
+    <polygon points="900,500 1050,220 1200,500" fill="#081018"/>
+    <!-- Distant range -->
+    <polygon points="0,500 200,280 400,500" fill="#060d14" opacity="0.6"/>
+    <polygon points="300,500 550,250 800,500" fill="#070e16" opacity="0.5"/>
+    <polygon points="700,500 950,270 1200,500" fill="#060c14" opacity="0.6"/>
   </svg>
 
   <!-- Main mountain SVG -->
@@ -481,42 +708,62 @@ body{display:flex;flex-direction:column;position:relative}
     <defs>
       <linearGradient id="mtGrad" x1="0.5" y1="0" x2="0.5" y2="1">
         <stop offset="0%" stop-color="#1a1530"/>
-        <stop offset="30%" stop-color="#151d2b"/>
-        <stop offset="60%" stop-color="#122218"/>
+        <stop offset="20%" stop-color="#161c2e"/>
+        <stop offset="45%" stop-color="#132218"/>
+        <stop offset="70%" stop-color="#0f1e14"/>
         <stop offset="100%" stop-color="#0d1a12"/>
       </linearGradient>
       <linearGradient id="snowGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-        <stop offset="0%" stop-color="rgba(200,210,230,0.12)"/>
-        <stop offset="100%" stop-color="rgba(200,210,230,0)"/>
+        <stop offset="0%" stop-color="rgba(200,215,235,0.15)"/>
+        <stop offset="100%" stop-color="rgba(200,215,235,0)"/>
       </linearGradient>
+      <linearGradient id="shadowGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.15)"/>
+        <stop offset="50%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.1)"/>
+      </linearGradient>
+      <filter id="mtGlow">
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
     </defs>
-    <!-- Mountain body -->
+    <!-- Mountain shadow/depth -->
     <polygon points="400,30 100,700 700,700" fill="url(#mtGrad)"/>
+    <!-- Shading overlay -->
+    <polygon points="400,30 100,700 400,700" fill="rgba(0,0,0,0.08)"/>
     <!-- Snow cap -->
-    <polygon points="400,30 340,130 460,130" fill="url(#snowGrad)"/>
-    <!-- Ridgelines for texture -->
-    <line x1="400" y1="30" x2="250" y2="400" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
-    <line x1="400" y1="30" x2="550" y2="400" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
-    <line x1="400" y1="30" x2="180" y2="600" stroke="rgba(255,255,255,0.02)" stroke-width="1"/>
-    <line x1="400" y1="30" x2="620" y2="600" stroke="rgba(255,255,255,0.02)" stroke-width="1"/>
+    <polygon points="400,30 350,110 450,110" fill="url(#snowGrad)"/>
+    <polygon points="400,30 370,80 430,80" fill="rgba(220,230,245,0.08)"/>
+    <!-- Ridgelines -->
+    <line x1="400" y1="30" x2="250" y2="400" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
+    <line x1="400" y1="30" x2="550" y2="400" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
+    <line x1="400" y1="30" x2="180" y2="600" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
+    <line x1="400" y1="30" x2="620" y2="600" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
+    <line x1="400" y1="30" x2="300" y2="700" stroke="rgba(255,255,255,0.01)" stroke-width="1"/>
+    <line x1="400" y1="30" x2="500" y2="700" stroke="rgba(255,255,255,0.01)" stroke-width="1"/>
+    <!-- Tree line suggestion -->
+    <line x1="220" y1="480" x2="580" y2="480" stroke="rgba(30,60,30,0.15)" stroke-width="2" stroke-dasharray="2 8"/>
   </svg>
 
-  <!-- Trail lines SVG (positioned over mountain) -->
+  <!-- Trail lines SVG -->
   <svg class="trail-line" id="trailLines" viewBox="0 0 800 700" preserveAspectRatio="xMidYMax meet"
        style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:130%;max-width:850px;height:88%">
   </svg>
 
-  <!-- Stations, elk, fog are positioned absolutely -->
   <div id="stationsContainer"></div>
-  <div class="elk" id="elk">🦌</div>
+  <div class="elk idle" id="elk">🦌</div>
 
   <div class="fog" id="fogContainer">
-    <div class="fog-layer" style="--speed:38s;--opacity:0.7;height:80px"></div>
-    <div class="fog-layer" style="--speed:52s;--opacity:0.5;height:60px;bottom:8%"></div>
-    <div class="fog-layer" style="--speed:65s;--opacity:0.3;height:50px;bottom:15%"></div>
+    <div class="fog-layer" style="--speed:35s;--opacity:0.8;height:90px"></div>
+    <div class="fog-layer" style="--speed:48s;--opacity:0.6;height:70px;bottom:6%"></div>
+    <div class="fog-layer" style="--speed:62s;--opacity:0.4;height:55px;bottom:13%"></div>
+    <div class="fog-layer" style="--speed:75s;--opacity:0.2;height:40px;bottom:20%"></div>
   </div>
 
-  <!-- UI Overlay -->
+  <div class="wind-particles" id="windParticles"></div>
+  <div class="snow-particles" id="snowParticles"></div>
+  <div class="vignette" id="vignette"></div>
+
   <div class="ui-overlay">
     <div class="top-bar">
       <a href="index.html" class="home-link">$ELK</a>
@@ -524,10 +771,12 @@ body{display:flex;flex-direction:column;position:relative}
       <span class="level-display" id="levelDisplay">Camp 0/10</span>
     </div>
     <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="altitude" id="altitude">ALT 0m</div>
 
     <div class="question-panel hidden" id="questionPanel">
       <div class="feedback" id="feedback"></div>
       <div class="question-level" id="questionLevel">Base Camp</div>
+      <div class="question-philosopher" id="questionPhilosopher"></div>
       <div class="question-text" id="questionText"></div>
       <div class="options" id="optionsContainer"></div>
     </div>
@@ -535,83 +784,158 @@ body{display:flex;flex-direction:column;position:relative}
 </div>
 
 <script>
-// ── Question Database ──
+// ═══════════════════════════════════════════════
+// MASSIVE QUESTION DATABASE — 100+ questions
+// Answers distributed across all positions (0-3)
+// Covers: Zapffe, Camus, Kierkegaard, Nietzsche,
+// Sartre, Heidegger, Schopenhauer, Cioran, Beauvoir,
+// Dostoevsky, $ELK philosophy, and more
+// ═══════════════════════════════════════════════
 const QUESTIONS = {
   1: [
-    { q: "What does 'existentialism' broadly deal with?", opts: ["The meaning of individual existence and freedom", "Economic systems and class struggle", "The classification of living organisms", "Mathematical logic and proofs"], ans: 0 },
-    { q: "Peter Wessel Zapffe was from which country?", opts: ["Denmark", "Norway", "Sweden", "Germany"], ans: 1 },
-    { q: "What animal symbolizes the burden of consciousness in $ELK?", opts: ["The bear", "The whale", "The elk", "The wolf"], ans: 2 },
-    { q: "Zapffe's most famous essay is called:", opts: ["Being and Nothingness", "The Last Messiah", "The Myth of Sisyphus", "Fear and Trembling"], ans: 1 },
+    { q: "What does 'existentialism' broadly deal with?", opts: ["Economic systems and class struggle", "The classification of living organisms", "Mathematical logic and proofs", "The meaning of individual existence and freedom"], ans: 3, tag: "Existentialism" },
+    { q: "Peter Wessel Zapffe was from which country?", opts: ["Norway", "Denmark", "Sweden", "Germany"], ans: 0, tag: "Zapffe" },
+    { q: "What animal symbolizes the burden of consciousness in $ELK?", opts: ["The bear", "The wolf", "The elk", "The raven"], ans: 2, tag: "$ELK" },
+    { q: "Albert Camus wrote about the absurdity of life. He was from:", opts: ["Spain", "Italy", "Algeria/France", "Greece"], ans: 2, tag: "Camus" },
+    { q: "Søren Kierkegaard is often called the father of:", opts: ["Capitalism", "Existentialism", "Communism", "Rationalism"], ans: 1, tag: "Kierkegaard" },
+    { q: "Friedrich Nietzsche famously declared that:", opts: ["Mathematics is the queen of sciences", "God is dead", "The Earth is flat", "Money is the root of evil"], ans: 1, tag: "Nietzsche" },
+    { q: "In philosophy, 'the absurd' generally refers to:", opts: ["A type of comedy", "Quantum physics", "The conflict between humans seeking meaning and a meaningless universe", "Political corruption"], ans: 2, tag: "Camus" },
+    { q: "Which of these is an existentialist novel by Albert Camus?", opts: ["The Stranger", "1984", "Pride and Prejudice", "Moby Dick"], ans: 0, tag: "Camus" },
+    { q: "The elk's antlers in $ELK philosophy represent:", opts: ["Seasonal change", "Physical dominance", "The weight of awareness carried through life", "Financial success"], ans: 2, tag: "$ELK" },
+    { q: "Existential philosophy became most prominent in which century?", opts: ["16th century", "17th century", "18th century", "20th century"], ans: 3, tag: "Existentialism" },
   ],
   2: [
-    { q: "In Zapffe's view, what makes humans unique among animals?", opts: ["Opposable thumbs", "An over-developed consciousness", "The ability to use fire", "Social hierarchies"], ans: 1 },
-    { q: "Existential philosophy is primarily concerned with:", opts: ["How to build wealth", "The nature of human existence and meaning", "Predicting the future", "The laws of physics"], ans: 1 },
-    { q: "The elk's antlers in $ELK symbolize:", opts: ["Wealth and prosperity", "The weight of awareness we all carry", "Physical strength", "Seasonal change"], ans: 1 },
-    { q: "Which century was Zapffe born in?", opts: ["18th century", "19th century", "20th century", "17th century"], ans: 1 },
+    { q: "In Zapffe's view, what makes humans unique among animals?", opts: ["Opposable thumbs", "Social hierarchies", "An over-developed consciousness", "The ability to use fire"], ans: 2, tag: "Zapffe" },
+    { q: "Camus's 'The Myth of Sisyphus' opens with what famous claim?", opts: ["Life is beautiful", "There is but one truly serious philosophical problem: suicide", "God does not play dice", "Knowledge is power"], ans: 1, tag: "Camus" },
+    { q: "Kierkegaard wrote under many pseudonyms. Why?", opts: ["To avoid taxes", "To present multiple philosophical perspectives simultaneously", "He forgot his own name", "It was legally required"], ans: 1, tag: "Kierkegaard" },
+    { q: "Nietzsche's concept of the 'Übermensch' refers to:", opts: ["A comic book hero", "Someone who creates their own values beyond conventional morality", "A type of German bread", "A political dictator"], ans: 1, tag: "Nietzsche" },
+    { q: "Jean-Paul Sartre declared that 'existence precedes essence.' This means:", opts: ["You are born with a fixed nature", "We first exist, then define ourselves through choices", "Essence oils are important", "Science comes before philosophy"], ans: 1, tag: "Sartre" },
+    { q: "Which century was Zapffe born in?", opts: ["17th century", "18th century", "19th century", "20th century"], ans: 2, tag: "Zapffe" },
+    { q: "Simone de Beauvoir's famous work 'The Second Sex' explores:", opts: ["Mathematics", "Astronomy", "The existential condition of women in society", "Marine biology"], ans: 2, tag: "Beauvoir" },
+    { q: "In $ELK philosophy, 'carrying the antlers' means:", opts: ["Making a profit", "Growing a social media following", "Mining cryptocurrency", "Sharing the burden of existential awareness together"], ans: 3, tag: "$ELK" },
+    { q: "Arthur Schopenhauer believed the fundamental driving force of reality is:", opts: ["Love", "Reason", "Will (blind striving)", "Mathematics"], ans: 2, tag: "Schopenhauer" },
+    { q: "Dostoevsky explored existential themes primarily through:", opts: ["Scientific papers", "Novels and fiction", "Mathematical proofs", "Political speeches"], ans: 1, tag: "Dostoevsky" },
   ],
   3: [
-    { q: "Zapffe believed that human suffering arises primarily from:", opts: ["Poverty and inequality", "Knowing more than we can bear", "Physical illness", "Lack of education"], ans: 1 },
-    { q: "Which philosopher is known for the phrase 'existence precedes essence'?", opts: ["Immanuel Kant", "Jean-Paul Sartre", "Peter Zapffe", "Friedrich Nietzsche"], ans: 1 },
-    { q: "In the $ELK community, 'carrying the antlers' means:", opts: ["Making a profit", "Sharing the burden of existential awareness together", "Growing a social media following", "Mining cryptocurrency"], ans: 1 },
-    { q: "Zapffe's work is often categorized under which philosophical tradition?", opts: ["Rationalism", "Pessimistic existentialism", "Utilitarianism", "Pragmatism"], ans: 1 },
+    { q: "Zapffe believed that human suffering arises primarily from:", opts: ["Physical illness", "Knowing more than we can bear", "Lack of education", "Poverty alone"], ans: 1, tag: "Zapffe" },
+    { q: "Camus concluded we should imagine Sisyphus as:", opts: ["Angry", "Sad", "Happy", "Indifferent"], ans: 2, tag: "Camus" },
+    { q: "Kierkegaard's 'leap of faith' suggests that:", opts: ["Physical jumping builds character", "Some truths require commitment beyond rational proof", "Faith is irrational and should be abandoned", "Leaping is good exercise"], ans: 1, tag: "Kierkegaard" },
+    { q: "What did Nietzsche mean by 'eternal recurrence'?", opts: ["History textbooks should be read repeatedly", "The idea that you would live your exact life infinite times", "Seasons repeat every year", "Reincarnation in Eastern philosophy"], ans: 1, tag: "Nietzsche" },
+    { q: "Zapffe's work is often categorized under:", opts: ["Rationalism", "Utilitarianism", "Pragmatism", "Pessimistic existentialism"], ans: 3, tag: "Zapffe" },
+    { q: "Sartre said 'Hell is other people' in which play?", opts: ["The Flies", "No Exit", "Dirty Hands", "The Respectful Prostitute"], ans: 1, tag: "Sartre" },
+    { q: "Heidegger's concept of 'Dasein' roughly translates to:", opts: ["Happiness", "Being-there (human existence)", "The universe", "A type of meditation"], ans: 1, tag: "Heidegger" },
+    { q: "Emil Cioran, the Romanian pessimist, wrote:", opts: ["The Communist Manifesto", "The Trouble with Being Born", "Harry Potter", "The Wealth of Nations"], ans: 1, tag: "Cioran" },
+    { q: "Zapffe's most famous essay is called:", opts: ["Being and Nothingness", "Fear and Trembling", "The Myth of Sisyphus", "The Last Messiah"], ans: 3, tag: "Zapffe" },
+    { q: "Dostoevsky's 'Notes from Underground' features a narrator who is:", opts: ["A wealthy aristocrat", "A happy farmer", "A bitter, hyper-conscious intellectual", "A successful merchant"], ans: 2, tag: "Dostoevsky" },
   ],
   4: [
-    { q: "Which of these is NOT one of Zapffe's four defense mechanisms?", opts: ["Isolation", "Anchoring", "Transcendence", "Sublimation"], ans: 2 },
-    { q: "Zapffe's 'Anchoring' refers to:", opts: ["Dropping anchor on a ship", "Fixing one's life to stable values, goals, or beliefs to avoid despair", "Refusing to move from one place", "A psychological test"], ans: 1 },
-    { q: "'The Last Messiah' was published in which decade?", opts: ["1913", "1933", "1953", "1973"], ans: 1 },
-    { q: "What role does community play in the $ELK philosophy?", opts: ["It is irrelevant", "We carry the burden together — shared consciousness lightens the weight", "Community should be avoided", "Only leaders matter"], ans: 1 },
+    { q: "Which of these is NOT one of Zapffe's four defense mechanisms?", opts: ["Isolation", "Transcendence", "Anchoring", "Sublimation"], ans: 1, tag: "Zapffe" },
+    { q: "Camus distinguished between the absurd and:", opts: ["The rational and the irrational", "Philosophical suicide (accepting false meaning) versus living with absurdity", "Comedy and tragedy", "Art and science"], ans: 1, tag: "Camus" },
+    { q: "Kierkegaard's 'three stages of existence' are:", opts: ["Birth, life, death", "Past, present, future", "Aesthetic, ethical, religious", "Id, ego, superego"], ans: 2, tag: "Kierkegaard" },
+    { q: "Zapffe's 'Anchoring' refers to:", opts: ["Dropping anchor on a ship", "A psychological test", "Refusing to move from one place", "Fixing one's life to stable values, goals, or beliefs to avoid despair"], ans: 3, tag: "Zapffe" },
+    { q: "Nietzsche's concept of 'amor fati' means:", opts: ["Love of fate — embracing everything that happens", "Fear of death", "Love of money", "Fate of love"], ans: 0, tag: "Nietzsche" },
+    { q: "Heidegger argued that 'Being-toward-death' means:", opts: ["We should fear death constantly", "Thinking about death is morbid", "Awareness of mortality is fundamental to authentic existence", "Death is an illusion"], ans: 2, tag: "Heidegger" },
+    { q: "What role does community play in the $ELK philosophy?", opts: ["It is irrelevant", "Only leaders matter", "We carry the burden together — shared consciousness lightens the weight", "Community should be avoided"], ans: 2, tag: "$ELK" },
+    { q: "Schopenhauer influenced Zapffe's pessimism. Schopenhauer argued that:", opts: ["Life is fundamentally good", "Suffering is the basic condition of existence", "Money solves all problems", "Philosophy is useless"], ans: 1, tag: "Schopenhauer" },
+    { q: "'The Last Messiah' by Zapffe was published in which decade?", opts: ["1913", "1933", "1953", "1973"], ans: 1, tag: "Zapffe" },
+    { q: "Sartre's concept of 'bad faith' describes:", opts: ["Cheating on a test", "Self-deception about one's freedom — pretending you have no choice", "Religious hypocrisy", "Financial fraud"], ans: 1, tag: "Sartre" },
   ],
   5: [
-    { q: "Zapffe's 'Distraction' mechanism involves:", opts: ["Focusing intensely on tasks or entertainment to avoid existential dread", "Becoming physically lost", "A magic trick", "Sleeping longer hours"], ans: 0 },
-    { q: "According to Zapffe, consciousness is humanity's:", opts: ["Greatest gift without downsides", "Tragic biological overdevelopment", "Path to guaranteed happiness", "Least important trait"], ans: 1 },
-    { q: "What connects Zapffe's philosophy to the elk as a symbol?", opts: ["Elks are Norwegian animals and Zapffe was Norwegian", "Both the elk and conscious humans carry magnificent but heavy burdens", "There is no connection", "Zapffe owned pet elk"], ans: 1 },
-    { q: "Zapffe argued that most human activity is ultimately a form of:", opts: ["Progress", "Coping with the terror of existence", "Pure rationality", "Divine purpose"], ans: 1 },
+    { q: "Zapffe's 'Distraction' mechanism involves:", opts: ["Focusing intensely on tasks or entertainment to avoid existential dread", "Becoming physically lost", "A magic trick", "Sleeping longer hours"], ans: 0, tag: "Zapffe" },
+    { q: "Camus argued we should respond to the absurd by:", opts: ["Giving up entirely", "Finding a religion", "Living fully with passionate revolt, freedom, and awareness", "Ignoring it completely"], ans: 2, tag: "Camus" },
+    { q: "According to Zapffe, consciousness is humanity's:", opts: ["Path to guaranteed happiness", "Least important trait", "Greatest gift without downsides", "Tragic biological overdevelopment"], ans: 3, tag: "Zapffe" },
+    { q: "Kierkegaard's concept of 'anxiety' (Angst) is:", opts: ["Just a medical condition", "Dizziness of freedom — awareness of infinite choice and responsibility", "Fear of spiders", "Worry about money"], ans: 1, tag: "Kierkegaard" },
+    { q: "What connects Zapffe's philosophy to the elk as a symbol?", opts: ["Both carry magnificent but heavy burdens — antlers and consciousness", "Elks live in Norway", "There is no connection", "Zapffe owned pet elk"], ans: 0, tag: "$ELK" },
+    { q: "Nietzsche's 'will to power' is best understood as:", opts: ["Political domination", "Physical strength", "A fundamental drive to grow, overcome, and create", "Electrical power"], ans: 2, tag: "Nietzsche" },
+    { q: "Beauvoir argued that women's oppression is existential because:", opts: ["Women are biologically weaker", "Society constructs women as 'the Other,' denying their freedom", "Women don't want freedom", "It's a natural order"], ans: 1, tag: "Beauvoir" },
+    { q: "Zapffe argued that most human activity is ultimately a form of:", opts: ["Progress", "Divine purpose", "Pure rationality", "Coping with the terror of existence"], ans: 3, tag: "Zapffe" },
+    { q: "Cioran wrote: 'It is not worth the bother of killing yourself, since you always kill yourself too late.' This reflects:", opts: ["A joke about punctuality", "Deep pessimism about the impossibility of escaping consciousness", "Advice on time management", "A murder mystery plot"], ans: 1, tag: "Cioran" },
+    { q: "Heidegger's concept of 'thrownness' (Geworfenheit) means:", opts: ["A sport technique", "We are thrown into existence without choosing it", "Discarding old things", "A type of pottery"], ans: 1, tag: "Heidegger" },
   ],
   6: [
-    { q: "What did Zapffe mean by 'Isolation' as a defense mechanism?", opts: ["Living alone in the wilderness", "Mentally compartmentalizing disturbing thoughts away from daily life", "National borders and separation", "Internet privacy"], ans: 1 },
-    { q: "In Zapffe's framework, religion would most likely be an example of:", opts: ["Sublimation", "Anchoring", "Distraction", "Isolation"], ans: 1 },
-    { q: "The $ELK mountain metaphor suggests that:", opts: ["Life is about reaching the top at any cost", "The climb itself — shared struggle and meaning-making — is what matters", "Mountains should be avoided", "Only the strongest survive"], ans: 1 },
-    { q: "How does Zapffe's pessimism differ from simple nihilism?", opts: ["It doesn't — they are identical", "Zapffe acknowledges meaning-making as a coping mechanism, not as nonexistent", "Zapffe was actually an optimist", "Nihilism is more extreme"], ans: 1 },
+    { q: "What did Zapffe mean by 'Isolation' as a defense mechanism?", opts: ["Living alone in the wilderness", "Mentally compartmentalizing disturbing thoughts from daily life", "National borders", "Internet privacy"], ans: 1, tag: "Zapffe" },
+    { q: "In Zapffe's framework, religion would most likely be an example of:", opts: ["Sublimation", "Anchoring", "Distraction", "Isolation"], ans: 1, tag: "Zapffe" },
+    { q: "Camus rejected the label 'existentialist.' He preferred:", opts: ["Nihilist", "Absurdist", "Rationalist", "Optimist"], ans: 1, tag: "Camus" },
+    { q: "Dostoevsky's Grand Inquisitor parable argues that humans:", opts: ["Love freedom above all", "Will trade freedom for security, comfort, and certainty", "Are naturally good", "Don't need leadership"], ans: 1, tag: "Dostoevsky" },
+    { q: "How does Zapffe's pessimism differ from simple nihilism?", opts: ["They are identical", "Zapffe was actually an optimist", "Nihilism is more extreme", "Zapffe acknowledges meaning-making as a coping mechanism, not as nonexistent"], ans: 3, tag: "Zapffe" },
+    { q: "Nietzsche's 'master morality' vs 'slave morality' distinguishes between:", opts: ["Rich and poor people literally", "Values born from strength/creation versus values born from resentment", "Educational systems", "Different religions only"], ans: 1, tag: "Nietzsche" },
+    { q: "Sartre's concept of 'radical freedom' means:", opts: ["Political anarchy", "We are always free to choose, even in constrained situations", "Freedom requires wealth", "Only some people are truly free"], ans: 1, tag: "Sartre" },
+    { q: "The $ELK mountain metaphor suggests that:", opts: ["Life is about reaching the top at any cost", "Only the strongest survive", "The climb itself — shared struggle and meaning-making — is what matters", "Mountains should be avoided"], ans: 2, tag: "$ELK" },
+    { q: "Schopenhauer's view of art was that it:", opts: ["Is a waste of time", "Provides temporary escape from the suffering of the Will", "Is only for the wealthy", "Has no philosophical significance"], ans: 1, tag: "Schopenhauer" },
+    { q: "Kierkegaard's 'knight of faith' is someone who:", opts: ["Fights in crusades", "Makes the leap of faith while fully embracing the absurd", "Never questions anything", "Rejects all emotion"], ans: 1, tag: "Kierkegaard" },
   ],
   7: [
-    { q: "If Zapffe observed modern social media, he would most likely classify it as:", opts: ["Pure sublimation", "A vast engine of Distraction", "A form of Isolation", "Completely outside his framework"], ans: 1 },
-    { q: "How does 'Sublimation' transform existential suffering in Zapffe's view?", opts: ["It eliminates suffering entirely", "It channels pain into creative and artistic expression, giving it form", "It suppresses all emotion", "It converts suffering into physical energy"], ans: 1 },
-    { q: "Zapffe's philosophy suggests the 'correct' response to existence is:", opts: ["Blind optimism", "There is no single correct response — only mechanisms for bearing it", "Absolute despair", "Ignoring reality completely"], ans: 1 },
-    { q: "Which statement best captures the tension in Zapffe's thought?", opts: ["Humans should stop thinking", "Consciousness is both our defining feature and our deepest wound", "Knowledge is always liberating", "Nature is fundamentally good"], ans: 1 },
+    { q: "If Zapffe observed modern social media, he would most likely classify it as:", opts: ["Pure sublimation", "Completely outside his framework", "A vast engine of Distraction", "A form of true connection"], ans: 2, tag: "Zapffe" },
+    { q: "How does Zapffe's 'Sublimation' transform existential suffering?", opts: ["It eliminates suffering entirely", "It suppresses all emotion", "It converts suffering into physical energy", "It channels pain into creative and artistic expression, giving it form"], ans: 3, tag: "Zapffe" },
+    { q: "Camus's 'The Rebel' argues that authentic revolt must be:", opts: ["Violent and total", "Measured — rejecting injustice while affirming human solidarity", "Purely individual", "Based on religious principles"], ans: 1, tag: "Camus" },
+    { q: "Heidegger argued that modern technology causes:", opts: ["Only material progress", "A fundamental way of seeing everything as a resource to be exploited", "No philosophical problems", "Only environmental damage"], ans: 1, tag: "Heidegger" },
+    { q: "Which statement best captures the tension in Zapffe's thought?", opts: ["Humans should stop thinking", "Knowledge is always liberating", "Consciousness is both our defining feature and our deepest wound", "Nature is fundamentally good"], ans: 2, tag: "Zapffe" },
+    { q: "Nietzsche's 'death of God' is primarily about:", opts: ["Literal atheism", "The collapse of the entire metaphysical framework that gave Western life meaning", "Church attendance declining", "A fictional story"], ans: 1, tag: "Nietzsche" },
+    { q: "Kierkegaard's 'sickness unto death' refers to:", opts: ["A physical disease", "Cancer specifically", "Despair — being in a wrong relationship to oneself", "Fear of doctors"], ans: 2, tag: "Kierkegaard" },
+    { q: "Beauvoir's 'ethics of ambiguity' proposes that:", opts: ["Morality is simple and clear", "We must embrace the ambiguity of freedom and work for everyone's liberation", "Ethics don't matter", "Only rules matter, not context"], ans: 1, tag: "Beauvoir" },
+    { q: "Dostoevsky's 'if God does not exist, everything is permitted' raises the question of:", opts: ["Whether religion is true", "Whether morality requires a transcendent foundation", "Whether laws are necessary", "Whether cooking needs recipes"], ans: 1, tag: "Dostoevsky" },
+    { q: "Zapffe's philosophy suggests the 'correct' response to existence is:", opts: ["Blind optimism", "Absolute despair", "There is no single correct response — only mechanisms for bearing it", "Ignoring reality completely"], ans: 2, tag: "Zapffe" },
   ],
   8: [
-    { q: "A Zapffean reading of art would suggest that great works are:", opts: ["Merely entertainment", "Acts of sublimation — transforming unbearable awareness into beauty", "Economically motivated", "Purely technical achievements"], ans: 1 },
-    { q: "If an elk could comprehend its own mortality, Zapffe would say it has:", opts: ["Evolved perfectly", "Crossed the threshold into human-like tragic consciousness", "Become irrational", "Gained an advantage for survival"], ans: 1 },
-    { q: "The phrase 'the antlers are heavy' in $ELK philosophy most deeply means:", opts: ["Elk antlers weigh a lot physically", "The gift of consciousness comes with inescapable existential weight", "Cryptocurrency is difficult", "Antlers slow the elk down"], ans: 1 },
-    { q: "Zapffe's view on human reproduction was:", opts: ["Enthusiastically pro-natalist", "Skeptical — bringing new consciousness into being means creating new suffering", "Indifferent to the topic", "Focused only on population statistics"], ans: 1 },
+    { q: "A Zapffean reading of art would suggest that great works are:", opts: ["Acts of sublimation — transforming unbearable awareness into beauty", "Merely entertainment", "Economically motivated", "Purely technical achievements"], ans: 0, tag: "Zapffe" },
+    { q: "Camus saw Sisyphus as a metaphor for:", opts: ["Physical exercise", "Greek mythology only", "The human condition — finding meaning through persistent engagement with absurdity", "Punishment by gods"], ans: 2, tag: "Camus" },
+    { q: "Nietzsche's 'genealogy of morals' reveals that moral values:", opts: ["Are eternal and unchanging", "Come from God", "Have historical origins in power dynamics and resentment", "Don't exist"], ans: 2, tag: "Nietzsche" },
+    { q: "The phrase 'the antlers are heavy' in $ELK philosophy most deeply means:", opts: ["Elk antlers weigh a lot physically", "The gift of consciousness comes with inescapable existential weight", "Cryptocurrency is difficult", "Antlers slow the elk down"], ans: 1, tag: "$ELK" },
+    { q: "Sartre argued that 'we are condemned to be free.' The word 'condemned' suggests:", opts: ["Freedom is a prison sentence", "Freedom is easy and joyful", "Freedom carries the unbearable weight of total responsibility", "Condemnation by a court"], ans: 2, tag: "Sartre" },
+    { q: "Schopenhauer's pessimism influenced which of these thinkers?", opts: ["Only Zapffe", "Nietzsche, Zapffe, Cioran, Tolstoy, and many others", "No one at all", "Only Eastern philosophers"], ans: 1, tag: "Schopenhauer" },
+    { q: "Cioran's radical pessimism led him to call consciousness:", opts: ["A miracle", "A catastrophe in the history of the universe", "A useful tool", "Morally neutral"], ans: 1, tag: "Cioran" },
+    { q: "If an elk could comprehend its own mortality, Zapffe would say it has:", opts: ["Evolved perfectly", "Become irrational", "Crossed the threshold into human-like tragic consciousness", "Gained a survival advantage"], ans: 2, tag: "Zapffe" },
+    { q: "Heidegger's concept of 'authenticity' requires:", opts: ["Following social norms perfectly", "Owning one's existence and choices in the face of death", "Being honest about small things", "Having a genuine personality"], ans: 1, tag: "Heidegger" },
+    { q: "Zapffe's view on human reproduction was:", opts: ["Enthusiastically pro-natalist", "Focused only on population statistics", "Indifferent to the topic", "Skeptical — bringing new consciousness into being means creating new suffering"], ans: 3, tag: "Zapffe" },
   ],
   9: [
-    { q: "Which modern phenomenon would Zapffe most likely see as confirming his thesis?", opts: ["Space exploration", "The global rise of anxiety and depression despite material progress", "Improved agricultural yields", "Faster internet speeds"], ans: 1 },
-    { q: "In Zapffe's framework, someone who devotes their life to a cause (career, nation, ideology) is primarily engaging in:", opts: ["Sublimation", "Distraction", "Anchoring", "Isolation"], ans: 2 },
-    { q: "The deepest paradox in Zapffe's philosophy is:", opts: ["Money can't buy happiness", "We must use consciousness to defend against the pain that consciousness creates", "Education is overrated", "Nature is beautiful but dangerous"], ans: 1 },
-    { q: "Why might a memecoin community resonate with Zapffe's ideas?", opts: ["Because memes are meaningless", "Because collective absurdist humor is itself a coping mechanism — Distraction and Sublimation merged", "Because cryptocurrency solves existential problems", "It doesn't resonate at all"], ans: 1 },
+    { q: "Which modern phenomenon would Zapffe most likely see as confirming his thesis?", opts: ["Space exploration", "Improved agricultural yields", "The global rise of anxiety and depression despite material progress", "Faster internet speeds"], ans: 2, tag: "Zapffe" },
+    { q: "In Zapffe's framework, someone who devotes their life to a cause (career, nation, ideology) is primarily engaging in:", opts: ["Sublimation", "Distraction", "Anchoring", "Isolation"], ans: 2, tag: "Zapffe" },
+    { q: "The deepest paradox in Zapffe's philosophy is:", opts: ["We must use consciousness to defend against the pain that consciousness creates", "Money can't buy happiness", "Education is overrated", "Nature is beautiful but dangerous"], ans: 0, tag: "Zapffe" },
+    { q: "Camus wrote: 'In the depth of winter, I finally learned that within me there lay an invincible summer.' This reflects:", opts: ["A weather report", "Finding inner resilience within the absurd condition", "Seasonal affective disorder", "A travel memoir"], ans: 1, tag: "Camus" },
+    { q: "Why might a memecoin community resonate with Zapffe's ideas?", opts: ["Because collective absurdist humor is itself a coping mechanism — Distraction and Sublimation merged", "Because memes are meaningless", "Because cryptocurrency solves existential problems", "It doesn't resonate at all"], ans: 0, tag: "$ELK" },
+    { q: "Nietzsche's idea of 'perspectivism' suggests:", opts: ["There is one absolute truth", "All perspectives are equally worthless", "There are no facts, only interpretations shaped by the knower", "Only scientists can know truth"], ans: 2, tag: "Nietzsche" },
+    { q: "Kierkegaard's 'either/or' presents the choice between:", opts: ["Good and evil simply", "Two careers", "An aesthetic life of pleasure versus an ethical life of commitment", "Two countries"], ans: 2, tag: "Kierkegaard" },
+    { q: "Beauvoir argued that existential freedom is meaningless unless:", opts: ["You are wealthy", "You have power over others", "It is accompanied by the struggle for others' freedom as well", "It is unlimited"], ans: 2, tag: "Beauvoir" },
+    { q: "Heidegger's critique of 'das Man' (the They) warns against:", opts: ["Specific individuals", "Losing authentic selfhood by conforming to anonymous social norms", "Foreign cultures", "Modern art"], ans: 1, tag: "Heidegger" },
+    { q: "Schopenhauer believed the deepest truth could be accessed through:", opts: ["Science alone", "Political power", "Aesthetic contemplation, music, and compassion", "Wealth accumulation"], ans: 2, tag: "Schopenhauer" },
   ],
   10: [
-    { q: "The mountain has no true summit. The climb IS the meaning. What does the elk do?", opts: ["Anchoring — declares 'this peak is the real summit' and stops climbing, satisfied", "Distraction — races ever faster up the slope, never looking down", "Sublimation — turns the climb itself into a song that echoes through the valley", "Isolation — forgets there was ever a mountain at all"], ans: 2 },
-    { q: "If consciousness is the wound, and we cannot un-know what we know, the most authentically Zapffean response is:", opts: ["Refuse to participate in life", "Acknowledge the wound openly while creating beauty from it — carrying the antlers with grace", "Pretend the wound doesn't exist", "Seek a technological cure for awareness"], ans: 1 },
-    { q: "The elk reaches the summit and sees only more mountains beyond. This moment represents:", opts: ["Failure — the journey was pointless", "The core truth — meaning is not a destination but the shared act of continuing to climb", "A reason to give up", "Proof that maps are unreliable"], ans: 1 },
+    { q: "The mountain has no true summit. The climb IS the meaning. What does the elk do?", opts: ["Anchoring — declares 'this peak is the real summit' and stops", "Distraction — races ever faster, never looking down", "Isolation — forgets there was ever a mountain", "Sublimation — turns the climb itself into a song that echoes through the valley"], ans: 3, tag: "Zapffe / $ELK" },
+    { q: "If consciousness is the wound, and we cannot un-know what we know, the most authentically Zapffean response is:", opts: ["Refuse to participate in life", "Pretend the wound doesn't exist", "Acknowledge the wound openly while creating beauty from it — carrying the antlers with grace", "Seek a technological cure for awareness"], ans: 2, tag: "Zapffe" },
+    { q: "The elk reaches the summit and sees only more mountains beyond. This moment represents:", opts: ["The core truth — meaning is not a destination but the shared act of continuing to climb", "Failure — the journey was pointless", "A reason to give up", "Proof that maps are unreliable"], ans: 0, tag: "$ELK" },
+    { q: "Camus, Zapffe, Kierkegaard, and Nietzsche would all agree on one thing:", opts: ["That life has a simple, fixed meaning", "That conventional comforts fully satisfy the human condition", "That the confrontation with existence demands an extraordinary personal response", "That philosophy is useless"], ans: 2, tag: "All" },
+    { q: "A community built around shared philosophical burden — like $ELK — would be viewed by Zapffe as:", opts: ["Impossible and contradictory", "A uniquely honest form of Anchoring that acknowledges the weight it tries to bear", "A distraction like any other", "Completely unrelated to his ideas"], ans: 1, tag: "Zapffe / $ELK" },
+    { q: "At the summit, the elk whispers: 'The weight never left, but I learned to call it wings.' This is closest to:", opts: ["Denial of suffering", "Sublimation — transforming pain into meaning without denying its existence", "Nihilism — nothing matters", "Distraction from the real problem"], ans: 1, tag: "Zapffe / $ELK" },
   ]
 };
 
-// ── Philosophical quotes ──
+// ── Philosophical quotes (expanded) ──
 const QUOTES = [
   "\"Man is a tragic animal.\" — Zapffe",
   "\"The antlers are heavy. We carry them together.\"",
-  "\"One night the antlers catch the moonlight, and the weight becomes wonder.\"",
+  "\"One must imagine Sisyphus happy.\" — Camus",
   "\"To be aware is both the wound and the gift.\"",
   "\"We climb not to conquer, but to understand.\"",
   "\"The fog lifts for those who keep walking.\"",
   "\"Each campfire is proof that others have passed this way before.\"",
-  "\"The herd moves slowly, but it moves together.\"",
-  "\"At the treeline, silence becomes a companion.\"",
+  "\"He who has a why to live can bear almost any how.\" — Nietzsche",
+  "\"Life can only be understood backwards; but it must be lived forwards.\" — Kierkegaard",
   "\"Stars appear only when you climb above the noise.\"",
   "\"The mountain does not care. That is why the climb matters.\"",
   "\"What we carry defines us more than where we arrive.\"",
+  "\"Freedom is what we do with what is done to us.\" — Sartre",
+  "\"In the depth of winter, I found an invincible summer.\" — Camus",
+  "\"The herd moves slowly, but it moves together.\"",
+  "\"Anxiety is the dizziness of freedom.\" — Kierkegaard",
+  "\"At the treeline, silence becomes a companion.\"",
+  "\"One night the antlers catch the moonlight, and the weight becomes wonder.\"",
+  "\"To live is to suffer; to survive is to find meaning.\" — Frankl",
+  "\"The only way to deal with an unfree world is to become so absolutely free that your very existence is an act of rebellion.\" — Camus",
+  "\"Existence precedes essence.\" — Sartre",
+  "\"The higher we climb, the more we see — and the more we must bear.\"",
+  "\"Without music, life would be a mistake.\" — Nietzsche",
+  "\"The absurd does not liberate; it binds.\" — Camus",
 ];
 
 const WRONG_MESSAGES = [
@@ -621,6 +945,12 @@ const WRONG_MESSAGES = [
   "The mountain tests all who dare to ascend.",
   "Consciousness is heavy. Take a breath and try again.",
   "The trail remains. Another step awaits.",
+  "\"The struggle itself is enough to fill a man's heart.\" — Camus",
+  "One step back, but the summit has not moved.",
+  "The wind pushes you back. Lean into it.",
+  "Even Sisyphus had to watch the boulder roll down.",
+  "The antlers catch on a branch. Untangle and continue.",
+  "Nietzsche stumbled too. What matters is the next step.",
 ];
 
 const LEVEL_NAMES = [
@@ -629,21 +959,21 @@ const LEVEL_NAMES = [
   "Near Summit", "The Ascent", "Summit"
 ];
 
-// ── Station positions (percentage-based for responsiveness) ──
-// These map to coordinates within the mountain SVG viewBox (800x700)
-// Converted to percentages of the scene
+const ALTITUDES = [0, 800, 1600, 2400, 3200, 4000, 4800, 5600, 6400, 7200, 8000];
+
+// ── Station positions ──
 const STATION_COORDS = [
-  { x: 50, y: 88 },  // 0: Base camp (start)
-  { x: 44, y: 81 },  // 1
-  { x: 55, y: 74 },  // 2
-  { x: 43, y: 67 },  // 3
-  { x: 53, y: 60 },  // 4
-  { x: 45, y: 53 },  // 5
-  { x: 54, y: 46 },  // 6
-  { x: 47, y: 39 },  // 7
-  { x: 52, y: 32 },  // 8
-  { x: 48, y: 25 },  // 9
-  { x: 50, y: 17 },  // 10: Summit
+  { x: 50, y: 88 },
+  { x: 44, y: 81 },
+  { x: 55, y: 74 },
+  { x: 43, y: 67 },
+  { x: 53, y: 60 },
+  { x: 45, y: 53 },
+  { x: 54, y: 46 },
+  { x: 47, y: 39 },
+  { x: 52, y: 32 },
+  { x: 48, y: 25 },
+  { x: 50, y: 17 },
 ];
 
 // ── Game State ──
@@ -656,6 +986,7 @@ let state = {
   isAnimating: false,
   gameActive: false,
 };
+let shootingStarInterval = null;
 
 // ── DOM References ──
 const $ = id => document.getElementById(id);
@@ -663,6 +994,7 @@ const elk = $('elk');
 const questionPanel = $('questionPanel');
 const questionText = $('questionText');
 const questionLevel = $('questionLevel');
+const questionPhilosopher = $('questionPhilosopher');
 const optionsContainer = $('optionsContainer');
 const feedback = $('feedback');
 const levelDisplay = $('levelDisplay');
@@ -671,26 +1003,61 @@ const starsContainer = $('starsContainer');
 const sky = $('sky');
 const fogContainer = $('fogContainer');
 const summitGlow = $('summitGlow');
+const mountainGlow = $('mountainGlow');
+const aurora = $('aurora');
+const windParticles = $('windParticles');
+const snowParticles = $('snowParticles');
+const altitude = $('altitude');
 
 // ── Initialization ──
 function init() {
   createStars();
   createStations();
   createTrailLines();
+  createWindParticles();
+  createSnowParticles();
   positionElk(0, false);
 }
 
 function createStars() {
   let html = '';
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 120; i++) {
     const x = Math.random() * 100;
-    const y = Math.random() * 50;
-    const o = (0.3 + Math.random() * 0.7).toFixed(2);
-    const d = (2 + Math.random() * 4).toFixed(1);
-    const s = (1 + Math.random() * 2).toFixed(0);
-    html += `<div class="star" style="left:${x}%;top:${y}%;--o:${o};--d:${d}s;width:${s}px;height:${s}px"></div>`;
+    const y = Math.random() * 55;
+    const o = (0.2 + Math.random() * 0.8).toFixed(2);
+    const d = (2 + Math.random() * 5).toFixed(1);
+    const s = Math.random() < 0.1 ? 3 : (Math.random() < 0.3 ? 2 : 1);
+    const color = Math.random() < 0.05 ? 'rgba(180,200,255,0.9)' : (Math.random() < 0.05 ? 'rgba(255,220,180,0.9)' : '#fff');
+    html += `<div class="star" style="left:${x}%;top:${y}%;--o:${o};--d:${d}s;width:${s}px;height:${s}px;background:${color}"></div>`;
   }
   starsContainer.innerHTML = html;
+}
+
+function createWindParticles() {
+  let html = '';
+  for (let i = 0; i < 12; i++) {
+    const y = 15 + Math.random() * 50;
+    const w = 15 + Math.random() * 40;
+    const speed = 4 + Math.random() * 6;
+    const delay = Math.random() * 10;
+    const o = (0.04 + Math.random() * 0.08).toFixed(2);
+    html += `<div class="wind-particle" style="top:${y}%;--w:${w}px;--speed:${speed}s;--delay:${delay}s;--o:${o}"></div>`;
+  }
+  windParticles.innerHTML = html;
+}
+
+function createSnowParticles() {
+  let html = '';
+  for (let i = 0; i < 25; i++) {
+    const x = Math.random() * 100;
+    const s = (1 + Math.random() * 2).toFixed(0);
+    const dur = 6 + Math.random() * 8;
+    const delay = Math.random() * 12;
+    const drift = (-30 + Math.random() * 60).toFixed(0);
+    const o = (0.15 + Math.random() * 0.3).toFixed(2);
+    html += `<div class="snow-p" style="left:${x}%;--s:${s}px;--dur:${dur}s;--delay:${delay}s;--drift:${drift}px;--o:${o}"></div>`;
+  }
+  snowParticles.innerHTML = html;
 }
 
 function createStations() {
@@ -712,12 +1079,26 @@ function createTrailLines() {
   for (let i = 0; i < 10; i++) {
     const a = STATION_COORDS[i];
     const b = STATION_COORDS[i + 1];
-    // Convert percentage coords to SVG viewBox coords
     const x1 = a.x * 8, y1 = a.y * 7;
     const x2 = b.x * 8, y2 = b.y * 7;
     html += `<line id="trail${i}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
   }
   svg.innerHTML = html;
+}
+
+function triggerShootingStar() {
+  const container = $('shootingStarsContainer');
+  const star = document.createElement('div');
+  star.className = 'shooting-star';
+  const x = 20 + Math.random() * 60;
+  const y = 5 + Math.random() * 25;
+  const dx = (-120 - Math.random() * 150).toFixed(0);
+  const dy = (60 + Math.random() * 100).toFixed(0);
+  const dur = (0.6 + Math.random() * 0.8).toFixed(1);
+  star.style.cssText = `left:${x}%;top:${y}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s`;
+  container.appendChild(star);
+  requestAnimationFrame(() => star.classList.add('active'));
+  setTimeout(() => star.remove(), parseFloat(dur) * 1000 + 100);
 }
 
 function positionElk(level, animate = true) {
@@ -729,6 +1110,20 @@ function positionElk(level, animate = true) {
   }
   elk.style.left = c.x + '%';
   elk.style.top = c.y + '%';
+}
+
+// ── Shuffle utility ──
+function shuffleOptions(q) {
+  // Create indexed options
+  const indexed = q.opts.map((text, i) => ({ text, isCorrect: i === q.ans }));
+  // Fisher-Yates shuffle
+  for (let i = indexed.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+  }
+  const newOpts = indexed.map(o => o.text);
+  const newAns = indexed.findIndex(o => o.isCorrect);
+  return { q: q.q, opts: newOpts, ans: newAns, tag: q.tag };
 }
 
 // ── Game Flow ──
@@ -749,12 +1144,19 @@ function startGame() {
     $(`station${i}`).classList.remove('reached');
   }
   document.querySelectorAll('#trailLines line').forEach(l => l.classList.remove('active'));
-  starsContainer.classList.remove('visible');
-  sky.classList.remove('high');
+  starsContainer.classList.remove('visible', 'dim');
+  sky.classList.remove('high', 'mid');
   summitGlow.classList.remove('visible');
+  mountainGlow.classList.remove('visible');
+  aurora.classList.remove('visible');
+  windParticles.classList.remove('visible');
+  snowParticles.classList.remove('visible');
   fogContainer.style.opacity = '1';
-  elk.classList.remove('celebrate');
+  elk.className = 'elk idle';
   progressBar.style.width = '0%';
+
+  // Clear shooting star interval
+  if (shootingStarInterval) clearInterval(shootingStarInterval);
 
   // Mark base camp
   $('station0').classList.add('reached');
@@ -770,14 +1172,35 @@ function startGame() {
 function updateLevel() {
   levelDisplay.textContent = `Camp ${state.level}/10`;
   progressBar.style.width = (state.level * 10) + '%';
+  altitude.textContent = `ALT ${ALTITUDES[state.level]}m`;
 
-  // Visual atmosphere changes
+  // Progressive atmosphere
+  if (state.level >= 3) {
+    starsContainer.classList.add('dim');
+    sky.classList.add('mid');
+  }
   if (state.level >= 5) {
+    starsContainer.classList.remove('dim');
     starsContainer.classList.add('visible');
+    windParticles.classList.add('visible');
+    mountainGlow.classList.add('visible');
+  }
+  if (state.level >= 6) {
+    // Start occasional shooting stars
+    if (!shootingStarInterval) {
+      shootingStarInterval = setInterval(() => {
+        if (Math.random() < 0.4) triggerShootingStar();
+      }, 3000);
+    }
   }
   if (state.level >= 7) {
+    sky.classList.remove('mid');
     sky.classList.add('high');
-    fogContainer.style.opacity = '0.3';
+    fogContainer.style.opacity = '0.25';
+    aurora.classList.add('visible');
+  }
+  if (state.level >= 8) {
+    snowParticles.classList.add('visible');
   }
   if (state.level >= 9) {
     summitGlow.classList.add('visible');
@@ -793,7 +1216,6 @@ function getQuestion() {
 
   const available = pool.filter((_, i) => !state.usedQuestions[targetLevel].includes(i));
   if (available.length === 0) {
-    // Reset pool if all used
     state.usedQuestions[targetLevel] = [];
     return getQuestion();
   }
@@ -801,7 +1223,9 @@ function getQuestion() {
   const idx = Math.floor(Math.random() * available.length);
   const originalIdx = pool.indexOf(available[idx]);
   state.usedQuestions[targetLevel].push(originalIdx);
-  return available[idx];
+
+  // Shuffle the options so correct answer position varies
+  return shuffleOptions(available[idx]);
 }
 
 function showQuestion() {
@@ -810,12 +1234,13 @@ function showQuestion() {
 
   const targetLevel = state.level + 1;
   let diffLabel;
-  if (targetLevel <= 3) diffLabel = LEVEL_NAMES[targetLevel] + ' — Easy';
-  else if (targetLevel <= 6) diffLabel = LEVEL_NAMES[targetLevel] + ' — Medium';
-  else if (targetLevel <= 9) diffLabel = LEVEL_NAMES[targetLevel] + ' — Hard';
-  else diffLabel = 'The Summit — Final Question';
+  if (targetLevel <= 3) diffLabel = LEVEL_NAMES[targetLevel] + ' · Easy';
+  else if (targetLevel <= 6) diffLabel = LEVEL_NAMES[targetLevel] + ' · Medium';
+  else if (targetLevel <= 9) diffLabel = LEVEL_NAMES[targetLevel] + ' · Hard';
+  else diffLabel = 'The Summit · Final Question';
 
   questionLevel.textContent = `Level ${targetLevel} · ${diffLabel}`;
+  questionPhilosopher.textContent = q.tag ? `— ${q.tag} —` : '';
   questionText.textContent = q.q;
 
   const letters = ['A', 'B', 'C', 'D'];
@@ -850,22 +1275,25 @@ function selectAnswer(selected, correct) {
 
 function handleCorrect() {
   state.level++;
+
+  // Climb animation
+  elk.classList.remove('idle');
+  elk.classList.add('climb');
   positionElk(state.level);
 
-  // Light up station and trail
   setTimeout(() => {
     $(`station${state.level}`).classList.add('reached');
     const trail = document.getElementById(`trail${state.level - 1}`);
     if (trail) trail.classList.add('active');
     updateLevel();
-  }, 400);
+    elk.classList.remove('climb');
+    elk.classList.add('idle');
+  }, 500);
 
-  // Show quote
   const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
   showFeedback(quote);
 
   if (state.level >= 10) {
-    // Summit reached!
     setTimeout(() => {
       questionPanel.classList.add('hidden');
       showSummit();
@@ -874,7 +1302,7 @@ function handleCorrect() {
     setTimeout(() => {
       state.isAnimating = false;
       showQuestion();
-    }, 2200);
+    }, 2400);
   }
 }
 
@@ -883,14 +1311,17 @@ function handleWrong() {
   const msg = WRONG_MESSAGES[Math.floor(Math.random() * WRONG_MESSAGES.length)];
   showFeedback(msg);
 
-  // Slip down if above base
+  elk.classList.remove('idle');
+
   if (state.level > 0) {
     state.level--;
     elk.classList.add('slip');
     positionElk(state.level);
-    setTimeout(() => elk.classList.remove('slip'), 700);
+    setTimeout(() => {
+      elk.classList.remove('slip');
+      elk.classList.add('idle');
+    }, 800);
 
-    // Unlight the station we slipped from
     const prev = state.level + 1;
     $(`station${prev}`).classList.remove('reached');
     const trail = document.getElementById(`trail${state.level}`);
@@ -898,13 +1329,16 @@ function handleWrong() {
     updateLevel();
   } else {
     elk.classList.add('slip');
-    setTimeout(() => elk.classList.remove('slip'), 700);
+    setTimeout(() => {
+      elk.classList.remove('slip');
+      elk.classList.add('idle');
+    }, 800);
   }
 
   setTimeout(() => {
     state.isAnimating = false;
     showQuestion();
-  }, 2200);
+  }, 2400);
 }
 
 function showFeedback(text) {
@@ -918,7 +1352,9 @@ function hideFeedback() {
 // ── Summit ──
 function showSummit() {
   state.gameActive = false;
+  elk.classList.remove('idle');
   elk.classList.add('celebrate');
+  if (shootingStarInterval) { clearInterval(shootingStarInterval); shootingStarInterval = null; }
 
   const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
   const mins = Math.floor(elapsed / 60);
@@ -932,22 +1368,21 @@ function showSummit() {
     <div class="stat"><span class="stat-val">${timeStr}</span><span class="stat-label">Time</span></div>
   `;
 
-  // Create burst particles
   const starsEl = $('summitStars');
   let bHtml = '';
-  for (let i = 0; i < 30; i++) {
-    const tx = (-150 + Math.random() * 300).toFixed(0);
-    const ty = (-150 + Math.random() * 300).toFixed(0);
-    const d = (1.5 + Math.random() * 2).toFixed(1);
-    const delay = (Math.random() * 2).toFixed(1);
-    bHtml += `<div class="summit-burst" style="left:50%;top:40%;--tx:${tx}px;--ty:${ty}px;--d:${d}s;animation-delay:${delay}s"></div>`;
+  for (let i = 0; i < 50; i++) {
+    const tx = (-200 + Math.random() * 400).toFixed(0);
+    const ty = (-200 + Math.random() * 400).toFixed(0);
+    const d = (1.5 + Math.random() * 2.5).toFixed(1);
+    const delay = (Math.random() * 3).toFixed(1);
+    const colors = ['#d4a843','#f0c75e','#fff','#e8712a','#ffd700'];
+    const c = colors[Math.floor(Math.random() * colors.length)];
+    bHtml += `<div class="summit-burst" style="left:50%;top:38%;--tx:${tx}px;--ty:${ty}px;--d:${d}s;animation-delay:${delay}s;background:${c}"></div>`;
   }
   starsEl.innerHTML = bHtml;
 
-  // Store for share
   state.timeStr = timeStr;
-
-  setTimeout(() => $('summitScreen').classList.add('visible'), 300);
+  setTimeout(() => $('summitScreen').classList.add('visible'), 400);
 }
 
 function shareResult() {
@@ -978,7 +1413,7 @@ function fallbackCopy(text) {
 
 function restartGame() {
   $('summitScreen').classList.remove('visible');
-  setTimeout(() => startGame(), 400);
+  setTimeout(() => startGame(), 500);
 }
 
 // ── Keyboard support ──
@@ -992,7 +1427,7 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Init on load
+// Init
 init();
 </script>
 </body>
