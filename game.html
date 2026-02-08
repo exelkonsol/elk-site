@@ -11,7 +11,7 @@
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#080810;
+  --bg:#050508;
   --mountain-dark:#0d1117;
   --mountain-mid:#141e2a;
   --mountain-light:#1a2634;
@@ -43,14 +43,14 @@ body{display:flex;flex-direction:column;position:relative}
 /* Sky gradient — transitions through elevation */
 .sky{
   position:absolute;inset:0;
-  background:linear-gradient(180deg,#05050f 0%,#0a0a1e 30%,#0f1628 60%,#131d2d 100%);
+  background:linear-gradient(180deg,#030308 0%,#060812 20%,#0a0e1e 45%,#0e1528 70%,#111d30 100%);
   transition:background 2.5s ease;
 }
 .sky.mid{
-  background:linear-gradient(180deg,#030310 0%,#070718 25%,#0a1025 55%,#0e1828 100%);
+  background:linear-gradient(180deg,#020206 0%,#040610 20%,#070a1a 50%,#0a1020 100%);
 }
 .sky.high{
-  background:linear-gradient(180deg,#020208 0%,#040410 20%,#060815 50%,#080c1a 100%);
+  background:linear-gradient(180deg,#010104 0%,#030308 15%,#050710 40%,#070a16 100%);
 }
 
 /* Stars */
@@ -152,25 +152,27 @@ body{display:flex;flex-direction:column;position:relative}
   100%{transform:translate(var(--drift,20px),calc(50vh));opacity:0}
 }
 
-/* Background peaks */
-.bg-peaks{
-  position:absolute;bottom:0;left:0;right:0;height:70%;
-  opacity:0.3;
+/* ── THE MOUNTAIN — Full-viewport layered landscape ── */
+.mountain-wrap{
+  position:absolute;bottom:0;left:0;right:0;height:100%;
+  pointer-events:none;
 }
 
-/* Main mountain */
-.mountain-wrap{position:absolute;bottom:0;left:0;right:0;height:85%}
-.mountain-svg{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:140%;max-width:900px;height:100%}
+/* Main mountain SVG — spans full width */
+.mountain-svg{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:220%;height:100%;
+}
 
 /* Trail and stations */
 .station{
   position:absolute;transform:translate(-50%,-50%);
-  width:28px;height:28px;border-radius:50%;
+  width:24px;height:24px;border-radius:50%;
   border:2px solid var(--glass-border);
   background:var(--glass);
   transition:all 0.8s ease;
   cursor:default;
-  z-index:5;
+  z-index:15;
 }
 .station.reached{
   border-color:var(--campfire);
@@ -182,10 +184,9 @@ body{display:flex;flex-direction:column;position:relative}
   background:radial-gradient(circle,rgba(232,113,42,0.25) 0%,transparent 70%);
   animation:fire-pulse 2s ease-in-out infinite alternate;
 }
-/* Campfire flame flicker */
 .station.reached::before{
-  content:'🔥';position:absolute;top:-18px;left:50%;transform:translateX(-50%);
-  font-size:12px;
+  content:'🔥';position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  font-size:11px;
   animation:flame-flicker 0.4s ease-in-out infinite alternate;
   opacity:0.8;
 }
@@ -194,10 +195,10 @@ body{display:flex;flex-direction:column;position:relative}
   background:rgba(212,168,67,0.3);
   box-shadow:0 0 30px rgba(212,168,67,0.4),0 0 60px rgba(212,168,67,0.15);
 }
-.station.summit.reached::before{content:'⭐';font-size:14px;top:-20px}
+.station.summit.reached::before{content:'⭐';font-size:12px;top:-18px}
 .station-num{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
   color:var(--text-dim);transition:color 0.6s;
 }
 .station.reached .station-num{color:var(--text-primary)}
@@ -205,14 +206,14 @@ body{display:flex;flex-direction:column;position:relative}
 @keyframes flame-flicker{0%{transform:translateX(-50%) scale(1) rotate(-3deg)}100%{transform:translateX(-50%) scale(1.1) rotate(3deg)}}
 
 /* Trail line */
-.trail-line{position:absolute;z-index:2}
+.trail-line{position:absolute;z-index:12}
 .trail-line line{
-  stroke:rgba(255,255,255,0.06);stroke-width:2;
+  stroke:rgba(255,255,255,0.06);stroke-width:1.5;
   stroke-dasharray:4 6;
 }
 .trail-line line.active{
   stroke:rgba(232,113,42,0.35);
-  stroke-width:2.5;
+  stroke-width:2;
   filter:drop-shadow(0 0 3px rgba(232,113,42,0.3));
   transition:all 1s ease;
 }
@@ -220,13 +221,12 @@ body{display:flex;flex-direction:column;position:relative}
 /* Elk character */
 .elk{
   position:absolute;transform:translate(-50%,-50%);
-  font-size:32px;z-index:10;
+  font-size:28px;z-index:16;
   transition:left 1.2s cubic-bezier(0.34,1.56,0.64,1),
              top 1.2s cubic-bezier(0.34,1.56,0.64,1);
   filter:drop-shadow(0 0 12px rgba(232,113,42,0.4));
   line-height:1;
 }
-/* Breathing idle animation */
 .elk.idle{
   animation:elk-breathe 3s ease-in-out infinite;
 }
@@ -261,7 +261,7 @@ body{display:flex;flex-direction:column;position:relative}
   100%{transform:translate(-50%,-50%) scale(1.18) translateY(-8px)}
 }
 
-/* Fog layers — more atmospheric */
+/* Fog layers */
 .fog{position:absolute;bottom:0;left:0;right:0;pointer-events:none;z-index:6;transition:opacity 3s ease}
 .fog-layer{
   position:absolute;bottom:0;left:-30%;width:160%;
@@ -277,7 +277,7 @@ body{display:flex;flex-direction:column;position:relative}
   100%{transform:translateX(-12%) scaleY(1)}
 }
 
-/* Mountain glow — ambient light on mountain face */
+/* Mountain glow */
 .mountain-glow{
   position:absolute;bottom:20%;left:45%;width:180px;height:300px;
   background:radial-gradient(ellipse,rgba(232,113,42,0.04) 0%,transparent 70%);
@@ -290,26 +290,26 @@ body{display:flex;flex-direction:column;position:relative}
 .ui-overlay{
   position:absolute;inset:0;display:flex;flex-direction:column;
   justify-content:flex-end;align-items:center;
-  padding:16px;z-index:20;pointer-events:none;
+  padding:12px;z-index:20;pointer-events:none;
 }
 
 /* Top bar */
 .top-bar{
   position:absolute;top:0;left:0;right:0;
   display:flex;justify-content:space-between;align-items:center;
-  padding:12px 16px;pointer-events:auto;
-  background:linear-gradient(180deg,rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.3) 60%,transparent 100%);
+  padding:10px 16px;pointer-events:auto;
+  background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.2) 60%,transparent 100%);
 }
 .game-title{
-  font-family:'Cinzel',serif;font-size:14px;font-weight:600;
+  font-family:'Cinzel',serif;font-size:13px;font-weight:600;
   letter-spacing:0.12em;text-transform:uppercase;color:var(--text-secondary);
 }
 .level-display{
-  font-family:'JetBrains Mono',monospace;font-size:12px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
   color:var(--text-dim);letter-spacing:0.08em;
 }
 .home-link{
-  color:var(--text-dim);text-decoration:none;font-size:12px;
+  color:var(--text-dim);text-decoration:none;font-size:11px;
   font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;
   transition:color 0.3s;
 }
@@ -317,62 +317,62 @@ body{display:flex;flex-direction:column;position:relative}
 
 /* Altitude indicator */
 .altitude{
-  position:absolute;top:60px;right:16px;
-  font-family:'JetBrains Mono',monospace;font-size:10px;
+  position:absolute;top:55px;right:14px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;
   color:var(--text-dim);letter-spacing:0.08em;
   writing-mode:vertical-rl;text-orientation:mixed;
-  opacity:0.5;pointer-events:none;z-index:25;
+  opacity:0.4;pointer-events:none;z-index:25;
 }
 
-/* Question panel — semi-transparent so mountain shows through */
+/* ── Question panel — compact, translucent, bottom-hugging ── */
 .question-panel{
   pointer-events:auto;
-  width:100%;max-width:520px;
-  background:linear-gradient(135deg,rgba(8,12,22,0.72) 0%,rgba(12,18,32,0.78) 100%);
-  backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,0.06);
-  border-radius:14px;
-  padding:18px 20px;
+  width:100%;max-width:480px;
+  background:linear-gradient(135deg,rgba(5,8,16,0.62) 0%,rgba(8,14,26,0.68) 100%);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:12px;
+  padding:14px 16px;
   transform:translateY(0);
   transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1),opacity 0.4s ease;
   opacity:1;
   margin-bottom:env(safe-area-inset-bottom,0);
-  box-shadow:0 -4px 20px rgba(0,0,0,0.3);
-  max-height:calc(60vh);
+  box-shadow:0 -2px 16px rgba(0,0,0,0.25);
+  max-height:calc(36vh);
   overflow-y:auto;
 }
 .question-panel.hidden{
   transform:translateY(30px);opacity:0;pointer-events:none;
 }
 .question-level{
-  font-family:'JetBrains Mono',monospace;font-size:10px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;
   color:var(--campfire);letter-spacing:0.15em;text-transform:uppercase;
-  margin-bottom:2px;
+  margin-bottom:1px;
 }
 .question-philosopher{
-  font-family:'JetBrains Mono',monospace;font-size:9px;
+  font-family:'JetBrains Mono',monospace;font-size:8px;
   color:var(--text-dim);letter-spacing:0.1em;
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
 .question-text{
-  font-family:'Crimson Text',serif;font-size:17px;line-height:1.45;
-  color:var(--text-primary);margin-bottom:14px;
+  font-family:'Crimson Text',serif;font-size:15px;line-height:1.4;
+  color:var(--text-primary);margin-bottom:10px;
   font-style:italic;
 }
-.options{display:flex;flex-direction:column;gap:6px}
+.options{display:flex;flex-direction:column;gap:4px}
 .option-btn{
-  display:flex;align-items:flex-start;gap:10px;
-  width:100%;padding:10px 14px;
-  background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,255,255,0.06);
-  border-radius:8px;
+  display:flex;align-items:flex-start;gap:8px;
+  width:100%;padding:8px 12px;
+  background:rgba(255,255,255,0.025);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:7px;
   color:var(--text-secondary);
-  font-family:'Crimson Text',serif;font-size:15px;line-height:1.35;
+  font-family:'Crimson Text',serif;font-size:14px;line-height:1.3;
   text-align:left;cursor:pointer;
   transition:all 0.25s ease;
   -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
-  min-height:40px;
+  min-height:34px;
   position:relative;
   overflow:hidden;
 }
@@ -382,16 +382,16 @@ body{display:flex;flex-direction:column;position:relative}
   opacity:0;transition:opacity 0.3s;
 }
 .option-btn:hover{
-  background:rgba(255,255,255,0.08);
-  border-color:rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.07);
+  border-color:rgba(255,255,255,0.12);
   color:var(--text-primary);
   transform:translateX(2px);
 }
 .option-btn:hover::before{opacity:1}
 .option-btn:active{transform:scale(0.98)}
 .option-btn .opt-letter{
-  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
-  color:var(--text-dim);min-width:20px;padding-top:2px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+  color:var(--text-dim);min-width:18px;padding-top:1px;
   transition:color 0.3s;
 }
 .option-btn:hover .opt-letter{color:var(--campfire)}
@@ -422,19 +422,19 @@ body{display:flex;flex-direction:column;position:relative}
 /* Feedback toast */
 .feedback{
   position:absolute;left:50%;transform:translateX(-50%);
-  bottom:calc(100% + 12px);
-  background:rgba(8,12,22,0.85);
+  bottom:calc(100% + 8px);
+  background:rgba(5,8,16,0.82);
   backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,0.06);
-  border-radius:10px;
-  padding:10px 16px;
-  font-family:'Crimson Text',serif;font-size:14px;font-style:italic;
-  color:var(--text-secondary);line-height:1.4;
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:8px;
+  padding:8px 14px;
+  font-family:'Crimson Text',serif;font-size:13px;font-style:italic;
+  color:var(--text-secondary);line-height:1.35;
   text-align:center;
   opacity:0;transform:translateX(-50%) translateY(10px);
   transition:all 0.5s ease;
   pointer-events:none;
-  max-width:90vw;
+  max-width:88vw;
   white-space:normal;
 }
 .feedback.visible{
@@ -446,7 +446,7 @@ body{display:flex;flex-direction:column;position:relative}
   position:absolute;inset:0;z-index:50;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:24px;
-  background:rgba(5,5,10,0.97);
+  background:rgba(3,3,6,0.96);
   transition:opacity 1s ease;
   text-align:center;
 }
@@ -523,7 +523,6 @@ body{display:flex;flex-direction:column;position:relative}
   20%{opacity:1;transform:translate(var(--tx),var(--ty)) scale(1)}
   100%{opacity:0;transform:translate(calc(var(--tx)*2.5),calc(var(--ty)*2.5)) scale(0)}
 }
-/* Summit ring pulse */
 .summit-ring{
   position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
   width:120px;height:120px;border-radius:50%;
@@ -588,8 +587,8 @@ body{display:flex;flex-direction:column;position:relative}
 
 /* Progress bar */
 .progress-wrap{
-  position:absolute;top:48px;left:16px;right:16px;
-  height:3px;background:rgba(255,255,255,0.05);border-radius:2px;
+  position:absolute;top:44px;left:16px;right:16px;
+  height:2px;background:rgba(255,255,255,0.04);border-radius:2px;
   overflow:hidden;z-index:25;
 }
 .progress-bar{
@@ -597,14 +596,14 @@ body{display:flex;flex-direction:column;position:relative}
   background:linear-gradient(90deg,var(--campfire),var(--gold));
   border-radius:2px;
   transition:width 1s cubic-bezier(0.34,1.56,0.64,1);
-  box-shadow:0 0 8px rgba(232,113,42,0.3);
+  box-shadow:0 0 6px rgba(232,113,42,0.3);
 }
 
 /* Golden glow at summit */
 .summit-glow{
-  position:absolute;top:5%;left:50%;transform:translateX(-50%);
-  width:250px;height:250px;
-  background:radial-gradient(circle,rgba(212,168,67,0.18) 0%,rgba(212,168,67,0.05) 40%,transparent 70%);
+  position:absolute;top:3%;left:50%;transform:translateX(-50%);
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(212,168,67,0.15) 0%,rgba(212,168,67,0.04) 40%,transparent 70%);
   border-radius:50%;opacity:0;
   transition:opacity 2.5s ease;
   z-index:3;pointer-events:none;
@@ -614,35 +613,35 @@ body{display:flex;flex-direction:column;position:relative}
 /* Elevation vignette */
 .vignette{
   position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 50%,transparent 50%,rgba(0,0,0,0.4) 100%);
+  background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,0.5) 100%);
   pointer-events:none;z-index:8;
   transition:background 2s ease;
 }
 
 /* Responsive */
 @media(max-width:480px){
-  .question-text{font-size:15px}
-  .option-btn{font-size:14px;padding:8px 12px}
-  .options{gap:5px}
+  .question-text{font-size:14px}
+  .option-btn{font-size:13px;padding:7px 10px}
+  .options{gap:3px}
   .start-title{font-size:22px}
   .summit-title{font-size:20px}
-  .station{width:22px;height:22px}
-  .station-num{font-size:8px}
-  .station.reached::before{font-size:10px;top:-15px}
-  .elk{font-size:26px}
-  .question-panel{padding:14px 16px;border-radius:12px;max-height:55vh}
-  .top-bar{padding:10px 12px}
+  .station{width:20px;height:20px}
+  .station-num{font-size:7px}
+  .station.reached::before{font-size:9px;top:-14px}
+  .elk{font-size:22px}
+  .question-panel{padding:10px 12px;border-radius:10px;max-height:38vh}
+  .top-bar{padding:8px 12px}
   .summit-stats{gap:16px}
   .altitude{display:none}
 }
 @media(max-width:360px){
-  .question-panel{padding:12px 14px;max-height:50vh}
-  .question-text{font-size:14px;margin-bottom:10px}
-  .option-btn{font-size:13px;padding:8px 10px;gap:6px;min-height:36px}
-  .options{gap:4px}
+  .question-panel{padding:8px 10px;max-height:40vh}
+  .question-text{font-size:13px;margin-bottom:8px}
+  .option-btn{font-size:12px;padding:6px 8px;gap:5px;min-height:30px}
+  .options{gap:3px}
 }
 @media(min-height:800px){
-  .question-panel{margin-bottom:20px;max-height:50vh}
+  .question-panel{margin-bottom:16px;max-height:34vh}
 }
 </style>
 </head>
@@ -653,7 +652,7 @@ body{display:flex;flex-direction:column;position:relative}
   <div class="start-elk">🦌</div>
   <h1 class="start-title">Mountain Ascent</h1>
   <p class="start-sub">"Man is a tragic animal. Not because of his smallness, but because he is too well endowed." — Peter Wessel Zapffe</p>
-  <p class="start-hint">10 camps · Zapffe · Camus · Kierkegaard · Nietzsche · Sartre · and more</p>
+  <p class="start-hint">10 camps · Zapffe · Camus · Kierkegaard · Nietzsche · Sartre · Heidegger · Schopenhauer</p>
   <button class="start-btn" id="startBtn" onclick="startGame()">Begin the Climb</button>
 </div>
 
@@ -693,75 +692,211 @@ body{display:flex;flex-direction:column;position:relative}
   <div class="summit-glow" id="summitGlow"></div>
   <div class="mountain-glow" id="mountainGlow"></div>
 
-  <!-- Background peaks SVG -->
-  <svg class="bg-peaks" viewBox="0 0 1200 500" preserveAspectRatio="none" style="position:absolute;bottom:0;left:0;width:100%;height:65%;opacity:0.18">
-    <polygon points="0,500 120,200 240,500" fill="#0c1420"/>
-    <polygon points="150,500 350,140 550,500" fill="#091018"/>
-    <polygon points="400,500 580,180 760,500" fill="#0b1320"/>
-    <polygon points="650,500 850,160 1050,500" fill="#0a1220"/>
-    <polygon points="900,500 1050,220 1200,500" fill="#081018"/>
-    <!-- Distant range -->
-    <polygon points="0,500 200,280 400,500" fill="#060d14" opacity="0.6"/>
-    <polygon points="300,500 550,250 800,500" fill="#070e16" opacity="0.5"/>
-    <polygon points="700,500 950,270 1200,500" fill="#060c14" opacity="0.6"/>
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  THE MOUNTAIN — A layered landscape masterpiece -->
+  <!-- ═══════════════════════════════════════════════ -->
+
+  <!-- Layer 5: Most distant range — barely visible silhouettes -->
+  <svg style="position:absolute;bottom:0;left:0;width:100%;height:55%;opacity:0.12;pointer-events:none" viewBox="0 0 1600 400" preserveAspectRatio="none">
+    <polygon points="0,400 40,300 90,270 140,290 210,240 280,260 340,220 420,250 490,200 560,230 640,190 720,220 790,180 870,210 950,240 1020,200 1100,230 1180,260 1250,220 1330,250 1400,270 1500,290 1600,400" fill="#050810"/>
   </svg>
 
-  <!-- Main mountain SVG -->
-  <svg id="mountainSvg" viewBox="0 0 800 700" preserveAspectRatio="xMidYMax meet"
-       style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:130%;max-width:850px;height:88%">
+  <!-- Layer 4: Distant range -->
+  <svg style="position:absolute;bottom:0;left:0;width:100%;height:60%;opacity:0.18;pointer-events:none" viewBox="0 0 1600 450" preserveAspectRatio="none">
+    <polygon points="0,450 60,340 130,300 200,320 270,270 350,290 420,240 500,280 570,230 650,260 720,210 800,250 870,220 940,260 1020,230 1090,270 1160,240 1240,280 1310,300 1400,320 1500,340 1600,450" fill="#060a12"/>
+    <polygon points="0,450 100,360 180,320 260,350 340,290 430,310 510,260 600,300 680,250 760,280 850,240 930,270 1010,290 1080,260 1160,290 1240,310 1320,340 1400,320 1500,360 1600,450" fill="#070c14" opacity="0.7"/>
+  </svg>
+
+  <!-- Layer 3: Mid-range peaks — flanking mountains -->
+  <svg style="position:absolute;bottom:0;left:0;width:100%;height:68%;opacity:0.25;pointer-events:none" viewBox="0 0 1600 500" preserveAspectRatio="none">
+    <!-- Left flanking range -->
+    <polygon points="0,500 20,380 60,340 100,310 140,290 190,260 230,280 280,240 320,260 370,230 410,250 460,270 510,300 560,330 620,350 680,400 740,500" fill="#080e18"/>
+    <!-- Right flanking range -->
+    <polygon points="860,500 920,400 980,350 1030,320 1080,290 1130,260 1180,240 1230,260 1280,230 1330,250 1380,270 1420,290 1460,310 1510,340 1560,370 1600,500" fill="#080e18"/>
+  </svg>
+
+  <!-- Layer 2: Near-range secondary peaks -->
+  <svg style="position:absolute;bottom:0;left:0;width:100%;height:75%;opacity:0.3;pointer-events:none" viewBox="0 0 1600 550" preserveAspectRatio="none">
     <defs>
-      <linearGradient id="mtGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-        <stop offset="0%" stop-color="#1a1530"/>
-        <stop offset="20%" stop-color="#161c2e"/>
-        <stop offset="45%" stop-color="#132218"/>
-        <stop offset="70%" stop-color="#0f1e14"/>
-        <stop offset="100%" stop-color="#0d1a12"/>
+      <linearGradient id="nearRange" x1="0.5" y1="0" x2="0.5" y2="1">
+        <stop offset="0%" stop-color="#0c1220"/>
+        <stop offset="60%" stop-color="#0a1018"/>
+        <stop offset="100%" stop-color="#080d14"/>
       </linearGradient>
+    </defs>
+    <!-- Left secondary peak -->
+    <polygon points="0,550 30,420 80,370 130,340 180,310 230,280 280,310 320,330 380,360 440,400 500,440 550,480 600,550" fill="url(#nearRange)"/>
+    <!-- Right secondary peak -->
+    <polygon points="1000,550 1050,480 1100,440 1150,400 1210,360 1270,330 1320,300 1370,280 1420,310 1460,340 1510,370 1560,420 1600,550" fill="url(#nearRange)"/>
+  </svg>
+
+  <!-- Layer 1: THE MAIN MOUNTAIN — the centerpiece -->
+  <svg id="mountainSvg" class="mountain-svg" viewBox="0 0 1400 800" preserveAspectRatio="xMidYMax meet">
+    <defs>
+      <!-- Main mountain gradient — purple summit to forest base -->
+      <linearGradient id="mtGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+        <stop offset="0%" stop-color="#1c1535"/>
+        <stop offset="8%" stop-color="#181a30"/>
+        <stop offset="18%" stop-color="#14202c"/>
+        <stop offset="35%" stop-color="#112520"/>
+        <stop offset="55%" stop-color="#0e2018"/>
+        <stop offset="75%" stop-color="#0c1c14"/>
+        <stop offset="100%" stop-color="#091810"/>
+      </linearGradient>
+      <!-- Snow gradient -->
       <linearGradient id="snowGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-        <stop offset="0%" stop-color="rgba(200,215,235,0.15)"/>
+        <stop offset="0%" stop-color="rgba(215,230,248,0.22)"/>
+        <stop offset="50%" stop-color="rgba(200,218,240,0.10)"/>
         <stop offset="100%" stop-color="rgba(200,215,235,0)"/>
       </linearGradient>
-      <linearGradient id="shadowGrad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="rgba(0,0,0,0.15)"/>
-        <stop offset="50%" stop-color="rgba(0,0,0,0)"/>
-        <stop offset="100%" stop-color="rgba(0,0,0,0.1)"/>
+      <!-- Left face shadow -->
+      <linearGradient id="leftShadow" x1="0" y1="0" x2="1" y2="0.3">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.18)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+      </linearGradient>
+      <!-- Right highlight -->
+      <linearGradient id="rightLight" x1="1" y1="0" x2="0" y2="0.3">
+        <stop offset="0%" stop-color="rgba(160,180,220,0.03)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+      </linearGradient>
+      <!-- Tree gradient -->
+      <linearGradient id="treeGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+        <stop offset="0%" stop-color="#0c1e10"/>
+        <stop offset="100%" stop-color="#071408"/>
+      </linearGradient>
+      <!-- Moonlight shimmer for ridgelines -->
+      <linearGradient id="ridgeShimmer" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(200,215,240,0.06)"/>
+        <stop offset="100%" stop-color="rgba(200,215,240,0)"/>
       </linearGradient>
       <filter id="mtGlow">
         <feGaussianBlur stdDeviation="2" result="blur"/>
         <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
+      <filter id="softGlow">
+        <feGaussianBlur stdDeviation="4" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
     </defs>
-    <!-- Mountain shadow/depth -->
-    <polygon points="400,30 100,700 700,700" fill="url(#mtGrad)"/>
-    <!-- Shading overlay -->
-    <polygon points="400,30 100,700 400,700" fill="rgba(0,0,0,0.08)"/>
-    <!-- Snow cap -->
-    <polygon points="400,30 350,110 450,110" fill="url(#snowGrad)"/>
-    <polygon points="400,30 370,80 430,80" fill="rgba(220,230,245,0.08)"/>
-    <!-- Ridgelines -->
-    <line x1="400" y1="30" x2="250" y2="400" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
-    <line x1="400" y1="30" x2="550" y2="400" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
-    <line x1="400" y1="30" x2="180" y2="600" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
-    <line x1="400" y1="30" x2="620" y2="600" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
-    <line x1="400" y1="30" x2="300" y2="700" stroke="rgba(255,255,255,0.01)" stroke-width="1"/>
-    <line x1="400" y1="30" x2="500" y2="700" stroke="rgba(255,255,255,0.01)" stroke-width="1"/>
-    <!-- Tree line suggestion -->
-    <line x1="220" y1="480" x2="580" y2="480" stroke="rgba(30,60,30,0.15)" stroke-width="2" stroke-dasharray="2 8"/>
+
+    <!-- Main mountain body — wide, natural shape with irregular edges -->
+    <path d="M700,35 L695,48 688,62 678,82 665,105 650,130 638,152 622,178 608,200
+             590,228 575,252 558,278 540,305 525,328 505,358 488,382 468,410
+             450,435 430,462 408,490 385,518 360,545 332,572 305,595 275,620
+             248,642 218,665 188,685 155,705 120,725 85,745 50,765 20,780 0,800
+             1400,800 1380,780 1350,765 1315,745 1280,725 1248,705 1215,685
+             1185,665 1158,642 1130,620 1102,595 1078,572 1052,545 1028,518
+             1005,490 985,462 965,435 948,410 930,382 912,358 895,328 878,305
+             862,278 845,252 830,228 815,200 800,178 788,152 775,130 762,105
+             750,82 740,62 732,48 725,40 715,35 708,34 Z"
+         fill="url(#mtGrad)"/>
+
+    <!-- Left face shadow overlay -->
+    <path d="M700,35 L695,48 688,62 678,82 665,105 650,130 638,152 622,178 608,200
+             590,228 575,252 558,278 540,305 525,328 505,358 488,382 468,410
+             450,435 430,462 408,490 385,518 360,545 332,572 305,595 275,620
+             248,642 218,665 188,685 155,705 120,725 85,745 50,765 20,780 0,800
+             700,800 Z"
+         fill="url(#leftShadow)"/>
+
+    <!-- Right face subtle moonlight -->
+    <path d="M700,35 L725,40 732,48 740,62 750,82 762,105 775,130 788,152 800,178
+             815,200 830,228 845,252 862,278 878,305 895,328 912,358 930,382
+             948,410 965,435 985,462 1005,490 1028,518 1052,545 1078,572
+             1102,595 1130,620 1158,642 1185,665 1215,685 1248,705 1280,725
+             1315,745 1350,765 1380,780 1400,800 700,800 Z"
+         fill="url(#rightLight)"/>
+
+    <!-- Snow cap — irregular, realistic -->
+    <path d="M700,35 L695,48 688,62 678,82 665,105 650,130 645,138
+             655,140 668,135 680,142 692,136 700,140 712,136 724,142
+             735,135 748,140 758,132 762,105 750,82 740,62 732,48 725,40 715,35 708,34 Z"
+         fill="url(#snowGrad)"/>
+    <!-- Inner snow peak -->
+    <path d="M700,35 L695,48 690,58 694,60 700,55 706,60 712,56 715,48 710,38 705,35 Z"
+         fill="rgba(230,240,255,0.12)"/>
+    <!-- Snow patches on right face -->
+    <path d="M745,100 L755,115 760,128 752,130 748,122 740,118 738,108 Z"
+         fill="rgba(215,230,248,0.06)"/>
+    <path d="M770,150 L782,170 785,180 778,178 772,168 765,158 Z"
+         fill="rgba(215,230,248,0.04)"/>
+
+    <!-- Primary ridgelines — moonlit edges -->
+    <line x1="700" y1="35" x2="468" y2="410" stroke="rgba(200,215,240,0.025)" stroke-width="1"/>
+    <line x1="700" y1="35" x2="930" y2="382" stroke="rgba(200,215,240,0.03)" stroke-width="1"/>
+    <line x1="700" y1="35" x2="305" y2="595" stroke="rgba(200,215,240,0.018)" stroke-width="0.8"/>
+    <line x1="700" y1="35" x2="1102" y2="595" stroke="rgba(200,215,240,0.02)" stroke-width="0.8"/>
+    <line x1="700" y1="35" x2="188" y2="685" stroke="rgba(200,215,240,0.012)" stroke-width="0.5"/>
+    <line x1="700" y1="35" x2="1215" y2="685" stroke="rgba(200,215,240,0.015)" stroke-width="0.5"/>
+
+    <!-- Secondary ridges — rock face texture -->
+    <line x1="665" y1="105" x2="488" y2="382" stroke="rgba(200,215,240,0.015)" stroke-width="0.5"/>
+    <line x1="762" y1="105" x2="948" y2="410" stroke="rgba(200,215,240,0.018)" stroke-width="0.5"/>
+    <line x1="638" y1="152" x2="408" y2="490" stroke="rgba(200,215,240,0.01)" stroke-width="0.5"/>
+    <line x1="788" y1="152" x2="1005" y2="490" stroke="rgba(200,215,240,0.012)" stroke-width="0.5"/>
+
+    <!-- Gullies/crevices — dark accent lines -->
+    <line x1="680" y1="82" x2="520" y2="340" stroke="rgba(0,0,0,0.06)" stroke-width="0.8"/>
+    <line x1="720" y1="82" x2="880" y2="340" stroke="rgba(0,0,0,0.04)" stroke-width="0.8"/>
+    <line x1="660" y1="130" x2="430" y2="462" stroke="rgba(0,0,0,0.04)" stroke-width="0.5"/>
+    <line x1="765" y1="130" x2="980" y2="460" stroke="rgba(0,0,0,0.03)" stroke-width="0.5"/>
+
+    <!-- Left shoulder spur -->
+    <path d="M558,278 L540,305 518,338 495,370 470,405 445,435 418,468 390,500
+             360,530 335,558 310,580 288,600 265,625 245,645 228,660
+             360,720 420,680 470,640 515,595 555,548 580,505 595,465
+             598,430 590,395 578,360 568,330 560,305 Z"
+         fill="rgba(10,18,12,0.25)"/>
+
+    <!-- Right shoulder spur -->
+    <path d="M862,278 L878,305 898,338 920,370 942,405 965,435 988,468 1012,500
+             1038,530 1065,558 1090,580 1115,600 1140,625 1162,645 1178,660
+             1050,720 990,680 940,640 895,595 860,548 838,505 825,465
+             822,430 828,395 838,360 848,330 855,305 Z"
+         fill="rgba(8,14,10,0.2)"/>
+
+    <!-- Tree line zone — suggestion of forest -->
+    <line x1="330" y1="565" x2="1075" y2="565" stroke="rgba(20,50,25,0.1)" stroke-width="1.5" stroke-dasharray="2 5"/>
+
+    <!-- Individual tree silhouettes at treeline -->
+    <!-- Left side trees -->
+    <polygon points="280,630 284,600 288,630" fill="rgba(12,30,14,0.2)"/>
+    <polygon points="295,625 300,590 305,625" fill="rgba(12,30,14,0.22)"/>
+    <polygon points="315,618 320,582 325,618" fill="rgba(12,30,14,0.25)"/>
+    <polygon points="338,610 344,570 350,610" fill="rgba(12,30,14,0.25)"/>
+    <polygon points="365,600 372,558 379,600" fill="rgba(12,30,14,0.22)"/>
+    <polygon points="392,592 398,548 404,592" fill="rgba(12,30,14,0.2)"/>
+    <polygon points="418,585 425,540 432,585" fill="rgba(12,30,14,0.18)"/>
+    <!-- Right side trees -->
+    <polygon points="980,592 986,548 992,592" fill="rgba(12,30,14,0.2)"/>
+    <polygon points="1005,600 1012,558 1019,600" fill="rgba(12,30,14,0.22)"/>
+    <polygon points="1035,610 1042,570 1049,610" fill="rgba(12,30,14,0.25)"/>
+    <polygon points="1062,618 1068,582 1074,618" fill="rgba(12,30,14,0.25)"/>
+    <polygon points="1088,625 1094,590 1100,625" fill="rgba(12,30,14,0.22)"/>
+    <polygon points="1112,630 1118,600 1124,630" fill="rgba(12,30,14,0.2)"/>
+
+    <!-- Atmospheric glow at summit region -->
+    <circle cx="700" cy="60" r="80" fill="rgba(180,160,220,0.015)" filter="url(#softGlow)"/>
   </svg>
 
-  <!-- Trail lines SVG -->
-  <svg class="trail-line" id="trailLines" viewBox="0 0 800 700" preserveAspectRatio="xMidYMax meet"
-       style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:130%;max-width:850px;height:88%">
+  <!-- Trail lines SVG — positioned to match main mountain -->
+  <svg class="trail-line" id="trailLines" viewBox="0 0 100 100" preserveAspectRatio="none"
+       style="position:absolute;inset:0;width:100%;height:100%">
   </svg>
 
   <div id="stationsContainer"></div>
   <div class="elk idle" id="elk">🦌</div>
 
+  <!-- Foreground forest silhouette — bottom of scene -->
+  <svg style="position:absolute;bottom:0;left:0;width:100%;height:15%;pointer-events:none;z-index:5;opacity:0.4" viewBox="0 0 1600 100" preserveAspectRatio="none">
+    <polygon points="0,100 0,70 15,55 25,68 35,48 45,65 60,40 72,60 85,35 95,55 110,42 120,58 135,30 148,52 160,38 175,55 188,28 200,50 215,35 228,58 240,42 255,60 268,45 280,62 295,38 310,55 322,42 338,60 350,35 365,55 378,40 392,58 405,32 420,52 432,45 448,62 460,38 475,55 488,42 502,60 515,35 530,52 542,42 558,58 570,35 585,55 598,40 612,58 625,32 640,52 652,45 668,62 680,38 695,55 708,42 722,60 735,35 750,52 762,42 778,58 790,35 805,55 818,40 832,58 845,32 860,52 872,45 888,62 900,38 915,55 928,42 942,60 955,35 970,52 982,42 998,58 1010,35 1025,55 1038,40 1052,58 1065,32 1080,52 1092,45 1108,62 1120,38 1135,55 1148,42 1162,60 1175,35 1190,52 1202,42 1218,58 1230,35 1245,55 1258,40 1272,58 1285,32 1300,52 1312,45 1328,62 1340,38 1355,55 1368,42 1382,60 1395,35 1410,52 1422,42 1438,58 1450,35 1465,55 1478,40 1492,58 1505,45 1520,60 1535,48 1550,65 1565,55 1580,68 1600,70 1600,100" fill="#040a06"/>
+  </svg>
+
   <div class="fog" id="fogContainer">
-    <div class="fog-layer" style="--speed:35s;--opacity:0.8;height:90px"></div>
-    <div class="fog-layer" style="--speed:48s;--opacity:0.6;height:70px;bottom:6%"></div>
-    <div class="fog-layer" style="--speed:62s;--opacity:0.4;height:55px;bottom:13%"></div>
-    <div class="fog-layer" style="--speed:75s;--opacity:0.2;height:40px;bottom:20%"></div>
+    <div class="fog-layer" style="--speed:35s;--opacity:0.7;height:80px"></div>
+    <div class="fog-layer" style="--speed:48s;--opacity:0.5;height:60px;bottom:5%"></div>
+    <div class="fog-layer" style="--speed:62s;--opacity:0.3;height:45px;bottom:12%"></div>
+    <div class="fog-layer" style="--speed:75s;--opacity:0.15;height:30px;bottom:20%"></div>
   </div>
 
   <div class="wind-particles" id="windParticles"></div>
@@ -789,128 +924,129 @@ body{display:flex;flex-direction:column;position:relative}
 
 <script>
 // ═══════════════════════════════════════════════
-// MASSIVE QUESTION DATABASE — 100+ questions
-// Answers distributed across all positions (0-3)
-// Covers: Zapffe, Camus, Kierkegaard, Nietzsche,
-// Sartre, Heidegger, Schopenhauer, Cioran, Beauvoir,
-// Dostoevsky, $ELK philosophy, and more
+// QUESTION DATABASE — Challenging questions
+// focused on the most well-known existential
+// philosophers. All options are similar length.
+// Covers: Nietzsche, Camus, Kierkegaard, Sartre,
+// Heidegger, Schopenhauer, Zapffe, Dostoevsky,
+// Beauvoir, Cioran
 // ═══════════════════════════════════════════════
 const QUESTIONS = {
   1: [
-    { q: "What does 'existentialism' broadly deal with?", opts: ["Economic systems and class struggle", "The classification of living organisms", "Mathematical logic and proofs", "The meaning of individual existence and freedom"], ans: 3, tag: "Existentialism" },
-    { q: "Peter Wessel Zapffe was from which country?", opts: ["Norway", "Denmark", "Sweden", "Germany"], ans: 0, tag: "Zapffe" },
-    { q: "What animal symbolizes the burden of consciousness in $ELK?", opts: ["The bear", "The wolf", "The elk", "The raven"], ans: 2, tag: "$ELK" },
-    { q: "Albert Camus wrote about the absurdity of life. He was from:", opts: ["Spain", "Italy", "Algeria/France", "Greece"], ans: 2, tag: "Camus" },
-    { q: "Søren Kierkegaard is often called the father of:", opts: ["Capitalism", "Existentialism", "Communism", "Rationalism"], ans: 1, tag: "Kierkegaard" },
-    { q: "Friedrich Nietzsche famously declared that:", opts: ["Mathematics is the queen of sciences", "God is dead", "The Earth is flat", "Money is the root of evil"], ans: 1, tag: "Nietzsche" },
-    { q: "In philosophy, 'the absurd' generally refers to:", opts: ["A type of comedy", "Quantum physics", "The conflict between humans seeking meaning and a meaningless universe", "Political corruption"], ans: 2, tag: "Camus" },
-    { q: "Which of these is an existentialist novel by Albert Camus?", opts: ["The Stranger", "1984", "Pride and Prejudice", "Moby Dick"], ans: 0, tag: "Camus" },
-    { q: "The elk's antlers in $ELK philosophy represent:", opts: ["Seasonal change", "Physical dominance", "The weight of awareness carried through life", "Financial success"], ans: 2, tag: "$ELK" },
-    { q: "Existential philosophy became most prominent in which century?", opts: ["16th century", "17th century", "18th century", "20th century"], ans: 3, tag: "Existentialism" },
+    { q: "Which philosopher wrote 'The Myth of Sisyphus'?", opts: ["Friedrich Nietzsche", "Albert Camus", "Jean-Paul Sartre", "Martin Heidegger"], ans: 1, tag: "Camus" },
+    { q: "Nietzsche proclaimed 'God is dead' in which work?", opts: ["Thus Spoke Zarathustra", "Beyond Good and Evil", "The Gay Science", "Twilight of the Idols"], ans: 2, tag: "Nietzsche" },
+    { q: "Kierkegaard is often called the father of:", opts: ["German idealism", "Logical positivism", "Existentialism", "Phenomenology"], ans: 2, tag: "Kierkegaard" },
+    { q: "Which philosopher wrote 'Being and Nothingness'?", opts: ["Martin Heidegger", "Simone de Beauvoir", "Albert Camus", "Jean-Paul Sartre"], ans: 3, tag: "Sartre" },
+    { q: "Heidegger's major work 'Being and Time' was published in:", opts: ["1907", "1917", "1927", "1937"], ans: 2, tag: "Heidegger" },
+    { q: "Zapffe's most famous essay is titled:", opts: ["The Myth of Sisyphus", "The Last Messiah", "The Sickness Unto Death", "The Birth of Tragedy"], ans: 1, tag: "Zapffe" },
+    { q: "Schopenhauer's main work is called:", opts: ["Critique of Pure Reason", "The World as Will", "Phenomenology of Spirit", "Fear and Trembling"], ans: 1, tag: "Schopenhauer" },
+    { q: "Which of these philosophers was Danish?", opts: ["Friedrich Nietzsche", "Arthur Schopenhauer", "Soren Kierkegaard", "Martin Heidegger"], ans: 2, tag: "Kierkegaard" },
+    { q: "Camus won the Nobel Prize in:", opts: ["Literature", "Peace", "Philosophy", "Economics"], ans: 0, tag: "Camus" },
+    { q: "Dostoevsky was a novelist from:", opts: ["France", "Germany", "Russia", "Denmark"], ans: 2, tag: "Dostoevsky" },
   ],
   2: [
-    { q: "In Zapffe's view, what makes humans unique among animals?", opts: ["Opposable thumbs", "Social hierarchies", "An over-developed consciousness", "The ability to use fire"], ans: 2, tag: "Zapffe" },
-    { q: "Camus's 'The Myth of Sisyphus' opens with what famous claim?", opts: ["Life is beautiful", "There is but one truly serious philosophical problem: suicide", "God does not play dice", "Knowledge is power"], ans: 1, tag: "Camus" },
-    { q: "Kierkegaard wrote under many pseudonyms. Why?", opts: ["To avoid taxes", "To present multiple philosophical perspectives simultaneously", "He forgot his own name", "It was legally required"], ans: 1, tag: "Kierkegaard" },
-    { q: "Nietzsche's concept of the 'Übermensch' refers to:", opts: ["A comic book hero", "Someone who creates their own values beyond conventional morality", "A type of German bread", "A political dictator"], ans: 1, tag: "Nietzsche" },
-    { q: "Jean-Paul Sartre declared that 'existence precedes essence.' This means:", opts: ["You are born with a fixed nature", "We first exist, then define ourselves through choices", "Essence oils are important", "Science comes before philosophy"], ans: 1, tag: "Sartre" },
-    { q: "Which century was Zapffe born in?", opts: ["17th century", "18th century", "19th century", "20th century"], ans: 2, tag: "Zapffe" },
-    { q: "Simone de Beauvoir's famous work 'The Second Sex' explores:", opts: ["Mathematics", "Astronomy", "The existential condition of women in society", "Marine biology"], ans: 2, tag: "Beauvoir" },
-    { q: "In $ELK philosophy, 'carrying the antlers' means:", opts: ["Making a profit", "Growing a social media following", "Mining cryptocurrency", "Sharing the burden of existential awareness together"], ans: 3, tag: "$ELK" },
-    { q: "Arthur Schopenhauer believed the fundamental driving force of reality is:", opts: ["Love", "Reason", "Will (blind striving)", "Mathematics"], ans: 2, tag: "Schopenhauer" },
-    { q: "Dostoevsky explored existential themes primarily through:", opts: ["Scientific papers", "Novels and fiction", "Mathematical proofs", "Political speeches"], ans: 1, tag: "Dostoevsky" },
+    { q: "What did Sartre mean by 'existence precedes essence'?", opts: ["Nature defines us first", "We define ourselves by choices", "Essence is an illusion", "God creates our purpose"], ans: 1, tag: "Sartre" },
+    { q: "In Camus, what is 'the absurd'?", opts: ["A type of humor", "Conflict of meaning and silence", "Religious skepticism", "Political rebellion"], ans: 1, tag: "Camus" },
+    { q: "Nietzsche's 'Ubermensch' is best translated as:", opts: ["Super soldier", "Overman", "Perfect being", "Holy spirit"], ans: 1, tag: "Nietzsche" },
+    { q: "Heidegger's term 'Dasein' roughly means:", opts: ["Pure reason", "Being-there", "World-spirit", "Inner peace"], ans: 1, tag: "Heidegger" },
+    { q: "Kierkegaard wrote under pseudonyms mainly to:", opts: ["Avoid censorship laws", "Present multiple viewpoints", "Hide from creditors", "Impress his publisher"], ans: 1, tag: "Kierkegaard" },
+    { q: "Schopenhauer believed the core of reality is:", opts: ["Pure reason", "Blind will", "Divine love", "Eternal form"], ans: 1, tag: "Schopenhauer" },
+    { q: "Zapffe argued humans suffer because of:", opts: ["Economic inequality", "Overconsciousness", "Original sin", "Social isolation"], ans: 1, tag: "Zapffe" },
+    { q: "Beauvoir's 'The Second Sex' primarily examines:", opts: ["Marxist theory", "Women's situation", "French history", "Literary criticism"], ans: 1, tag: "Beauvoir" },
+    { q: "Dostoevsky's 'Underground Man' is defined by:", opts: ["Quiet contentment", "Bitter self-awareness", "Religious devotion", "Political ambition"], ans: 1, tag: "Dostoevsky" },
+    { q: "Cioran was a philosophical pessimist from:", opts: ["Bulgaria", "Romania", "Hungary", "Slovakia"], ans: 1, tag: "Cioran" },
   ],
   3: [
-    { q: "Zapffe believed that human suffering arises primarily from:", opts: ["Physical illness", "Knowing more than we can bear", "Lack of education", "Poverty alone"], ans: 1, tag: "Zapffe" },
-    { q: "Camus concluded we should imagine Sisyphus as:", opts: ["Angry", "Sad", "Happy", "Indifferent"], ans: 2, tag: "Camus" },
-    { q: "Kierkegaard's 'leap of faith' suggests that:", opts: ["Physical jumping builds character", "Some truths require commitment beyond rational proof", "Faith is irrational and should be abandoned", "Leaping is good exercise"], ans: 1, tag: "Kierkegaard" },
-    { q: "What did Nietzsche mean by 'eternal recurrence'?", opts: ["History textbooks should be read repeatedly", "The idea that you would live your exact life infinite times", "Seasons repeat every year", "Reincarnation in Eastern philosophy"], ans: 1, tag: "Nietzsche" },
-    { q: "Zapffe's work is often categorized under:", opts: ["Rationalism", "Utilitarianism", "Pragmatism", "Pessimistic existentialism"], ans: 3, tag: "Zapffe" },
-    { q: "Sartre said 'Hell is other people' in which play?", opts: ["The Flies", "No Exit", "Dirty Hands", "The Respectful Prostitute"], ans: 1, tag: "Sartre" },
-    { q: "Heidegger's concept of 'Dasein' roughly translates to:", opts: ["Happiness", "Being-there (human existence)", "The universe", "A type of meditation"], ans: 1, tag: "Heidegger" },
-    { q: "Emil Cioran, the Romanian pessimist, wrote:", opts: ["The Communist Manifesto", "The Trouble with Being Born", "Harry Potter", "The Wealth of Nations"], ans: 1, tag: "Cioran" },
-    { q: "Zapffe's most famous essay is called:", opts: ["Being and Nothingness", "Fear and Trembling", "The Myth of Sisyphus", "The Last Messiah"], ans: 3, tag: "Zapffe" },
-    { q: "Dostoevsky's 'Notes from Underground' features a narrator who is:", opts: ["A wealthy aristocrat", "A happy farmer", "A bitter, hyper-conscious intellectual", "A successful merchant"], ans: 2, tag: "Dostoevsky" },
+    { q: "Camus said we must imagine Sisyphus as:", opts: ["Defiant", "Happy", "Angry", "Broken"], ans: 1, tag: "Camus" },
+    { q: "Nietzsche's 'eternal recurrence' asks you to:", opts: ["Study ancient history", "Relive your life infinitely", "Reject all tradition", "Worship natural cycles"], ans: 1, tag: "Nietzsche" },
+    { q: "Kierkegaard's 'leap of faith' involves:", opts: ["Rational calculation", "Commitment beyond proof", "Rejecting all belief", "Scientific experiment"], ans: 1, tag: "Kierkegaard" },
+    { q: "Sartre's play 'No Exit' contains the line:", opts: ["'Freedom is nothing'", "'Hell is other people'", "'God is absent'", "'Life has no exit'"], ans: 1, tag: "Sartre" },
+    { q: "Heidegger called everyday conformity:", opts: ["Bad faith", "Das Man", "Ressentiment", "The absurd"], ans: 1, tag: "Heidegger" },
+    { q: "Zapffe listed how many defense mechanisms?", opts: ["Two", "Three", "Four", "Five"], ans: 2, tag: "Zapffe" },
+    { q: "Which novel features the Grand Inquisitor?", opts: ["Crime and Punishment", "The Brothers Karamazov", "The Idiot", "Notes from Underground"], ans: 1, tag: "Dostoevsky" },
+    { q: "Schopenhauer considered which art form supreme?", opts: ["Painting", "Music", "Poetry", "Sculpture"], ans: 1, tag: "Schopenhauer" },
+    { q: "Beauvoir said 'One is not born, but becomes a:'", opts: ["Philosopher", "Woman", "Citizen", "Rebel"], ans: 1, tag: "Beauvoir" },
+    { q: "Cioran's 'The Trouble with Being Born' is about:", opts: ["Childhood trauma", "The curse of existence", "Medical ethics", "Population growth"], ans: 1, tag: "Cioran" },
   ],
   4: [
-    { q: "Which of these is NOT one of Zapffe's four defense mechanisms?", opts: ["Isolation", "Transcendence", "Anchoring", "Sublimation"], ans: 1, tag: "Zapffe" },
-    { q: "Camus distinguished between the absurd and:", opts: ["The rational and the irrational", "Philosophical suicide (accepting false meaning) versus living with absurdity", "Comedy and tragedy", "Art and science"], ans: 1, tag: "Camus" },
-    { q: "Kierkegaard's 'three stages of existence' are:", opts: ["Birth, life, death", "Past, present, future", "Aesthetic, ethical, religious", "Id, ego, superego"], ans: 2, tag: "Kierkegaard" },
-    { q: "Zapffe's 'Anchoring' refers to:", opts: ["Dropping anchor on a ship", "A psychological test", "Refusing to move from one place", "Fixing one's life to stable values, goals, or beliefs to avoid despair"], ans: 3, tag: "Zapffe" },
-    { q: "Nietzsche's concept of 'amor fati' means:", opts: ["Love of fate — embracing everything that happens", "Fear of death", "Love of money", "Fate of love"], ans: 0, tag: "Nietzsche" },
-    { q: "Heidegger argued that 'Being-toward-death' means:", opts: ["We should fear death constantly", "Thinking about death is morbid", "Awareness of mortality is fundamental to authentic existence", "Death is an illusion"], ans: 2, tag: "Heidegger" },
-    { q: "What role does community play in the $ELK philosophy?", opts: ["It is irrelevant", "Only leaders matter", "We carry the burden together — shared consciousness lightens the weight", "Community should be avoided"], ans: 2, tag: "$ELK" },
-    { q: "Schopenhauer influenced Zapffe's pessimism. Schopenhauer argued that:", opts: ["Life is fundamentally good", "Suffering is the basic condition of existence", "Money solves all problems", "Philosophy is useless"], ans: 1, tag: "Schopenhauer" },
-    { q: "'The Last Messiah' by Zapffe was published in which decade?", opts: ["1913", "1933", "1953", "1973"], ans: 1, tag: "Zapffe" },
-    { q: "Sartre's concept of 'bad faith' describes:", opts: ["Cheating on a test", "Self-deception about one's freedom — pretending you have no choice", "Religious hypocrisy", "Financial fraud"], ans: 1, tag: "Sartre" },
+    { q: "Which is NOT one of Zapffe's four defense mechanisms?", opts: ["Isolation", "Sublimation", "Transcendence", "Distraction"], ans: 2, tag: "Zapffe" },
+    { q: "Nietzsche's 'amor fati' translates to:", opts: ["Love of wisdom", "Love of fate", "Love of power", "Love of truth"], ans: 1, tag: "Nietzsche" },
+    { q: "Kierkegaard's three stages of existence are:", opts: ["Faith, hope, charity", "Thesis, antithesis, synthesis", "Aesthetic, ethical, religious", "Sensory, rational, spiritual"], ans: 2, tag: "Kierkegaard" },
+    { q: "Sartre's 'bad faith' refers to:", opts: ["Religious hypocrisy", "Self-deception about freedom", "Breaking a promise", "Political corruption"], ans: 1, tag: "Sartre" },
+    { q: "Heidegger's 'Being-toward-death' argues mortality is:", opts: ["A medical problem", "Key to authentic life", "Best left unexamined", "A cultural construct"], ans: 1, tag: "Heidegger" },
+    { q: "Camus distinguished himself from existentialists as:", opts: ["A rationalist", "An absurdist", "A nihilist", "A pragmatist"], ans: 1, tag: "Camus" },
+    { q: "In Zapffe's framework, religion is an example of:", opts: ["Sublimation", "Anchoring", "Distraction", "Isolation"], ans: 1, tag: "Zapffe" },
+    { q: "Schopenhauer's ethics are grounded in:", opts: ["Duty and law", "Compassion", "Self-interest", "Social contract"], ans: 1, tag: "Schopenhauer" },
+    { q: "Dostoevsky's Raskolnikov murders to test his:", opts: ["Courage in combat", "Theory of great men", "Religious devotion", "Criminal technique"], ans: 1, tag: "Dostoevsky" },
+    { q: "Beauvoir's existentialist ethics emphasize:", opts: ["Absolute moral rules", "Freedom and ambiguity", "National identity", "Economic equality"], ans: 1, tag: "Beauvoir" },
   ],
   5: [
-    { q: "Zapffe's 'Distraction' mechanism involves:", opts: ["Focusing intensely on tasks or entertainment to avoid existential dread", "Becoming physically lost", "A magic trick", "Sleeping longer hours"], ans: 0, tag: "Zapffe" },
-    { q: "Camus argued we should respond to the absurd by:", opts: ["Giving up entirely", "Finding a religion", "Living fully with passionate revolt, freedom, and awareness", "Ignoring it completely"], ans: 2, tag: "Camus" },
-    { q: "According to Zapffe, consciousness is humanity's:", opts: ["Path to guaranteed happiness", "Least important trait", "Greatest gift without downsides", "Tragic biological overdevelopment"], ans: 3, tag: "Zapffe" },
-    { q: "Kierkegaard's concept of 'anxiety' (Angst) is:", opts: ["Just a medical condition", "Dizziness of freedom — awareness of infinite choice and responsibility", "Fear of spiders", "Worry about money"], ans: 1, tag: "Kierkegaard" },
-    { q: "What connects Zapffe's philosophy to the elk as a symbol?", opts: ["Both carry magnificent but heavy burdens — antlers and consciousness", "Elks live in Norway", "There is no connection", "Zapffe owned pet elk"], ans: 0, tag: "$ELK" },
-    { q: "Nietzsche's 'will to power' is best understood as:", opts: ["Political domination", "Physical strength", "A fundamental drive to grow, overcome, and create", "Electrical power"], ans: 2, tag: "Nietzsche" },
-    { q: "Beauvoir argued that women's oppression is existential because:", opts: ["Women are biologically weaker", "Society constructs women as 'the Other,' denying their freedom", "Women don't want freedom", "It's a natural order"], ans: 1, tag: "Beauvoir" },
-    { q: "Zapffe argued that most human activity is ultimately a form of:", opts: ["Progress", "Divine purpose", "Pure rationality", "Coping with the terror of existence"], ans: 3, tag: "Zapffe" },
-    { q: "Cioran wrote: 'It is not worth the bother of killing yourself, since you always kill yourself too late.' This reflects:", opts: ["A joke about punctuality", "Deep pessimism about the impossibility of escaping consciousness", "Advice on time management", "A murder mystery plot"], ans: 1, tag: "Cioran" },
-    { q: "Heidegger's concept of 'thrownness' (Geworfenheit) means:", opts: ["A sport technique", "We are thrown into existence without choosing it", "Discarding old things", "A type of pottery"], ans: 1, tag: "Heidegger" },
+    { q: "Nietzsche's 'master morality' values:", opts: ["Humility and pity", "Strength and nobility", "Obedience and faith", "Equality and justice"], ans: 1, tag: "Nietzsche" },
+    { q: "Kierkegaard's 'Angst' is best described as:", opts: ["Fear of death", "Dizziness of freedom", "Social anxiety", "Religious doubt"], ans: 1, tag: "Kierkegaard" },
+    { q: "Camus's 'The Rebel' argues revolt must include:", opts: ["Total destruction", "Human solidarity", "Political parties", "Armed resistance"], ans: 1, tag: "Camus" },
+    { q: "Heidegger's 'thrownness' means we are:", opts: ["Rejected by society", "Cast into existence unchosen", "Thrown by circumstances", "Discarded by history"], ans: 1, tag: "Heidegger" },
+    { q: "Zapffe's 'Sublimation' transforms suffering into:", opts: ["Political action", "Creative expression", "Physical endurance", "Religious worship"], ans: 1, tag: "Zapffe" },
+    { q: "Sartre argued we are 'condemned' to be:", opts: ["Mortal", "Free", "Alone", "Guilty"], ans: 1, tag: "Sartre" },
+    { q: "Schopenhauer saw the world as driven by:", opts: ["Divine providence", "Blind irrational striving", "Historical progress", "Rational development"], ans: 1, tag: "Schopenhauer" },
+    { q: "Dostoevsky's Underground Man rejects:", opts: ["Religious belief", "Rational self-interest", "Political authority", "Artistic expression"], ans: 1, tag: "Dostoevsky" },
+    { q: "Beauvoir argued freedom is meaningless without:", opts: ["Financial security", "Struggle for others' freedom", "Personal happiness", "Political power"], ans: 1, tag: "Beauvoir" },
+    { q: "Cioran wrote that consciousness is a:", opts: ["Divine gift", "Evolutionary error", "Neutral faculty", "Moral compass"], ans: 1, tag: "Cioran" },
   ],
   6: [
-    { q: "What did Zapffe mean by 'Isolation' as a defense mechanism?", opts: ["Living alone in the wilderness", "Mentally compartmentalizing disturbing thoughts from daily life", "National borders", "Internet privacy"], ans: 1, tag: "Zapffe" },
-    { q: "In Zapffe's framework, religion would most likely be an example of:", opts: ["Sublimation", "Anchoring", "Distraction", "Isolation"], ans: 1, tag: "Zapffe" },
-    { q: "Camus rejected the label 'existentialist.' He preferred:", opts: ["Nihilist", "Absurdist", "Rationalist", "Optimist"], ans: 1, tag: "Camus" },
-    { q: "Dostoevsky's Grand Inquisitor parable argues that humans:", opts: ["Love freedom above all", "Will trade freedom for security, comfort, and certainty", "Are naturally good", "Don't need leadership"], ans: 1, tag: "Dostoevsky" },
-    { q: "How does Zapffe's pessimism differ from simple nihilism?", opts: ["They are identical", "Zapffe was actually an optimist", "Nihilism is more extreme", "Zapffe acknowledges meaning-making as a coping mechanism, not as nonexistent"], ans: 3, tag: "Zapffe" },
-    { q: "Nietzsche's 'master morality' vs 'slave morality' distinguishes between:", opts: ["Rich and poor people literally", "Values born from strength/creation versus values born from resentment", "Educational systems", "Different religions only"], ans: 1, tag: "Nietzsche" },
-    { q: "Sartre's concept of 'radical freedom' means:", opts: ["Political anarchy", "We are always free to choose, even in constrained situations", "Freedom requires wealth", "Only some people are truly free"], ans: 1, tag: "Sartre" },
-    { q: "The $ELK mountain metaphor suggests that:", opts: ["Life is about reaching the top at any cost", "Only the strongest survive", "The climb itself — shared struggle and meaning-making — is what matters", "Mountains should be avoided"], ans: 2, tag: "$ELK" },
-    { q: "Schopenhauer's view of art was that it:", opts: ["Is a waste of time", "Provides temporary escape from the suffering of the Will", "Is only for the wealthy", "Has no philosophical significance"], ans: 1, tag: "Schopenhauer" },
-    { q: "Kierkegaard's 'knight of faith' is someone who:", opts: ["Fights in crusades", "Makes the leap of faith while fully embracing the absurd", "Never questions anything", "Rejects all emotion"], ans: 1, tag: "Kierkegaard" },
+    { q: "Nietzsche's 'genealogy of morals' traces values to:", opts: ["Divine revelation", "Historical power dynamics", "Pure rational thought", "Natural human instinct"], ans: 1, tag: "Nietzsche" },
+    { q: "Heidegger's 'enframing' (Gestell) critiques:", opts: ["Modern art movements", "Technology's worldview", "Educational systems", "Democratic politics"], ans: 1, tag: "Heidegger" },
+    { q: "Camus rejected 'philosophical suicide' which means:", opts: ["Taking one's own life", "Accepting false transcendence", "Abandoning philosophy", "Killing intellectual rivals"], ans: 1, tag: "Camus" },
+    { q: "Kierkegaard's 'knight of faith' paradoxically:", opts: ["Rejects all worldly life", "Lives normally while embracing absurdity", "Fights for religious causes", "Retreats into monastery"], ans: 1, tag: "Kierkegaard" },
+    { q: "Sartre said consciousness is always consciousness:", opts: ["Of itself alone", "Of something (intentional)", "Of God's presence", "Of moral duty"], ans: 1, tag: "Sartre" },
+    { q: "Zapffe's 'Isolation' mechanism works by:", opts: ["Living physically alone", "Compartmentalizing dark thoughts", "Rejecting all community", "Building physical walls"], ans: 1, tag: "Zapffe" },
+    { q: "Schopenhauer argued art provides temporary:", opts: ["Financial reward", "Release from the will", "Social prestige", "Moral instruction"], ans: 1, tag: "Schopenhauer" },
+    { q: "In Dostoevsky, Ivan Karamazov argues that without God:", opts: ["Life is sacred", "Everything is permitted", "Nature is divine", "Morality is stronger"], ans: 1, tag: "Dostoevsky" },
+    { q: "Beauvoir criticized women being cast as:", opts: ["The weaker sex", "The Other", "The minority", "The opposition"], ans: 1, tag: "Beauvoir" },
+    { q: "Zapffe's 'Distraction' involves:", opts: ["Deep meditation", "Intense focus on trivial activity", "Philosophical inquiry", "Creative artistic work"], ans: 1, tag: "Zapffe" },
   ],
   7: [
-    { q: "If Zapffe observed modern social media, he would most likely classify it as:", opts: ["Pure sublimation", "Completely outside his framework", "A vast engine of Distraction", "A form of true connection"], ans: 2, tag: "Zapffe" },
-    { q: "How does Zapffe's 'Sublimation' transform existential suffering?", opts: ["It eliminates suffering entirely", "It suppresses all emotion", "It converts suffering into physical energy", "It channels pain into creative and artistic expression, giving it form"], ans: 3, tag: "Zapffe" },
-    { q: "Camus's 'The Rebel' argues that authentic revolt must be:", opts: ["Violent and total", "Measured — rejecting injustice while affirming human solidarity", "Purely individual", "Based on religious principles"], ans: 1, tag: "Camus" },
-    { q: "Heidegger argued that modern technology causes:", opts: ["Only material progress", "A fundamental way of seeing everything as a resource to be exploited", "No philosophical problems", "Only environmental damage"], ans: 1, tag: "Heidegger" },
-    { q: "Which statement best captures the tension in Zapffe's thought?", opts: ["Humans should stop thinking", "Knowledge is always liberating", "Consciousness is both our defining feature and our deepest wound", "Nature is fundamentally good"], ans: 2, tag: "Zapffe" },
-    { q: "Nietzsche's 'death of God' is primarily about:", opts: ["Literal atheism", "The collapse of the entire metaphysical framework that gave Western life meaning", "Church attendance declining", "A fictional story"], ans: 1, tag: "Nietzsche" },
-    { q: "Kierkegaard's 'sickness unto death' refers to:", opts: ["A physical disease", "Cancer specifically", "Despair — being in a wrong relationship to oneself", "Fear of doctors"], ans: 2, tag: "Kierkegaard" },
-    { q: "Beauvoir's 'ethics of ambiguity' proposes that:", opts: ["Morality is simple and clear", "We must embrace the ambiguity of freedom and work for everyone's liberation", "Ethics don't matter", "Only rules matter, not context"], ans: 1, tag: "Beauvoir" },
-    { q: "Dostoevsky's 'if God does not exist, everything is permitted' raises the question of:", opts: ["Whether religion is true", "Whether morality requires a transcendent foundation", "Whether laws are necessary", "Whether cooking needs recipes"], ans: 1, tag: "Dostoevsky" },
-    { q: "Zapffe's philosophy suggests the 'correct' response to existence is:", opts: ["Blind optimism", "Absolute despair", "There is no single correct response — only mechanisms for bearing it", "Ignoring reality completely"], ans: 2, tag: "Zapffe" },
+    { q: "Nietzsche's 'perspectivism' claims truth is:", opts: ["Absolute and singular", "Shaped by the knower", "Purely mathematical", "Democratically decided"], ans: 1, tag: "Nietzsche" },
+    { q: "Heidegger's 'authenticity' requires confronting:", opts: ["Other philosophers", "One's own mortality", "Political injustice", "Scientific ignorance"], ans: 1, tag: "Heidegger" },
+    { q: "For Kierkegaard, 'the sickness unto death' is:", opts: ["Terminal illness", "Despair itself", "Loss of faith", "Fear of dying"], ans: 1, tag: "Kierkegaard" },
+    { q: "Sartre's 'nausea' reveals existence as:", opts: ["Logically ordered", "Contingent and groundless", "Divinely purposeful", "Morally structured"], ans: 1, tag: "Sartre" },
+    { q: "Camus's absurd hero responds with:", opts: ["Quiet resignation", "Passionate revolt", "Rational planning", "Religious conversion"], ans: 1, tag: "Camus" },
+    { q: "Zapffe saw consciousness as a biological:", opts: ["Crowning achievement", "Tragic overdevelopment", "Neutral adaptation", "Necessary survival tool"], ans: 1, tag: "Zapffe" },
+    { q: "Schopenhauer's pessimism holds that life is fundamentally:", opts: ["Meaningfully tragic", "Blindly suffering", "Quietly beautiful", "Slowly improving"], ans: 1, tag: "Schopenhauer" },
+    { q: "Dostoevsky's 'idiot' Prince Myshkin represents:", opts: ["Political naivete", "Radical goodness", "Mental weakness", "Social climbing"], ans: 1, tag: "Dostoevsky" },
+    { q: "Beauvoir's 'ethics of ambiguity' rejects:", opts: ["Personal freedom", "Absolute moral certainty", "Gender equality", "Political engagement"], ans: 1, tag: "Beauvoir" },
+    { q: "Cioran said the act of being born is:", opts: ["A joyful miracle", "An irreversible catastrophe", "A neutral event", "A divine blessing"], ans: 1, tag: "Cioran" },
   ],
   8: [
-    { q: "A Zapffean reading of art would suggest that great works are:", opts: ["Acts of sublimation — transforming unbearable awareness into beauty", "Merely entertainment", "Economically motivated", "Purely technical achievements"], ans: 0, tag: "Zapffe" },
-    { q: "Camus saw Sisyphus as a metaphor for:", opts: ["Physical exercise", "Greek mythology only", "The human condition — finding meaning through persistent engagement with absurdity", "Punishment by gods"], ans: 2, tag: "Camus" },
-    { q: "Nietzsche's 'genealogy of morals' reveals that moral values:", opts: ["Are eternal and unchanging", "Come from God", "Have historical origins in power dynamics and resentment", "Don't exist"], ans: 2, tag: "Nietzsche" },
-    { q: "The phrase 'the antlers are heavy' in $ELK philosophy most deeply means:", opts: ["Elk antlers weigh a lot physically", "The gift of consciousness comes with inescapable existential weight", "Cryptocurrency is difficult", "Antlers slow the elk down"], ans: 1, tag: "$ELK" },
-    { q: "Sartre argued that 'we are condemned to be free.' The word 'condemned' suggests:", opts: ["Freedom is a prison sentence", "Freedom is easy and joyful", "Freedom carries the unbearable weight of total responsibility", "Condemnation by a court"], ans: 2, tag: "Sartre" },
-    { q: "Schopenhauer's pessimism influenced which of these thinkers?", opts: ["Only Zapffe", "Nietzsche, Zapffe, Cioran, Tolstoy, and many others", "No one at all", "Only Eastern philosophers"], ans: 1, tag: "Schopenhauer" },
-    { q: "Cioran's radical pessimism led him to call consciousness:", opts: ["A miracle", "A catastrophe in the history of the universe", "A useful tool", "Morally neutral"], ans: 1, tag: "Cioran" },
-    { q: "If an elk could comprehend its own mortality, Zapffe would say it has:", opts: ["Evolved perfectly", "Become irrational", "Crossed the threshold into human-like tragic consciousness", "Gained a survival advantage"], ans: 2, tag: "Zapffe" },
-    { q: "Heidegger's concept of 'authenticity' requires:", opts: ["Following social norms perfectly", "Owning one's existence and choices in the face of death", "Being honest about small things", "Having a genuine personality"], ans: 1, tag: "Heidegger" },
-    { q: "Zapffe's view on human reproduction was:", opts: ["Enthusiastically pro-natalist", "Focused only on population statistics", "Indifferent to the topic", "Skeptical — bringing new consciousness into being means creating new suffering"], ans: 3, tag: "Zapffe" },
+    { q: "Nietzsche saw 'slave morality' as born from:", opts: ["Genuine compassion", "Ressentiment", "Natural instinct", "Divine command"], ans: 1, tag: "Nietzsche" },
+    { q: "Heidegger argued modern man has forgotten the question of:", opts: ["Ethics", "Being", "Justice", "Beauty"], ans: 1, tag: "Heidegger" },
+    { q: "Kierkegaard's 'Abraham paradox' concerns:", opts: ["Economic sacrifice", "Faith versus ethics", "Political loyalty", "Scientific discovery"], ans: 1, tag: "Kierkegaard" },
+    { q: "Sartre's 'look of the Other' makes us feel:", opts: ["Loved and secure", "Objectified and judged", "Invisible and free", "Powerful and dominant"], ans: 1, tag: "Sartre" },
+    { q: "Camus wrote 'In the depth of winter I found within me:'", opts: ["An endless sorrow", "An invincible summer", "A terrible darkness", "A growing madness"], ans: 1, tag: "Camus" },
+    { q: "Zapffe would classify modern social media primarily as:", opts: ["Genuine connection", "Mass distraction", "Pure sublimation", "Effective anchoring"], ans: 1, tag: "Zapffe" },
+    { q: "Schopenhauer influenced which of these thinkers MOST?", opts: ["Karl Marx", "Nietzsche", "Immanuel Kant", "Georg Hegel"], ans: 1, tag: "Schopenhauer" },
+    { q: "Dostoevsky's Grand Inquisitor says humanity prefers:", opts: ["Absolute freedom", "Miracle, mystery, authority", "Truth and justice", "Solitude and peace"], ans: 1, tag: "Dostoevsky" },
+    { q: "Beauvoir saw existential freedom as requiring:", opts: ["Wealth and status", "Concrete social action", "Inner contemplation", "Religious guidance"], ans: 1, tag: "Beauvoir" },
+    { q: "Zapffe's deepest paradox is that consciousness:", opts: ["Creates what it cures", "Heals what it wounds", "Must defend against itself", "Transcends its own limits"], ans: 2, tag: "Zapffe" },
   ],
   9: [
-    { q: "Which modern phenomenon would Zapffe most likely see as confirming his thesis?", opts: ["Space exploration", "Improved agricultural yields", "The global rise of anxiety and depression despite material progress", "Faster internet speeds"], ans: 2, tag: "Zapffe" },
-    { q: "In Zapffe's framework, someone who devotes their life to a cause (career, nation, ideology) is primarily engaging in:", opts: ["Sublimation", "Distraction", "Anchoring", "Isolation"], ans: 2, tag: "Zapffe" },
-    { q: "The deepest paradox in Zapffe's philosophy is:", opts: ["We must use consciousness to defend against the pain that consciousness creates", "Money can't buy happiness", "Education is overrated", "Nature is beautiful but dangerous"], ans: 0, tag: "Zapffe" },
-    { q: "Camus wrote: 'In the depth of winter, I finally learned that within me there lay an invincible summer.' This reflects:", opts: ["A weather report", "Finding inner resilience within the absurd condition", "Seasonal affective disorder", "A travel memoir"], ans: 1, tag: "Camus" },
-    { q: "Why might a memecoin community resonate with Zapffe's ideas?", opts: ["Because collective absurdist humor is itself a coping mechanism — Distraction and Sublimation merged", "Because memes are meaningless", "Because cryptocurrency solves existential problems", "It doesn't resonate at all"], ans: 0, tag: "$ELK" },
-    { q: "Nietzsche's idea of 'perspectivism' suggests:", opts: ["There is one absolute truth", "All perspectives are equally worthless", "There are no facts, only interpretations shaped by the knower", "Only scientists can know truth"], ans: 2, tag: "Nietzsche" },
-    { q: "Kierkegaard's 'either/or' presents the choice between:", opts: ["Good and evil simply", "Two careers", "An aesthetic life of pleasure versus an ethical life of commitment", "Two countries"], ans: 2, tag: "Kierkegaard" },
-    { q: "Beauvoir argued that existential freedom is meaningless unless:", opts: ["You are wealthy", "You have power over others", "It is accompanied by the struggle for others' freedom as well", "It is unlimited"], ans: 2, tag: "Beauvoir" },
-    { q: "Heidegger's critique of 'das Man' (the They) warns against:", opts: ["Specific individuals", "Losing authentic selfhood by conforming to anonymous social norms", "Foreign cultures", "Modern art"], ans: 1, tag: "Heidegger" },
-    { q: "Schopenhauer believed the deepest truth could be accessed through:", opts: ["Science alone", "Political power", "Aesthetic contemplation, music, and compassion", "Wealth accumulation"], ans: 2, tag: "Schopenhauer" },
+    { q: "Nietzsche's 'will to power' is fundamentally a drive toward:", opts: ["Political domination", "Self-overcoming and creation", "Material accumulation", "Social recognition"], ans: 1, tag: "Nietzsche" },
+    { q: "Heidegger's 'clearing' (Lichtung) is where:", opts: ["Forests are cut down", "Being reveals itself", "Logic becomes clear", "Politics is decided"], ans: 1, tag: "Heidegger" },
+    { q: "Kierkegaard's 'either/or' contrasts the:", opts: ["Sacred and profane life", "Aesthetic and ethical life", "Active and passive life", "Public and private life"], ans: 1, tag: "Kierkegaard" },
+    { q: "Sartre argued that human reality is fundamentally:", opts: ["A being-in-itself", "A lack or nothingness", "A divine creation", "A material substance"], ans: 1, tag: "Sartre" },
+    { q: "For Camus, the absurd emerges between:", opts: ["Rich and poor", "Human longing and world's silence", "Past and future", "Self and society"], ans: 1, tag: "Camus" },
+    { q: "Zapffe's 'Anchoring' involves fixing life to:", opts: ["Geographic locations", "Stable values or goals", "Physical possessions", "Ancestral traditions"], ans: 1, tag: "Zapffe" },
+    { q: "Schopenhauer saw compassion as recognizing:", opts: ["Social obligation", "Shared suffering in others", "Divine commandment", "Rational self-interest"], ans: 1, tag: "Schopenhauer" },
+    { q: "Dostoevsky explored the idea that suffering:", opts: ["Should be eliminated", "Can redeem and transform", "Is always meaningless", "Only affects the weak"], ans: 1, tag: "Dostoevsky" },
+    { q: "Cioran's aphoristic style was influenced most by:", opts: ["Hegel's dialectics", "Nietzsche's fragments", "Kant's critiques", "Marx's manifestos"], ans: 1, tag: "Cioran" },
+    { q: "Beauvoir argued that aging reveals:", opts: ["Life's hidden beauty", "Existential vulnerability", "Wisdom's true value", "Society's compassion"], ans: 1, tag: "Beauvoir" },
   ],
   10: [
-    { q: "The mountain has no true summit. The climb IS the meaning. What does the elk do?", opts: ["Anchoring — declares 'this peak is the real summit' and stops", "Distraction — races ever faster, never looking down", "Isolation — forgets there was ever a mountain", "Sublimation — turns the climb itself into a song that echoes through the valley"], ans: 3, tag: "Zapffe / $ELK" },
-    { q: "If consciousness is the wound, and we cannot un-know what we know, the most authentically Zapffean response is:", opts: ["Refuse to participate in life", "Pretend the wound doesn't exist", "Acknowledge the wound openly while creating beauty from it — carrying the antlers with grace", "Seek a technological cure for awareness"], ans: 2, tag: "Zapffe" },
-    { q: "The elk reaches the summit and sees only more mountains beyond. This moment represents:", opts: ["The core truth — meaning is not a destination but the shared act of continuing to climb", "Failure — the journey was pointless", "A reason to give up", "Proof that maps are unreliable"], ans: 0, tag: "$ELK" },
-    { q: "Camus, Zapffe, Kierkegaard, and Nietzsche would all agree on one thing:", opts: ["That life has a simple, fixed meaning", "That conventional comforts fully satisfy the human condition", "That the confrontation with existence demands an extraordinary personal response", "That philosophy is useless"], ans: 2, tag: "All" },
-    { q: "A community built around shared philosophical burden — like $ELK — would be viewed by Zapffe as:", opts: ["Impossible and contradictory", "A uniquely honest form of Anchoring that acknowledges the weight it tries to bear", "A distraction like any other", "Completely unrelated to his ideas"], ans: 1, tag: "Zapffe / $ELK" },
-    { q: "At the summit, the elk whispers: 'The weight never left, but I learned to call it wings.' This is closest to:", opts: ["Denial of suffering", "Sublimation — transforming pain into meaning without denying its existence", "Nihilism — nothing matters", "Distraction from the real problem"], ans: 1, tag: "Zapffe / $ELK" },
+    { q: "If consciousness is the wound that cannot heal, the most Zapffean response is:", opts: ["Deny the wound exists", "Create beauty from the pain", "Seek a cure in science", "Simply stop thinking"], ans: 1, tag: "Zapffe" },
+    { q: "Camus, Nietzsche, and Kierkegaard all agree that existence demands:", opts: ["Comfortable acceptance", "Extraordinary personal response", "Systematic rational analysis", "Collective political action"], ans: 1, tag: "All" },
+    { q: "The elk reaches the summit and sees only more peaks. This represents:", opts: ["The futility of effort", "Meaning as perpetual becoming", "A navigational failure", "Nature's cruel indifference"], ans: 1, tag: "$ELK" },
+    { q: "Zapffe would view a philosophy-themed meme community as:", opts: ["Pointless entertainment", "Honest collective coping", "Intellectual pretension", "Pure commercial venture"], ans: 1, tag: "Zapffe / $ELK" },
+    { q: "'The weight never left, but I learned to call it wings.' This is closest to:", opts: ["Denial of reality", "Sublimation of suffering", "Willful ignorance", "Religious salvation"], ans: 1, tag: "Zapffe / $ELK" },
+    { q: "The deepest tension in existentialism is between:", opts: ["Science and religion", "Freedom and groundlessness", "Wealth and poverty", "Nature and technology"], ans: 1, tag: "Existentialism" },
   ]
 };
 
@@ -935,7 +1071,6 @@ const QUOTES = [
   "\"At the treeline, silence becomes a companion.\"",
   "\"One night the antlers catch the moonlight, and the weight becomes wonder.\"",
   "\"To live is to suffer; to survive is to find meaning.\" — Frankl",
-  "\"The only way to deal with an unfree world is to become so absolutely free that your very existence is an act of rebellion.\" — Camus",
   "\"Existence precedes essence.\" — Sartre",
   "\"The higher we climb, the more we see — and the more we must bear.\"",
   "\"Without music, life would be a mistake.\" — Nietzsche",
@@ -965,19 +1100,19 @@ const LEVEL_NAMES = [
 
 const ALTITUDES = [0, 800, 1600, 2400, 3200, 4000, 4800, 5600, 6400, 7200, 8000];
 
-// ── Station positions ──
+// ── Station positions (percentage of viewport) ──
 const STATION_COORDS = [
-  { x: 50, y: 88 },
-  { x: 44, y: 81 },
-  { x: 55, y: 74 },
-  { x: 43, y: 67 },
-  { x: 53, y: 60 },
-  { x: 45, y: 53 },
-  { x: 54, y: 46 },
-  { x: 47, y: 39 },
-  { x: 52, y: 32 },
-  { x: 48, y: 25 },
-  { x: 50, y: 17 },
+  { x: 50, y: 91 },
+  { x: 44, y: 84 },
+  { x: 56, y: 77 },
+  { x: 43, y: 70 },
+  { x: 55, y: 63 },
+  { x: 45, y: 56 },
+  { x: 54, y: 49 },
+  { x: 46, y: 42 },
+  { x: 53, y: 35 },
+  { x: 48, y: 27 },
+  { x: 50, y: 18 },
 ];
 
 // ── Game State ──
@@ -1025,13 +1160,13 @@ function init() {
 
 function createStars() {
   let html = '';
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 150; i++) {
     const x = Math.random() * 100;
-    const y = Math.random() * 55;
+    const y = Math.random() * 50;
     const o = (0.2 + Math.random() * 0.8).toFixed(2);
     const d = (2 + Math.random() * 5).toFixed(1);
-    const s = Math.random() < 0.1 ? 3 : (Math.random() < 0.3 ? 2 : 1);
-    const color = Math.random() < 0.05 ? 'rgba(180,200,255,0.9)' : (Math.random() < 0.05 ? 'rgba(255,220,180,0.9)' : '#fff');
+    const s = Math.random() < 0.08 ? 3 : (Math.random() < 0.25 ? 2 : 1);
+    const color = Math.random() < 0.06 ? 'rgba(180,200,255,0.9)' : (Math.random() < 0.04 ? 'rgba(255,220,180,0.9)' : '#fff');
     html += `<div class="star" style="left:${x}%;top:${y}%;--o:${o};--d:${d}s;width:${s}px;height:${s}px;background:${color}"></div>`;
   }
   starsContainer.innerHTML = html;
@@ -1039,12 +1174,12 @@ function createStars() {
 
 function createWindParticles() {
   let html = '';
-  for (let i = 0; i < 12; i++) {
-    const y = 15 + Math.random() * 50;
+  for (let i = 0; i < 14; i++) {
+    const y = 12 + Math.random() * 50;
     const w = 15 + Math.random() * 40;
     const speed = 4 + Math.random() * 6;
     const delay = Math.random() * 10;
-    const o = (0.04 + Math.random() * 0.08).toFixed(2);
+    const o = (0.03 + Math.random() * 0.07).toFixed(2);
     html += `<div class="wind-particle" style="top:${y}%;--w:${w}px;--speed:${speed}s;--delay:${delay}s;--o:${o}"></div>`;
   }
   windParticles.innerHTML = html;
@@ -1052,13 +1187,13 @@ function createWindParticles() {
 
 function createSnowParticles() {
   let html = '';
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 30; i++) {
     const x = Math.random() * 100;
     const s = (1 + Math.random() * 2).toFixed(0);
     const dur = 6 + Math.random() * 8;
     const delay = Math.random() * 12;
     const drift = (-30 + Math.random() * 60).toFixed(0);
-    const o = (0.15 + Math.random() * 0.3).toFixed(2);
+    const o = (0.12 + Math.random() * 0.25).toFixed(2);
     html += `<div class="snow-p" style="left:${x}%;--s:${s}px;--dur:${dur}s;--delay:${delay}s;--drift:${drift}px;--o:${o}"></div>`;
   }
   snowParticles.innerHTML = html;
@@ -1083,9 +1218,7 @@ function createTrailLines() {
   for (let i = 0; i < 10; i++) {
     const a = STATION_COORDS[i];
     const b = STATION_COORDS[i + 1];
-    const x1 = a.x * 8, y1 = a.y * 7;
-    const x2 = b.x * 8, y2 = b.y * 7;
-    html += `<line id="trail${i}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+    html += `<line id="trail${i}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;
   }
   svg.innerHTML = html;
 }
@@ -1095,7 +1228,7 @@ function triggerShootingStar() {
   const star = document.createElement('div');
   star.className = 'shooting-star';
   const x = 20 + Math.random() * 60;
-  const y = 5 + Math.random() * 25;
+  const y = 3 + Math.random() * 20;
   const dx = (-120 - Math.random() * 150).toFixed(0);
   const dy = (60 + Math.random() * 100).toFixed(0);
   const dur = (0.6 + Math.random() * 0.8).toFixed(1);
@@ -1118,7 +1251,6 @@ function positionElk(level, animate = true) {
 
 // ── Shuffle utility ──
 function shuffleOptions(q) {
-  // Create indexed options
   const indexed = q.opts.map((text, i) => ({ text, isCorrect: i === q.ans }));
   // Fisher-Yates shuffle
   for (let i = indexed.length - 1; i > 0; i--) {
@@ -1159,10 +1291,8 @@ function startGame() {
   elk.className = 'elk idle';
   progressBar.style.width = '0%';
 
-  // Clear shooting star interval
   if (shootingStarInterval) clearInterval(shootingStarInterval);
 
-  // Mark base camp
   $('station0').classList.add('reached');
   positionElk(0, false);
   updateLevel();
@@ -1178,7 +1308,6 @@ function updateLevel() {
   progressBar.style.width = (state.level * 10) + '%';
   altitude.textContent = `ALT ${ALTITUDES[state.level]}m`;
 
-  // Progressive atmosphere
   if (state.level >= 3) {
     starsContainer.classList.add('dim');
     sky.classList.add('mid');
@@ -1190,7 +1319,6 @@ function updateLevel() {
     mountainGlow.classList.add('visible');
   }
   if (state.level >= 6) {
-    // Start occasional shooting stars
     if (!shootingStarInterval) {
       shootingStarInterval = setInterval(() => {
         if (Math.random() < 0.4) triggerShootingStar();
@@ -1228,7 +1356,6 @@ function getQuestion() {
   const originalIdx = pool.indexOf(available[idx]);
   state.usedQuestions[targetLevel].push(originalIdx);
 
-  // Shuffle the options so correct answer position varies
   return shuffleOptions(available[idx]);
 }
 
@@ -1280,7 +1407,6 @@ function selectAnswer(selected, correct) {
 function handleCorrect() {
   state.level++;
 
-  // Climb animation
   elk.classList.remove('idle');
   elk.classList.add('climb');
   positionElk(state.level);
